@@ -3,6 +3,20 @@
 {% block title %}Edit {{ card.card_code }}{% endblock %}
 
 {% block content %}
+<style>
+/* Edit Card page: keep Raw/Graded boxes dark on page load, not white */
+.cw-form-compact #raw-fields,
+.cw-form-compact #graded-fields {
+    background: linear-gradient(145deg, #202b3a, #253246) !important;
+    border-color: rgba(148, 163, 184, .24) !important;
+}
+
+.cw-form-compact #raw-fields:hover,
+.cw-form-compact #graded-fields:hover {
+    background: linear-gradient(145deg, #253246, #2c3a50) !important;
+    border-color: rgba(96, 165, 250, .45) !important;
+}
+</style>
 <div class="d-flex justify-content-between align-items-center mb-4 cw-page-title">
     <div>
         <h1 class="h2 mb-1">Edit Card</h1>

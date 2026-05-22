@@ -15,82 +15,79 @@
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-4">
+
+    <!-- Available To Sell -->
+    <div class="col">
         <a class="dashboard-card-link" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
-        <div class="card page-card dashboard-stat-card dashboard-click-card h-100">
-            <div class="card-body">
-                <span class="btn btn-sm btn-success mb-3">Inventory (Active / Available)</span>
-                <div class="display-6 fw-bold text-white">{{ dealer_inventory_cards or 0 }}</div>
-                <div class="small text-white-50">Inventory cards currently Active</div>
+            <div class="card page-card dashboard-stat-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-success mb-3">Available To Sell</span>
+                    <div class="display-6 fw-bold text-white">{{ available_to_sell_cards or 0 }}</div>
+                    <div class="small text-white-50">Active inventory cards ready to move</div>
+                </div>
             </div>
-        </div>
         </a>
     </div>
 
-    <div class="col-md-4">
-        <a class="dashboard-card-link" href="{{ url_for('cards', status='Active') }}">
-        <div class="card page-card dashboard-stat-card dashboard-click-card h-100">
-            <div class="card-body">
-                <span class="btn btn-sm btn-primary mb-3">Available Today</span>
-                <div class="display-6 fw-bold text-white">{{ available_to_sell_cards or 0 }}</div>
-                <div class="small text-white-50">Active inventory ready to sell</div>
+    <!-- Inventory Cost -->
+    <div class="col">
+        <a class="dashboard-card-link" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
+            <div class="card page-card dashboard-stat-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-warning mb-3">Inventory Cost</span>
+                    <div class="display-6 fw-bold text-white">${{ "%.0f"|format(dealer_inventory_cost or 0) }}</div>
+                    <div class="small text-white-50">Current money tied up in inventory</div>
+                </div>
             </div>
-        </div>
         </a>
     </div>
 
-    <div class="col-md-4">
-        <a class="dashboard-card-link" href="{{ url_for('cards', collection_type='Grading Queue') }}">
-        <div class="card page-card dashboard-stat-card dashboard-click-card h-100">
-            <div class="card-body">
-                <span class="btn btn-sm btn-info mb-3">Grading Queue</span>
-                <div class="display-6 fw-bold text-white">{{ grading_queue_cards or 0 }}</div>
-                <div class="small text-white-50">Cards waiting for grading</div>
+    <!-- Inventory Estimated Value -->
+    <div class="col">
+        <a class="dashboard-card-link" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
+            <div class="card page-card dashboard-stat-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-info mb-3">Inventory Est. Value</span>
+                    <div class="display-6 fw-bold text-white">${{ "%.0f"|format(dealer_inventory_value or 0) }}</div>
+                    <div class="small text-white-50">Estimated market value of active inventory</div>
+                </div>
             </div>
-        </div>
         </a>
     </div>
+
+    <!-- Current Asking -->
+    <div class="col">
+        <a class="dashboard-card-link" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
+            <div class="card page-card dashboard-stat-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-primary mb-3">Current Asking</span>
+                    <div class="display-6 fw-bold text-white">${{ "%.0f"|format(available_asking_price or 0) }}</div>
+                    <div class="small text-white-50">Total current asking exposure</div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Potential Profit -->
+    <div class="col">
+        <a class="dashboard-card-link" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
+            <div class="card page-card dashboard-stat-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-purple mb-3">Potential Profit</span>
+                    <div class="display-6 fw-bold text-white">${{ "%.0f"|format(available_potential_profit or 0) }}</div>
+                    <div class="small text-white-50">
+                        {{ "%.1f"|format(available_potential_profit_percent or 0) }}% projected margin
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <a class="dashboard-card-link" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
-        <div class="card page-card dashboard-click-card h-100">
-            <div class="card-body">
-                <div class="cw-section-label mb-1">Inventory Cost (Active / Available)</div>
-                <div class="display-6 fw-bold">${{ "%.2f"|format(dealer_inventory_cost or 0) }}</div>
-                <p class="text-muted mb-0 small">Purchase cost tied up in currently Active Inventory cards.</p>
-            </div>
-        </div>
-        </a>
-    </div>
-
-    <div class="col-md-4">
-        <a class="dashboard-card-link" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
-        <div class="card page-card dashboard-click-card h-100">
-            <div class="card-body">
-                <div class="cw-section-label mb-1">Inventory Est. Value (Active / Available)</div>
-                <div class="display-6 fw-bold">${{ "%.2f"|format(dealer_inventory_value or 0) }}</div>
-                <p class="text-muted mb-0 small">Estimated value of currently Active Inventory cards.</p>
-            </div>
-        </div>
-        </a>
-    </div>
-
-    <div class="col-md-4">
-        <a class="dashboard-card-link" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
-        <div class="card page-card dashboard-click-card h-100">
-            <div class="card-body">
-                <div class="cw-section-label mb-1">Inventory P/L (Active / Available)</div>
-                <div class="display-6 fw-bold {% if dealer_unrealized_gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
-                    ${{ "%.2f"|format(dealer_unrealized_gain_loss or 0) }}
-                </div>
-                <p class="text-muted mb-0 small">Estimated value minus cost for currently Active Inventory cards.</p>
-            </div>
-        </div>
-        </a>
-    </div>
+    
 </div>
 
 <div class="row g-3 mb-4">
@@ -221,7 +218,6 @@
     </div>
 
 
-
     <div class="col-lg-4">
         <div class="card page-card dashboard-brand-card h-100">
             <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
@@ -254,7 +250,7 @@
             <div class="card-body">
                 <div class="workflow-action-list">
 
-                    <a class="workflow-action-row workflow-warning" href="{{ url_for('fulfillment_queue', status='Needs Pulling') }}">
+                    <a class="workflow-action-row workflow-primary" href="{{ url_for('fulfillment_queue', status='Needs Pulling') }}">
                         <div>
                             <div class="workflow-action-title">Needs Pulling</div>
                             <div class="workflow-action-subtitle">Sold cards still sitting in storage.</div>
@@ -286,7 +282,7 @@
                         <span class="workflow-action-count">{{ grading_queue_cards or 0 }}</span>
                     </a>
 
-                    <a class="workflow-action-row workflow-warning" href="{{ url_for('cards', status='Active', collection_type='Inventory', storage='__missing__') }}">
+                    <a class="workflow-action-row workflow-yellow" href="{{ url_for('cards', status='Active', collection_type='Inventory', storage='__missing__') }}">
                         <div>
                             <div class="workflow-action-title">Missing Storage Location</div>
                             <div class="workflow-action-subtitle">Active inventory cards that still need a box, binder, or showcase location.</div>
