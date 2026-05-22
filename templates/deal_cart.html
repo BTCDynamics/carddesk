@@ -84,6 +84,130 @@
     color: #111827 !important;
     font-weight: 600 !important;
 }
+
+/* Negotiation value controls */
+.negotiation-input {
+    min-width: 105px;
+    font-weight: 800 !important;
+}
+
+.negotiation-source-input {
+    min-width: 150px;
+}
+
+.negotiation-original-ask {
+    color: #cbd5e1;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.negotiation-working-cell {
+    min-width: 130px;
+}
+
+.negotiation-card-note {
+    color: #94a3b8;
+    font-size: .76rem;
+    line-height: 1.2;
+}
+
+.negotiation-table th,
+.negotiation-table td {
+    vertical-align: middle;
+}
+
+.lowest-acceptable-main-value {
+    white-space: nowrap;
+}
+
+
+/* Dealer Breakdown Mode */
+.breakdown-toggle-btn {
+    white-space: nowrap;
+    font-weight: 800;
+}
+
+.dealer-breakdown-row {
+    display: none;
+}
+
+.dealer-breakdown-row.is-open {
+    display: table-row;
+}
+
+.dealer-breakdown-panel {
+    margin: .25rem 0 1rem 0;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: linear-gradient(145deg, #111827, #1f2937);
+    border: 1px solid rgba(96, 165, 250, .32);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 .75rem 1.75rem rgba(0,0,0,.24);
+}
+
+.dealer-breakdown-title {
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 1rem;
+}
+
+.dealer-breakdown-subtitle,
+.dealer-breakdown-note {
+    color: #94a3b8;
+    font-size: .78rem;
+}
+
+.dealer-breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(190px, 1fr));
+    gap: .85rem;
+}
+
+.dealer-breakdown-field {
+    padding: .8rem;
+    border-radius: .85rem;
+    background: rgba(15, 23, 42, .65);
+    border: 1px solid rgba(148, 163, 184, .22);
+}
+
+.dealer-breakdown-field label {
+    display: block;
+    margin-bottom: .35rem;
+    color: #cbd5e1;
+    font-size: .74rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.dealer-breakdown-readout {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    padding: .38rem .6rem;
+    border-radius: .55rem;
+    color: #f8fafc;
+    background: rgba(2, 6, 23, .55);
+    border: 1px solid rgba(148, 163, 184, .20);
+    font-weight: 900;
+}
+
+.lowest-warning {
+    color: #f87171 !important;
+    font-weight: 900;
+}
+
+@media (max-width: 1199.98px) {
+    .dealer-breakdown-grid {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dealer-breakdown-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 </style>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
@@ -123,8 +247,8 @@
         <div class="col">
             <div class="card page-card deal-cart-stat-card h-100">
                 <div class="card-body">
-                    <div class="detail-label">Total Asking Price</div>
-                    <div class="detail-value">${{ "%.2f"|format(total_asking or 0) }}</div>
+                    <div class="detail-label">Working Ask Total</div>
+                    <div class="detail-value" id="topWorkingAskTotal">${{ "%.2f"|format(total_asking or 0) }}</div>
                 </div>
             </div>
         </div>
@@ -156,7 +280,7 @@
                 <div>
                     <div class="cw-section-label mb-1">Deal Calculator</div>
                     <p class="text-muted mb-0 small">
-                        Enter the value you agree to give the customer for their trade-in cards. This subtracts that credit from your deal cart asking price.
+                        Adjust card-level comps and working asks below, then use this calculator to handle discount, trade credit, and final cash needed.
                     </p>
                 </div>
                 <button class="btn btn-outline-secondary btn-sm" type="button" id="resetTradeCalculator">Reset</button>
@@ -164,12 +288,12 @@
 
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
-                    <label class="form-label fw-bold">Cart Asking Price</label>
+                    <label class="form-label fw-bold">Working Card Total</label>
                     <input class="form-control" id="cartAskingPrice" type="number" step="0.01" value="{{ "%.2f"|format(total_asking or 0) }}" readonly>
                 </div>
 
                 <div class="col-md-3">
-                    <label class="form-label fw-bold">Working Deal Asking Price</label>
+                    <label class="form-label fw-bold">Final Deal Price</label>
                     <input class="form-control fw-bold" id="workingDealPrice" type="number" step="0.01" min="0" value="{{ "%.2f"|format(total_asking or 0) }}">
                 </div>
 
@@ -208,7 +332,7 @@
             </div>
 
             <div class="alert alert-info mt-3 mb-0 small">
-                Example: if the cart asking price is $500, a 15% discount makes the working deal price $425. If you also give $150 trade credit, the customer owes $275 cash.
+                Use the row-level Comp and Working Ask fields during the conversation. Example: if the working card total is $500, a 15% discount makes the final deal price $425. If you also give $150 trade credit, the customer owes $275 cash.
             </div>
         </div>
     </div>
@@ -223,6 +347,7 @@
         <input type="hidden" name="trade_credit" id="finalTradeCreditInput" value="0.00">
         <input type="hidden" name="discount_percent" id="finalDiscountPercentInput" value="0.00">
         <input type="hidden" name="split_method" value="asking">
+        <input type="hidden" name="negotiated_working_total" id="finalWorkingAskTotalInput" value="{{ "%.2f"|format(total_asking or 0) }}">
 
         <div class="card page-card deal-workflow-card mb-3">
             <div class="card-body">
@@ -261,7 +386,7 @@
                 </div>
 
                 <div class="alert alert-warning mt-3 mb-3 small">
-                    Completing the deal will mark all selected cards as Sold. Sold prices will be assigned proportionally from each card's asking price using the current Working Deal Price.
+                    Completing the deal will mark all selected cards as Sold. Lowest Acceptable starts at 80% of entered comp values and can be adjusted in each breakdown panel.
                     Storage locations will be kept so you can still find cards that need to be pulled.
                 </div>
 
@@ -283,17 +408,21 @@
 
     <div class="card page-card">
         <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
+            <table class="table table-hover mb-0 align-middle negotiation-table">
                 <thead class="table-light">
                     <tr>
                         <th>Card</th>
+                        <th>Breakdown</th>
                         <th>Type</th>
                         <th>Qty</th>
                         <th>Cost</th>
                         <th>Est. Value</th>
                         <th>Est. Profit / Loss</th>
-                        <th>Ask</th>
-                        <th>Projected Sold</th>
+                        <th>Original Ask</th>
+                        <th>Comp</th>
+                        <th>Comp Source</th>
+                        <th>Working Ask</th>
+                        <th>Lowest Acceptable</th>
                         <th>Storage</th>
                         <th>Fulfillment</th>
                         <th class="text-end">Remove</th>
@@ -313,6 +442,16 @@
                                 {% if card.is_rookie %}<span class="badge badge-rc">RC</span>{% endif %}
                                 {% if card.is_hof %}<span class="badge badge-hof">HOF</span>{% endif %}
                             </td>
+                            <td>
+                                <button
+                                    class="btn btn-sm btn-outline-info breakdown-toggle-btn"
+                                    type="button"
+                                    data-card-id="{{ card.id }}"
+                                    aria-expanded="false"
+                                >
+                                    Breakdown
+                                </button>
+                            </td>
                             <td><span class="badge {% if card.card_type == 'Graded' %}text-bg-success{% else %}text-bg-dark{% endif %}">{{ card.card_type }}</span></td>
                             <td>{{ card.quantity or 1 }}</td>
                             <td>${{ "%.2f"|format((card.purchase_price or 0) * (card.quantity or 1)) }}</td>
@@ -323,10 +462,48 @@
                                     ${{ "%.2f"|format(card_est_profit) }}
                                 </span>
                             </td>
-                            <td class="card-ask-value" data-ask="{{ "%.2f"|format((card.asking_price or 0) * (card.quantity or 1)) }}">
-                                ${{ "%.2f"|format((card.asking_price or 0) * (card.quantity or 1)) }}
+                            {% set original_ask_total = (card.asking_price or 0) * (card.quantity or 1) %}
+                            <td class="card-ask-value" data-ask="{{ "%.2f"|format(original_ask_total) }}">
+                                <div class="negotiation-original-ask">${{ "%.2f"|format(original_ask_total) }}</div>
+                                <div class="negotiation-card-note">Inventory ask</div>
                             </td>
-                            <td class="projected-sold-value fw-bold">$0.00</td>
+                            <td>
+                                <input
+                                    class="form-control form-control-sm negotiation-input comp-value-input"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="Comp"
+                                    data-card-id="{{ card.id }}"
+                                    form="completeDealForm"
+                                    name="comp_value_{{ card.id }}"
+                                >
+                            </td>
+                            <td>
+                                <input
+                                    class="form-control form-control-sm negotiation-source-input comp-source-input"
+                                    type="text"
+                                    placeholder="eBay sold, 130Point..."
+                                    data-card-id="{{ card.id }}"
+                                    form="completeDealForm"
+                                    name="comp_source_{{ card.id }}"
+                                >
+                            </td>
+                            <td class="negotiation-working-cell">
+                                <input
+                                    class="form-control form-control-sm negotiation-input working-ask-input"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value="{{ "%.2f"|format(original_ask_total) }}"
+                                    data-original-ask="{{ "%.2f"|format(original_ask_total) }}"
+                                    data-card-id="{{ card.id }}"
+                                    form="completeDealForm"
+                                    name="working_ask_{{ card.id }}"
+                                >
+                                <div class="negotiation-card-note">Negotiation value</div>
+                            </td>
+                            <td class="lowest-acceptable-main-value fw-bold" data-card-id="{{ card.id }}">—</td>
                             <td>{{ card.storage_location or '—' }}</td>
                             <td>
                                 {% if card.storage_location %}
@@ -339,6 +516,99 @@
                                 <form method="POST" action="{{ url_for('remove_from_deal_cart', card_id=card.id) }}">
                                     <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
                                 </form>
+                            </td>
+                        </tr>
+                        <tr class="dealer-breakdown-row" id="breakdown-{{ card.id }}">
+                            <td colspan="15">
+                                <div class="dealer-breakdown-panel">
+                                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                                        <div>
+                                            <div class="dealer-breakdown-title">Dealer Breakdown · {{ card.player_name }}</div>
+                                            <div class="dealer-breakdown-subtitle">Use this during back-and-forth negotiation without changing saved inventory pricing.</div>
+                                        </div>
+                                        <span class="badge text-bg-dark">{{ card.card_code }}</span>
+                                    </div>
+
+                                    <div class="dealer-breakdown-grid">
+                                        <div class="dealer-breakdown-field">
+                                            <label>Original Ask</label>
+                                            <div class="dealer-breakdown-readout original-ask-readout" data-card-id="{{ card.id }}">${{ "%.2f"|format(original_ask_total) }}</div>
+                                            <div class="dealer-breakdown-note">Saved inventory ask.</div>
+                                        </div>
+
+                                        <div class="dealer-breakdown-field">
+                                            <label>Comp Value</label>
+                                            <div class="dealer-breakdown-readout comp-value-readout" data-card-id="{{ card.id }}">—</div>
+                                            <div class="dealer-breakdown-note">Mirrors the row comp field.</div>
+                                        </div>
+
+                                        <div class="dealer-breakdown-field">
+                                            <label>Comp Source</label>
+                                            <div class="dealer-breakdown-readout comp-source-readout" data-card-id="{{ card.id }}">—</div>
+                                            <div class="dealer-breakdown-note">Example: eBay sold, 130Point, Card Ladder.</div>
+                                        </div>
+
+                                        <div class="dealer-breakdown-field">
+                                            <label>Lowest Acceptable</label>
+                                            <input
+                                                class="form-control form-control-sm lowest-acceptable-input"
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                placeholder="Floor"
+                                                data-card-id="{{ card.id }}"
+                                                form="completeDealForm"
+                                                name="lowest_acceptable_{{ card.id }}"
+                                            >
+                                            <div class="dealer-breakdown-note lowest-warning-message" data-card-id="{{ card.id }}"></div>
+                                        </div>
+
+                                        <div class="dealer-breakdown-field">
+                                            <label>Customer Offer</label>
+                                            <input
+                                                class="form-control form-control-sm customer-offer-input"
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                placeholder="Offer"
+                                                data-card-id="{{ card.id }}"
+                                                form="completeDealForm"
+                                                name="customer_offer_{{ card.id }}"
+                                            >
+                                            <div class="dealer-breakdown-note customer-offer-profit" data-card-id="{{ card.id }}">Shows quick profit against your cost.</div>
+                                        </div>
+
+                                        <div class="dealer-breakdown-field">
+                                            <label>Working Ask</label>
+                                            <div class="dealer-breakdown-readout working-ask-readout" data-card-id="{{ card.id }}">${{ "%.2f"|format(original_ask_total) }}</div>
+                                            <div class="dealer-breakdown-note">Mirrors the row working ask.</div>
+                                        </div>
+
+                                        <div class="dealer-breakdown-field">
+                                            <label>Instant Profit</label>
+                                            <div
+                                                class="dealer-breakdown-readout instant-profit-readout"
+                                                data-card-id="{{ card.id }}"
+                                                data-card-cost="{{ "%.2f"|format((card.purchase_price or 0) * (card.quantity or 1)) }}"
+                                            >
+                                                $0.00
+                                            </div>
+                                            <div class="dealer-breakdown-note">Working ask minus cost basis.</div>
+                                        </div>
+
+                                        <div class="dealer-breakdown-field">
+                                            <label>Notes</label>
+                                            <textarea
+                                                class="form-control form-control-sm negotiation-note-input"
+                                                rows="2"
+                                                placeholder="Why this number? Counter notes?"
+                                                data-card-id="{{ card.id }}"
+                                                form="completeDealForm"
+                                                name="negotiation_notes_{{ card.id }}"
+                                            ></textarea>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}
@@ -368,20 +638,62 @@ function formatCurrency(value) {
     });
 }
 
+function numericFieldValue(id) {
+    const field = document.getElementById(id);
+    return field ? Number(field.value) || 0 : 0;
+}
+
+function getWorkingAskTotal() {
+    let total = 0;
+
+    document.querySelectorAll(".working-ask-input").forEach(function (input) {
+        total += Number(input.value) || 0;
+    });
+
+    return total;
+}
+
+function refreshWorkingAskTotal(syncFinalDealPrice) {
+    const workingAskTotal = getWorkingAskTotal();
+    const cartAskingField = document.getElementById("cartAskingPrice");
+    const topWorkingAskTotal = document.getElementById("topWorkingAskTotal");
+    const finalWorkingAskTotalInput = document.getElementById("finalWorkingAskTotalInput");
+
+    if (cartAskingField) {
+        cartAskingField.value = workingAskTotal.toFixed(2);
+    }
+
+    if (topWorkingAskTotal) {
+        topWorkingAskTotal.textContent = formatCurrency(workingAskTotal);
+    }
+
+    if (finalWorkingAskTotalInput) {
+        finalWorkingAskTotalInput.value = workingAskTotal.toFixed(2);
+    }
+
+    if (syncFinalDealPrice) {
+        const workingDealPriceField = document.getElementById("workingDealPrice");
+        if (workingDealPriceField) {
+            workingDealPriceField.value = workingAskTotal.toFixed(2);
+        }
+    }
+}
+
 function updateTradeCalculator() {
-    const askingPrice = Number(document.getElementById("cartAskingPrice").value) || 0;
-    const workingDealPrice = Number(document.getElementById("workingDealPrice").value) || 0;
-    const tradeCredit = Number(document.getElementById("tradeCredit").value) || 0;
+    refreshWorkingAskTotal(false);
+
+    const askingPrice = numericFieldValue("cartAskingPrice");
+    const workingDealPrice = numericFieldValue("workingDealPrice");
+    const tradeCredit = numericFieldValue("tradeCredit");
     const totalCost = {{ "%.2f"|format(total_cost or 0) }};
 
     const discountAmount = askingPrice - workingDealPrice;
     const discountPercent = askingPrice > 0 ? (discountAmount / askingPrice) * 100 : 0;
     const cashNeeded = workingDealPrice - tradeCredit;
     const profitAfterTrade = cashNeeded - totalCost;
-
-    document.getElementById("discountAmount").value = formatCurrency(discountAmount);
     const profitPercent = totalCost > 0 ? (profitAfterTrade / totalCost) * 100 : 0;
 
+    document.getElementById("discountAmount").value = formatCurrency(discountAmount);
     document.getElementById("cashNeeded").value = formatCurrency(cashNeeded);
     document.getElementById("profitAfterTrade").value = formatCurrency(profitAfterTrade);
 
@@ -413,15 +725,6 @@ function updateTradeCalculator() {
         completeDealButton.textContent = "Complete Deal at " + formatCurrency(workingDealPrice);
     }
 
-    document.querySelectorAll(".card-ask-value").forEach(function (cell) {
-        const cardAsk = Number(cell.dataset.ask) || 0;
-        const projectedSold = askingPrice > 0 ? cardAsk * (workingDealPrice / askingPrice) : 0;
-        const projectedCell = cell.parentElement.querySelector(".projected-sold-value");
-
-        if (projectedCell) {
-            projectedCell.textContent = formatCurrency(projectedSold);
-        }
-    });
 
     const profitField = document.getElementById("profitAfterTrade");
     profitField.classList.remove("text-success", "text-danger");
@@ -435,8 +738,89 @@ function updateTradeCalculator() {
     discountField.classList.remove("text-success", "text-danger");
     discountField.classList.add(discountAmount > 0 ? "text-danger" : "text-success");
 }
+
+function refreshDealerBreakdowns() {
+    document.querySelectorAll(".working-ask-input").forEach(function (workingInput) {
+        const cardId = workingInput.dataset.cardId;
+        const workingAsk = Number(workingInput.value) || 0;
+        const workingReadout = document.querySelector('.working-ask-readout[data-card-id="' + cardId + '"]');
+        const profitReadout = document.querySelector('.instant-profit-readout[data-card-id="' + cardId + '"]');
+        const lowestInput = document.querySelector('.lowest-acceptable-input[data-card-id="' + cardId + '"]');
+        const lowestMainReadout = document.querySelector('.lowest-acceptable-main-value[data-card-id="' + cardId + '"]');
+        const warning = document.querySelector('.lowest-warning-message[data-card-id="' + cardId + '"]');
+        const customerOfferInput = document.querySelector('.customer-offer-input[data-card-id="' + cardId + '"]');
+        const customerOfferProfit = document.querySelector('.customer-offer-profit[data-card-id="' + cardId + '"]');
+
+        if (workingReadout) {
+            workingReadout.textContent = formatCurrency(workingAsk);
+        }
+
+        const cost = profitReadout ? (Number(profitReadout.dataset.cardCost) || 0) : 0;
+
+        if (profitReadout) {
+            const profit = workingAsk - cost;
+            profitReadout.textContent = formatCurrency(profit);
+            profitReadout.classList.remove("text-success", "text-danger");
+            profitReadout.classList.add(profit >= 0 ? "text-success" : "text-danger");
+        }
+
+        if (lowestInput) {
+            const lowest = Number(lowestInput.value) || 0;
+
+            if (lowestMainReadout) {
+                lowestMainReadout.textContent = lowest > 0 ? formatCurrency(lowest) : "—";
+                lowestMainReadout.classList.remove("text-success", "text-danger");
+                if (lowest > 0) {
+                    lowestMainReadout.classList.add(workingAsk >= lowest ? "text-success" : "text-danger");
+                }
+            }
+
+            if (warning) {
+                if (lowest > 0 && workingAsk < lowest) {
+                    warning.textContent = "Below your floor by " + formatCurrency(lowest - workingAsk);
+                    warning.classList.add("lowest-warning");
+                } else {
+                    warning.textContent = "";
+                    warning.classList.remove("lowest-warning");
+                }
+            }
+        }
+
+        if (customerOfferInput && customerOfferProfit) {
+            const offer = Number(customerOfferInput.value) || 0;
+            if (offer > 0) {
+                const offerProfit = offer - cost;
+                customerOfferProfit.textContent = "Offer profit: " + formatCurrency(offerProfit);
+                customerOfferProfit.classList.remove("text-success", "text-danger");
+                customerOfferProfit.classList.add(offerProfit >= 0 ? "text-success" : "text-danger");
+            } else {
+                customerOfferProfit.textContent = "Shows quick profit against your cost.";
+                customerOfferProfit.classList.remove("text-success", "text-danger");
+            }
+        }
+    });
+
+    document.querySelectorAll(".comp-value-input").forEach(function (input) {
+        const cardId = input.dataset.cardId;
+        const readout = document.querySelector('.comp-value-readout[data-card-id="' + cardId + '"]');
+        if (readout) {
+            readout.textContent = input.value === "" ? "—" : formatCurrency(Number(input.value) || 0);
+        }
+    });
+
+    document.querySelectorAll(".comp-source-input").forEach(function (input) {
+        const cardId = input.dataset.cardId;
+        const readout = document.querySelector('.comp-source-readout[data-card-id="' + cardId + '"]');
+        if (readout) {
+            readout.textContent = input.value.trim() || "—";
+        }
+    });
+}
+
 function applyDiscount(percent) {
-    const askingPrice = Number(document.getElementById("cartAskingPrice").value) || 0;
+    refreshWorkingAskTotal(false);
+
+    const askingPrice = numericFieldValue("cartAskingPrice");
     const discountRate = Number(percent) / 100;
     const newDealPrice = askingPrice * (1 - discountRate);
 
@@ -454,6 +838,61 @@ if (workingDealPriceField) {
     workingDealPriceField.addEventListener("input", updateTradeCalculator);
 }
 
+document.querySelectorAll(".working-ask-input").forEach(function (input) {
+    input.addEventListener("input", function () {
+        refreshWorkingAskTotal(true);
+        updateTradeCalculator();
+        refreshDealerBreakdowns();
+    });
+});
+
+document.querySelectorAll(".comp-value-input").forEach(function (input) {
+    input.addEventListener("input", function () {
+        const row = input.closest("tr");
+        const workingAskInput = row ? row.querySelector(".working-ask-input") : null;
+        const cardId = input.dataset.cardId;
+        const lowestInput = document.querySelector('.lowest-acceptable-input[data-card-id="' + cardId + '"]');
+        const compValue = Number(input.value) || 0;
+
+        if (input.value !== "") {
+            if (workingAskInput) {
+                workingAskInput.value = compValue.toFixed(2);
+            }
+
+            if (lowestInput) {
+                lowestInput.value = (compValue * 0.80).toFixed(2);
+            }
+
+            refreshWorkingAskTotal(true);
+            updateTradeCalculator();
+            refreshDealerBreakdowns();
+        } else {
+            if (lowestInput) {
+                lowestInput.value = "";
+            }
+            refreshDealerBreakdowns();
+        }
+    });
+});
+
+document.querySelectorAll(".comp-source-input, .lowest-acceptable-input, .customer-offer-input").forEach(function (input) {
+    input.addEventListener("input", refreshDealerBreakdowns);
+});
+
+document.querySelectorAll(".breakdown-toggle-btn").forEach(function (button) {
+    button.addEventListener("click", function () {
+        const row = document.getElementById("breakdown-" + button.dataset.cardId);
+        if (!row) {
+            return;
+        }
+
+        const isOpen = row.classList.toggle("is-open");
+        button.textContent = isOpen ? "Close" : "Breakdown";
+        button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        refreshDealerBreakdowns();
+    });
+});
+
 document.querySelectorAll(".discount-btn").forEach(function (button) {
     button.addEventListener("click", function () {
         applyDiscount(button.dataset.discount);
@@ -463,9 +902,18 @@ document.querySelectorAll(".discount-btn").forEach(function (button) {
 const resetButton = document.getElementById("resetTradeCalculator");
 if (resetButton) {
     resetButton.addEventListener("click", function () {
-        document.getElementById("workingDealPrice").value = (Number(document.getElementById("cartAskingPrice").value) || 0).toFixed(2);
+        document.querySelectorAll(".working-ask-input").forEach(function (input) {
+            input.value = (Number(input.dataset.originalAsk) || 0).toFixed(2);
+        });
+
+        document.querySelectorAll(".comp-value-input, .comp-source-input, .lowest-acceptable-input, .customer-offer-input, .negotiation-note-input").forEach(function (input) {
+            input.value = "";
+        });
+
+        refreshWorkingAskTotal(true);
         document.getElementById("tradeCredit").value = "";
         updateTradeCalculator();
+        refreshDealerBreakdowns();
     });
 }
 
@@ -477,14 +925,16 @@ if (completeDealForm) {
         const dealPrice = document.getElementById("finalDealPriceInput").value;
         const tradeCredit = document.getElementById("finalTradeCreditInput").value;
         const discountPercent = document.getElementById("finalDiscountPercentInput").value;
+        const workingAskTotal = document.getElementById("finalWorkingAskTotalInput").value;
 
         const confirmed = confirm(
             "Complete this deal?\n\n" +
-            "Working Deal Price: $" + dealPrice + "\n" +
+            "Working Card Total: $" + workingAskTotal + "\n" +
+            "Final Deal Price: $" + dealPrice + "\n" +
             "Trade-In Credit: $" + tradeCredit + "\n" +
             "Discount: " + discountPercent + "%\n\n" +
-            "All selected cards will be marked Sold and sold prices will be distributed proportionally.\n" +
-            "Storage locations will be kept for fulfillment."
+            "All selected cards will be marked Sold.\n" +
+            "Note: comp values, working asks, and lowest acceptable floors are submitted with the form for future backend use."
         );
 
         if (!confirmed) {
@@ -493,6 +943,8 @@ if (completeDealForm) {
     });
 }
 
+refreshWorkingAskTotal(false);
 updateTradeCalculator();
+refreshDealerBreakdowns();
 </script>
 {% endblock %}
