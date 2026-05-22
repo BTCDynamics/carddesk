@@ -665,6 +665,11 @@ body {
     border-color: #fbbf24;
 }
 
+.workflow-yellow {
+    background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+    border-color: #fbbf24 !important;
+}
+
 .workflow-info {
     background: linear-gradient(135deg, #e0f2fe, #38bdf8);
     border-color: #7dd3fc;
@@ -1171,4 +1176,379 @@ body {
 .quick-storage-form .badge {
     display: inline-flex;
     margin-top: .35rem;
+}
+
+
+/* =========================================================
+   CardWatch Dark Dealer Terminal Visual Refresh
+   Added as an override layer so existing layout/templates stay safe.
+   ========================================================= */
+
+:root {
+    --cw-bg: #0b1120;
+    --cw-bg-soft: #111827;
+    --cw-panel: #1f2937;
+    --cw-panel-soft: #263244;
+    --cw-panel-lift: #2b374a;
+    --cw-border-soft: rgba(148, 163, 184, .22);
+    --cw-ink: #e5e7eb;
+    --cw-muted: #94a3b8;
+    --cw-muted-soft: #cbd5e1;
+    --cw-blue: #3b82f6;
+    --cw-cyan: #22d3ee;
+    --cw-green: #22c55e;
+    --cw-gold: #f59e0b;
+    --cw-red: #ef4444;
+    --cw-purple: #8b5cf6;
+}
+
+body {
+    color: var(--cw-ink);
+    background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, .18), transparent 28rem),
+        radial-gradient(circle at top right, rgba(245, 158, 11, .12), transparent 26rem),
+        linear-gradient(180deg, #08111f 0%, #0f172a 16rem, #111827 100%) !important;
+}
+
+main.container-fluid {
+    color: var(--cw-ink);
+}
+
+/* Global cards: soften the white-heavy look */
+.page-card,
+.stat-card,
+.card {
+    background: linear-gradient(145deg, #1f2937, #263244) !important;
+    border: 1px solid var(--cw-border-soft) !important;
+    color: var(--cw-ink);
+    box-shadow: 0 .85rem 2.2rem rgba(0, 0, 0, .28) !important;
+}
+
+.page-card .card-header,
+.card-header {
+    background: linear-gradient(90deg, #202b3a, #263244) !important;
+    border-bottom: 1px solid var(--cw-border-soft) !important;
+    color: #f8fafc;
+}
+
+/* Text hierarchy */
+.cw-section-label,
+.detail-value,
+.gallery-meta,
+.workflow-action-title,
+.recent-sale-player,
+.compact-detail-item .detail-value {
+    color: #f1f5f9 !important;
+}
+
+.detail-label,
+.recent-sale-meta,
+.recent-sale-date,
+.workflow-action-subtitle,
+.text-muted,
+.card .text-muted,
+p.text-muted,
+.small.text-muted {
+    color: var(--cw-muted) !important;
+}
+
+/* Top dashboard stat cards: dark, premium, not pitch black */
+.dashboard-stat-card {
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, .14), transparent 40%),
+        linear-gradient(145deg, #182233, #222f42) !important;
+    border: 1px solid rgba(148, 163, 184, .24) !important;
+    box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, .34) !important;
+}
+
+.dashboard-stat-card .card-body {
+    color: #f8fafc !important;
+}
+
+.dashboard-stat-card .display-6,
+.dashboard-stat-card .text-white {
+    color: #f8fafc !important;
+}
+
+.dashboard-stat-card .text-white-50 {
+    color: #aab7c8 !important;
+}
+
+.dashboard-stat-card .btn {
+    box-shadow: none !important;
+    border: 1px solid rgba(255,255,255,.12);
+}
+
+/* Secondary dashboard cards */
+.dashboard-click-card {
+    background:
+        radial-gradient(circle at top right, rgba(255,255,255,.035), transparent 45%),
+        linear-gradient(145deg, #202b3a, #263244) !important;
+    border: 1px solid rgba(148, 163, 184, .20) !important;
+}
+
+.dashboard-click-card:hover,
+.dashboard-stat-card:hover,
+.recent-sale-row:hover,
+.workflow-action-row:hover {
+    box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .38) !important;
+}
+
+/* Reduce white panels inside widgets */
+.recent-sale-row,
+.workflow-action-row,
+.deal-cart-bar,
+.compact-detail-item,
+.detail-box,
+.category-tile {
+    background: linear-gradient(145deg, #253246, #2b374a) !important;
+    border-color: rgba(148, 163, 184, .22) !important;
+    color: #f1f5f9 !important;
+}
+
+.recent-sale-row:hover {
+    border-color: rgba(96, 165, 250, .65) !important;
+    color: #f1f5f9 !important;
+}
+
+.recent-sale-numbers,
+.recent-sale-numbers.text-dark {
+    color: #f1f5f9 !important;
+}
+
+.recent-sale-numbers span {
+    color: #94a3b8 !important;
+}
+
+/* Action-needed rows: keep workflow color meaning, but mute the saturation */
+.workflow-warning {
+    background: linear-gradient(135deg, rgba(245,158,11,.28), rgba(120,83,18,.55)) !important;
+    border-color: rgba(251,191,36,.38) !important;
+}
+
+.workflow-info {
+    background: linear-gradient(135deg, rgba(14,165,233,.24), rgba(12,74,110,.56)) !important;
+    border-color: rgba(125,211,252,.32) !important;
+}
+
+.workflow-primary {
+    background: linear-gradient(135deg, rgba(59,130,246,.24), rgba(30,64,175,.52)) !important;
+    border-color: rgba(147,197,253,.32) !important;
+}
+
+.workflow-neutral {
+    background: linear-gradient(135deg, rgba(139,92,246,.22), rgba(76,29,149,.50)) !important;
+    border-color: rgba(196,181,253,.30) !important;
+}
+
+.workflow-muted {
+    background: linear-gradient(135deg, rgba(100,116,139,.22), rgba(51,65,85,.58)) !important;
+    border-color: rgba(148,163,184,.26) !important;
+}
+
+.workflow-action-count {
+    color: #f8fafc !important;
+    background: rgba(15, 23, 42, .45) !important;
+    border-color: rgba(255,255,255,.12) !important;
+}
+
+/* Forms and tables: keep readable but less bright */
+.cw-form-compact .cw-form-row,
+.cw-form-compact .cw-row-a,
+.cw-form-compact .cw-row-b,
+.cw-form-compact .cw-row-c,
+.cw-form-compact .cw-grade-row,
+.cw-form-compact .cw-form-row:nth-of-type(odd),
+.cw-form-compact .cw-form-row:nth-of-type(even) {
+    background: linear-gradient(145deg, #202b3a, #253246) !important;
+    border-color: rgba(148, 163, 184, .24) !important;
+}
+
+.cw-form-compact .cw-form-row:hover,
+.cw-form-compact #raw-fields:hover,
+.cw-form-compact #graded-fields:hover {
+    background: linear-gradient(145deg, #253246, #2c3a50) !important;
+    border-color: rgba(96,165,250,.45) !important;
+}
+
+.cw-form-compact .form-label,
+.cw-form-compact .form-check-label,
+.section-heading {
+    color: #e5e7eb !important;
+}
+
+.cw-form-compact .form-control,
+.cw-form-compact .form-select,
+.form-control,
+.form-select,
+textarea.form-control {
+    color: #f8fafc !important;
+    background-color: #111827 !important;
+    border-color: rgba(148,163,184,.30) !important;
+}
+
+.form-control::placeholder {
+    color: #64748b !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    color: #ffffff !important;
+    background-color: #111827 !important;
+    border-color: var(--cw-blue) !important;
+    box-shadow: 0 0 0 .22rem rgba(59,130,246,.22) !important;
+}
+
+/* Tables */
+.table {
+    color: #e5e7eb !important;
+}
+
+.table thead th,
+.table-light th {
+    color: #cbd5e1 !important;
+    background-color: #182233 !important;
+    border-color: rgba(148,163,184,.18) !important;
+}
+
+.table tbody tr.inventory-row:nth-child(odd) > *,
+.table tbody tr.inventory-row:nth-child(even) > * {
+    color: #e5e7eb !important;
+    background-color: #1f2937 !important;
+    border-color: rgba(148,163,184,.14) !important;
+}
+
+.table tbody tr.inventory-row:nth-child(even) > * {
+    background-color: #253246 !important;
+}
+
+.table tbody tr.inventory-row:hover > * {
+    background-color: #2b3b55 !important;
+}
+
+/* Sold rows still need to stand out, but not scream */
+.table tbody tr.sold-inventory-row > * {
+    background-color: rgba(127, 29, 29, .34) !important;
+}
+
+.table tbody tr.sold-inventory-row:hover > * {
+    background-color: rgba(127, 29, 29, .44) !important;
+}
+
+/* Image placeholders: no bright blocks */
+.placeholder-thumb,
+.cw-empty-image,
+.gallery-placeholder,
+.recent-sale-placeholder {
+    color: #94a3b8 !important;
+    background: #111827 !important;
+    border-color: rgba(148,163,184,.32) !important;
+}
+
+.card-thumb,
+.card-thumb-lg,
+.gallery-card-img,
+.recent-sale-thumb {
+    border-color: rgba(255,255,255,.18) !important;
+    background: #111827 !important;
+}
+
+/* Storage and status pills */
+.storage-pill {
+    color: #e5e7eb !important;
+    background: rgba(59,130,246,.14) !important;
+    border-color: rgba(96,165,250,.28) !important;
+}
+
+.storage-pill:hover {
+    color: #ffffff !important;
+    background: rgba(59,130,246,.28) !important;
+    border-color: rgba(147,197,253,.45) !important;
+}
+
+/* Keep badges useful but not overpowering */
+.badge-rc {
+    color: #111827 !important;
+    background: linear-gradient(135deg, #facc15, #f59e0b) !important;
+}
+
+.badge-hof {
+    color: #0f172a !important;
+    background: linear-gradient(135deg, #cbd5e1, #94a3b8) !important;
+}
+
+.status-Holding {
+    color: #e2e8f0 !important;
+    background: rgba(148,163,184,.28) !important;
+}
+
+.status-Sold {
+    color: #fecaca !important;
+    background: rgba(220,38,38,.28) !important;
+}
+
+/* Recent sales range pills */
+.dashboard-range-links a {
+    color: #bfdbfe !important;
+    background: rgba(37,99,235,.18) !important;
+    border-color: rgba(96,165,250,.32) !important;
+}
+
+.dashboard-range-links a:hover,
+.dashboard-range-links a.active,
+.dashboard-range-links a.active-range {
+    color: #ffffff !important;
+    background: rgba(37,99,235,.80) !important;
+    border-color: rgba(147,197,253,.70) !important;
+}
+
+/* Alerts */
+.alert-success {
+    color: #dcfce7 !important;
+    background: linear-gradient(135deg, rgba(22,101,52,.72), rgba(21,128,61,.55)) !important;
+    border: 1px solid rgba(134,239,172,.22) !important;
+}
+
+/* Links inside dark panels */
+.card a:not(.btn):not(.badge):not(.storage-pill),
+.page-card a:not(.btn):not(.badge):not(.storage-pill) {
+    color: #93c5fd;
+}
+
+.card a:not(.btn):not(.badge):not(.storage-pill):hover,
+.page-card a:not(.btn):not(.badge):not(.storage-pill):hover {
+    color: #bfdbfe;
+}
+
+/* Preserve dark player links that were intentionally forced black by older templates */
+.text-dark {
+    color: #f1f5f9 !important;
+}
+
+.border,
+.text-bg-light {
+    border-color: rgba(148,163,184,.25) !important;
+}
+
+.text-bg-light {
+    color: #e5e7eb !important;
+    background-color: rgba(148,163,184,.18) !important;
+}
+
+/* Bottom brand card remains a stronger anchor */
+.dashboard-brand-card {
+    background:
+        radial-gradient(circle at top left, rgba(59,130,246,.16), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(245,158,11,.14), transparent 35%),
+        linear-gradient(145deg, #0b1120, #1e293b) !important;
+    border-color: rgba(148,163,184,.22) !important;
+}
+
+/* Mobile keeps the darker panel style */
+@media (max-width: 768px) {
+    body {
+        background:
+            radial-gradient(circle at top left, rgba(59, 130, 246, .16), transparent 20rem),
+            linear-gradient(180deg, #08111f 0%, #0f172a 12rem, #111827 100%) !important;
+    }
 }
