@@ -8,6 +8,7 @@
 .deal-cart-stat-card {
     background: linear-gradient(145deg, #253246, #2c3a50) !important;
     border: 1px solid rgba(96, 165, 250, 0.28) !important;
+    box-shadow: 0 0 18px rgba(37, 99, 235, 0.12);
 }
 
 .deal-cart-stat-card .detail-label {
@@ -28,6 +29,60 @@
 
 .deal-cart-stat-card .text-danger {
     color: #f87171 !important;
+}
+
+/* Separate major deal workflow sections */
+.deal-workflow-card {
+    background: linear-gradient(145deg, #e5e7eb, #d1d5db) !important;
+    border: 2px solid rgba(107, 114, 128, 0.35) !important;
+    box-shadow: 0 0 28px rgba(15, 23, 42, 0.18);
+}
+
+.deal-workflow-card .cw-section-label {
+    color: #111827 !important;
+    font-size: 1rem;
+    font-weight: 800 !important;
+    letter-spacing: 0.05em;
+}
+
+.deal-workflow-card .form-label {
+    color: #111827 !important;
+    font-weight: 700 !important;
+}
+
+.deal-workflow-card .text-muted,
+.deal-workflow-card .form-text,
+.deal-workflow-card p {
+    color: #374151 !important;
+}
+
+.deal-workflow-card .form-control,
+.deal-workflow-card .form-select,
+.deal-workflow-card textarea {
+    background-color: #ffffff !important;
+    border: 1px solid #9ca3af !important;
+    color: #111827 !important;
+    font-weight: 600 !important;
+}
+
+.deal-workflow-card .form-control:focus,
+.deal-workflow-card .form-select:focus,
+.deal-workflow-card textarea:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 0.15rem rgba(37, 99, 235, 0.18) !important;
+}
+
+.deal-workflow-card .alert-info {
+    background: #dbeafe !important;
+    border-color: #93c5fd !important;
+    color: #1e3a8a !important;
+}
+
+.deal-workflow-card .alert-warning {
+    background: #fef3c7 !important;
+    border: 1px solid #f59e0b !important;
+    color: #111827 !important;
+    font-weight: 600 !important;
 }
 </style>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
@@ -95,11 +150,11 @@
         </div>
     </div>
 
-    <div class="card page-card mb-4">
+    <div class="card page-card deal-workflow-card mb-4">
         <div class="card-body">
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
                 <div>
-                    <div class="cw-section-label mb-1">Trade-In Deal Calculator</div>
+                    <div class="cw-section-label mb-1">Deal Calculator</div>
                     <p class="text-muted mb-0 small">
                         Enter the value you agree to give the customer for their trade-in cards. This subtracts that credit from your deal cart asking price.
                     </p>
@@ -169,7 +224,7 @@
         <input type="hidden" name="discount_percent" id="finalDiscountPercentInput" value="0.00">
         <input type="hidden" name="split_method" value="asking">
 
-        <div class="card page-card mb-3">
+        <div class="card page-card deal-workflow-card mb-3">
             <div class="card-body">
                 <div class="cw-section-label mb-2">Complete Deal</div>
 
