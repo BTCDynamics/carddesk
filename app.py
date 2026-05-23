@@ -534,6 +534,24 @@ def dashboard():
         else 0
     )
 
+
+    # Bought-card activity for the selected dashboard range
+    bought_range_cards = [
+        card for card in active_cards
+        if parse_card_date(card.purchase_date)
+        and parse_card_date(card.purchase_date) >= recent_sales_start_date_value
+    ]
+
+    cards_bought_in_range = sum(
+        (card.quantity or 1)
+        for card in bought_range_cards
+    )
+
+    cost_bought_in_range = sum(
+        ((card.purchase_price or 0) * (card.quantity or 1))
+        for card in bought_range_cards
+    )
+
     # Keep the original template variable names, but make them follow the selected dashboard sales range.
     today_sold_price = selected_range_sold_price
     today_sold_cost = selected_range_sold_cost
@@ -606,6 +624,8 @@ def dashboard():
         total_profit=today_profit,
         today_profit_percent=today_profit_percent,
         today_sales_margin_percent=today_sales_margin_percent,
+        cards_bought_in_range=cards_bought_in_range,
+        cost_bought_in_range=cost_bought_in_range,
         recent_sales=recent_sales,
         recent_sales_start_date=recent_sales_start_date,
         recent_sales_range=recent_sales_range,
