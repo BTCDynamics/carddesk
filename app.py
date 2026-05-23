@@ -733,7 +733,7 @@ def cards():
         if sold_range == "today":
             start_date = today_value
         elif sold_range == "3d":
-            start_date = today_value - timedelta(days=2)
+            start_date = today_value - timedelta(days=3)
         elif sold_range == "7d":
             start_date = today_value - timedelta(days=6)
         elif sold_range == "30d":
