@@ -292,10 +292,10 @@ def dashboard():
     recent_sales_range = request.args.get("recent_sales_range", "3d")
 
     recent_sales_range_days = {
-        "today": 0,
-        "3d": 2,
-        "7d": 6,
-        "30d": 29,
+    "today": 0,
+    "3d": 3,
+    "7d": 6,
+    "30d": 29,
     }
 
     recent_sales_range_labels = {
