@@ -245,11 +245,12 @@
     </div>
 
     <div class="col-lg-4">
+        {% set action_needed_total = (open_workflow_tasks or 0) + (missing_storage_cards or 0) %}
         <div class="card page-card h-100">
             <div class="card-header fw-bold d-flex justify-content-between align-items-center">
                 <span>Action Needed</span>
-                {% if open_workflow_tasks and open_workflow_tasks > 0 %}
-                    <span class="badge text-bg-danger">{{ open_workflow_tasks }} open</span>
+                {% if action_needed_total > 0 %}
+                    <span class="badge text-bg-danger">{{ action_needed_total }} open</span>
                 {% else %}
                     <span class="badge text-bg-success">Clear</span>
                 {% endif %}
