@@ -208,6 +208,87 @@
     }
 }
 
+
+/* Deal Cart workflow redesign */
+.deal-flow-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: #111827;
+    color: #ffffff;
+    font-weight: 900;
+    margin-right: .55rem;
+}
+
+.deal-flow-heading {
+    display: flex;
+    align-items: center;
+    color: #111827 !important;
+    font-size: 1.12rem;
+    font-weight: 900;
+    letter-spacing: .02em;
+    text-shadow: none !important;
+}
+
+.deal-flow-subtext {
+    color: #374151 !important;
+    font-size: .92rem;
+    font-weight: 700;
+    margin-top: .25rem;
+}
+
+.deal-final-card {
+    background: linear-gradient(145deg, #111827, #1f2937) !important;
+    border: 1px solid rgba(96,165,250,.35) !important;
+    color: #ffffff;
+}
+
+.deal-final-card .form-check-label,
+.deal-final-card .form-text {
+    color: #ffffff !important;
+}
+
+.deal-final-card .alert-warning {
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    color: #111827 !important;
+}
+
+.deal-final-number {
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.deal-final-label {
+    color: #cbd5e1;
+    font-size: .78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.deal-final-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: .85rem;
+}
+
+@media (max-width: 991.98px) {
+    .deal-final-grid {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .deal-final-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 </style>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
@@ -225,119 +306,7 @@
 </div>
 
 {% if selected_cards %}
-    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-4">
-        <div class="col">
-            <div class="card page-card deal-cart-stat-card h-100">
-                <div class="card-body">
-                    <div class="detail-label">Selected Cards</div>
-                    <div class="detail-value">{{ selected_card_count or selected_cards|length }}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col">
-            <div class="card page-card deal-cart-stat-card h-100">
-                <div class="card-body">
-                    <div class="detail-label">Total Cost Basis</div>
-                    <div class="detail-value">${{ "%.2f"|format(total_cost or 0) }}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col">
-            <div class="card page-card deal-cart-stat-card h-100">
-                <div class="card-body">
-                    <div class="detail-label">Working Ask Total</div>
-                    <div class="detail-value" id="topWorkingAskTotal">${{ "%.2f"|format(total_asking or 0) }}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col">
-            <div class="card page-card deal-cart-stat-card h-100">
-                <div class="card-body">
-                    <div class="detail-label">Total Est. Value</div>
-                    <div class="detail-value">${{ "%.2f"|format(total_estimated_value or 0) }}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col">
-            <div class="card page-card deal-cart-stat-card h-100">
-                <div class="card-body">
-                    <div class="detail-label">Total Est. Profit / Loss</div>
-                    <div class="detail-value {% if total_estimated_profit_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        ${{ "%.2f"|format(total_estimated_profit_loss or 0) }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card page-card deal-workflow-card mb-4">
-        <div class="card-body">
-            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-                <div>
-                    <div class="cw-section-label mb-1">Deal Calculator</div>
-                    <p class="text-muted mb-0 small">
-                        Adjust card-level comps and working asks below, then use this calculator to handle discount, trade credit, and final cash needed.
-                    </p>
-                </div>
-                <button class="btn btn-outline-secondary btn-sm" type="button" id="resetTradeCalculator">Reset</button>
-            </div>
-
-            <div class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Working Card Total</label>
-                    <input class="form-control" id="cartAskingPrice" type="number" step="0.01" value="{{ "%.2f"|format(total_asking or 0) }}" readonly>
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Final Deal Price</label>
-                    <input class="form-control fw-bold" id="workingDealPrice" type="number" step="0.01" min="0" value="{{ "%.2f"|format(total_asking or 0) }}">
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Trade-In Credit (If Applicable)</label>
-                    <input class="form-control" id="tradeCredit" type="number" step="0.01" min="0" placeholder="0.00">
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Cash Needed</label>
-                    <input class="form-control fw-bold" id="cashNeeded" type="text" value="${{ "%.2f"|format(total_asking or 0) }}" readonly>
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Discount Amount</label>
-                    <input class="form-control fw-bold text-danger" id="discountAmount" type="text" value="$0.00" readonly>
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Profit / Loss After Trade</label>
-                    <input class="form-control fw-bold" id="profitAfterTrade" type="text" value="${{ "%.2f"|format((total_asking or 0) - (total_cost or 0)) }}" readonly>
-                    <div class="dashboard-percent mt-1" id="profitAfterTradePercent">
-                        {{ "%.1f"|format((((total_asking or 0) - (total_cost or 0)) / (total_cost or 1)) * 100 if total_cost else 0) }}% markup
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Quick Counter Discount</label>
-                    <div class="d-flex flex-wrap gap-2">
-                        <button class="btn btn-outline-dark btn-sm discount-btn" type="button" data-discount="0">Full Ask</button>
-                        <button class="btn btn-outline-primary btn-sm discount-btn" type="button" data-discount="10">10% Off</button>
-                        <button class="btn btn-outline-primary btn-sm discount-btn" type="button" data-discount="15">15% Off</button>
-                        <button class="btn btn-outline-primary btn-sm discount-btn" type="button" data-discount="20">20% Off</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="alert alert-info mt-3 mb-0 small">
-                Use the row-level Comp and Working Ask fields during the conversation. Example: if the working card total is $500, a 15% discount makes the final deal price $425. If you also give $150 trade credit, the customer owes $275 cash.
-            </div>
-        </div>
-    </div>
-
-    <form method="POST" action="{{ url_for('bulk_sell') }}" class="mb-3" id="completeDealForm">
+    <form method="POST" action="{{ url_for('bulk_sell') }}" id="completeDealForm" class="d-none">
         {% for card in selected_cards %}
             <input type="hidden" name="card_ids" value="{{ card.id }}">
         {% endfor %}
@@ -348,63 +317,116 @@
         <input type="hidden" name="discount_percent" id="finalDiscountPercentInput" value="0.00">
         <input type="hidden" name="split_method" value="asking">
         <input type="hidden" name="negotiated_working_total" id="finalWorkingAskTotalInput" value="{{ "%.2f"|format(total_asking or 0) }}">
+    </form>
 
-        <div class="card page-card deal-workflow-card mb-3">
-            <div class="card-body">
-                <div class="cw-section-label mb-2">Complete Deal</div>
+    <div class="mb-3" style="color:#f8fafc;">
+        <div class="deal-flow-heading" style="color:#f8fafc !important;"><span class="deal-flow-step">1</span>Review Deal Totals</div>
+        <div class="deal-flow-subtext" style="color:#e2e8f0 !important;">Start here. These numbers update as you adjust comps, working asks, discounts, and trade credit.</div>
+    </div>
 
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Sold Date</label>
-                        <input class="form-control" type="date" name="sold_date" value="{{ today }}">
-                    </div>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-4">
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Selected Cards</div><div class="detail-value">{{ selected_card_count or selected_cards|length }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Cost Basis</div><div class="detail-value">${{ "%.2f"|format(total_cost or 0) }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Working Ask Total</div><div class="detail-value" id="topWorkingAskTotal">${{ "%.2f"|format(total_asking or 0) }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Est. Value</div><div class="detail-value">${{ "%.2f"|format(total_estimated_value or 0) }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Est. Profit / Loss</div><div class="detail-value {% if total_estimated_profit_loss >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.2f"|format(total_estimated_profit_loss or 0) }}</div></div></div></div>
+    </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Platform / Location</label>
-                        <input class="form-control" type="text" name="sales_platform" placeholder="Card Show, eBay, Direct Sale">
-                    </div>
+    <div class="card page-card deal-workflow-card mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <div class="deal-flow-heading" style="color:#111827 !important;"><span class="deal-flow-step">2</span>Negotiate Final Price</div>
+                    <p class="text-muted mb-0 small" style="color:#374151 !important;">Final price, discount, trade credit, cash needed, and profit stay together.</p>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" type="button" id="resetTradeCalculator">Reset</button>
+            </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Customer Name</label>
-                        <input class="form-control" type="text" name="customer_name" placeholder="Optional">
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Payment Type</label>
-                        <select class="form-select" name="payment_type">
-                            <option value="Cash">Cash</option>
-                            <option value="Trade">Trade</option>
-                            <option value="Cash + Trade">Cash + Trade</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label fw-bold">Deal Notes</label>
-                        <textarea class="form-control" name="deal_notes" rows="2" placeholder="Optional notes about this deal"></textarea>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Current Asking Total (All Cards)</label>
+                    <input class="form-control" id="cartAskingPrice" type="number" step="0.01" value="{{ "%.2f"|format(total_asking or 0) }}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Final Deal Price</label>
+                    <input class="form-control fw-bold" id="workingDealPrice" type="number" step="0.01" min="0" value="{{ "%.2f"|format(total_asking or 0) }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Trade-In Credit</label>
+                    <input class="form-control" id="tradeCredit" type="number" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Cash Needed</label>
+                    <input class="form-control fw-bold" id="cashNeeded" type="text" value="${{ "%.2f"|format(total_asking or 0) }}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Discount Amount</label>
+                    <input class="form-control fw-bold text-danger" id="discountAmount" type="text" value="$0.00" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Profit / Loss After Trade</label>
+                    <input class="form-control fw-bold" id="profitAfterTrade" type="text" value="${{ "%.2f"|format((total_asking or 0) - (total_cost or 0)) }}" readonly>
+                    <div class="dashboard-percent mt-1" id="profitAfterTradePercent">{{ "%.1f"|format((((total_asking or 0) - (total_cost or 0)) / (total_cost or 1)) * 100 if total_cost else 0) }}% markup</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Quick Counter Discount</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-outline-dark btn-sm discount-btn" type="button" data-discount="0">Full Ask</button>
+                        <button class="btn btn-outline-primary btn-sm discount-btn" type="button" data-discount="10">10% Off</button>
+                        <button class="btn btn-outline-primary btn-sm discount-btn" type="button" data-discount="15">15% Off</button>
+                        <button class="btn btn-outline-primary btn-sm discount-btn" type="button" data-discount="20">20% Off</button>
                     </div>
                 </div>
-
-                <div class="alert alert-warning mt-3 mb-3 small">
-                    Completing the deal will mark all selected cards as Sold. Lowest Acceptable starts at 80% of entered comp values and can be adjusted in each breakdown panel.
-                    Storage locations will be kept so you can still find cards that need to be pulled.
-                </div>
-
-                <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" name="mark_pulled_now" value="1" id="markPulledNow">
-                    <label class="form-check-label fw-bold" for="markPulledNow">
-                        I already pulled these cards from storage
-                    </label>
-                    <div class="form-text">
-                        Leave unchecked to mark sold cards as <strong>Needs Pulling</strong>. This helps you find cards after the sale.
-                    </div>
-                </div>
-
-                <button class="btn btn-danger" type="submit" id="completeDealButton">Complete Deal at ${{ "%.2f"|format(total_asking or 0) }}</button>
-                <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Add More Cards</a>
             </div>
         </div>
-    </form>
+    </div>
+
+    
+
+<div class="card page-card deal-workflow-card mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <div class="deal-flow-heading" style="color:#111827 !important;"><span class="deal-flow-step">3</span>Enter Deal Details</div>
+                    <p class="text-muted mb-0 small" style="color:#374151 !important;">Buyer, platform, payment, and notes. These submit with the final deal.</p>
+                </div>
+                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('cards') }}">Add More Cards</a>
+            </div>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Sold Date</label>
+                    <input class="form-control" type="date" name="sold_date" value="{{ today }}" form="completeDealForm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Platform / Location</label>
+                    <input class="form-control" type="text" name="sales_platform" placeholder="Card Show, eBay, Direct Sale" form="completeDealForm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Customer Name</label>
+                    <input class="form-control" type="text" name="customer_name" placeholder="Optional" form="completeDealForm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Payment Type</label>
+                    <select class="form-select" name="payment_type" form="completeDealForm">
+                        <option value="Cash">Cash</option>
+                        <option value="Trade">Trade</option>
+                        <option value="Cash + Trade">Cash + Trade</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">Deal Notes</label>
+                    <textarea class="form-control" name="deal_notes" rows="2" placeholder="Optional notes about this deal" form="completeDealForm"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3" style="color:#f8fafc;">
+        <div class="deal-flow-heading" style="color:#f8fafc !important;"><span class="deal-flow-step">4</span>Adjust Card-Level Pricing</div>
+        <div class="deal-flow-subtext" style="color:#e2e8f0 !important;">Fine tune comps, comp sources, working asks, floors, and breakdown notes for each card.</div>
+    </div>
 
     <div class="card page-card">
         <div class="table-responsive">
@@ -419,7 +441,7 @@
                         <th>Est. Value</th>
                         <th>Est. Profit / Loss</th>
                         <th>Original Ask</th>
-                        <th>Comp</th>
+                        <th>COMP (Current)</th>
                         <th>Comp Source</th>
                         <th>Working Ask</th>
                         <th>Lowest Acceptable (80%)</th>
@@ -616,6 +638,41 @@
             </table>
         </div>
     </div>
+
+
+    <div class="card page-card deal-final-card mt-4 mb-3">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <div class="deal-flow-heading" style="color:#ffffff;"><span class="deal-flow-step" style="background:#2563eb;">5</span>Final Review & Complete Deal</div>
+                    <p class="mb-0 small" style="color:#cbd5e1;">Review final numbers, choose the fulfillment starting point, then complete the sale.</p>
+                </div>
+                <button class="btn btn-danger btn-lg" type="submit" form="completeDealForm" id="completeDealButton">Complete Deal at ${{ "%.2f"|format(total_asking or 0) }}</button>
+            </div>
+
+            <div class="deal-final-grid mb-3">
+                <div><div class="deal-final-label">Working Total</div><div class="deal-final-number" id="finalReviewWorkingTotal">${{ "%.2f"|format(total_asking or 0) }}</div></div>
+                <div><div class="deal-final-label">Final Deal Price</div><div class="deal-final-number" id="finalReviewDealPrice">${{ "%.2f"|format(total_asking or 0) }}</div></div>
+                <div><div class="deal-final-label">Cash Needed</div><div class="deal-final-number" id="finalReviewCashNeeded">${{ "%.2f"|format(total_asking or 0) }}</div></div>
+                <div><div class="deal-final-label">Projected Profit</div><div class="deal-final-number" id="finalReviewProfit">${{ "%.2f"|format((total_asking or 0) - (total_cost or 0)) }}</div></div>
+            </div>
+
+            <div class="alert alert-warning small">
+                Completing the deal will mark all selected cards as Sold. Storage locations will be kept so the cards can still be pulled after the sale.
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="mark_pulled_now" value="1" id="markPulledNow" form="completeDealForm">
+                <label class="form-check-label fw-bold" for="markPulledNow">I already pulled these cards from storage</label>
+                <div class="form-text">Leave unchecked to mark sold cards as <strong>Needs Pulling</strong>. Check this to start them as <strong>Pulled</strong>.</div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-danger btn-lg" type="submit" form="completeDealForm" id="completeDealButtonBottom">Complete Deal</button>
+                <a class="btn btn-outline-light" href="{{ url_for('cards') }}">Add More Cards</a>
+            </div>
+        </div>
+    </div>
 {% else %}
     <div class="card page-card">
         <div class="card-body text-center py-5">
@@ -723,6 +780,34 @@ function updateTradeCalculator() {
 
     if (completeDealButton) {
         completeDealButton.textContent = "Complete Deal at " + formatCurrency(workingDealPrice);
+    }
+
+    const completeDealButtonBottom = document.getElementById("completeDealButtonBottom");
+    if (completeDealButtonBottom) {
+        completeDealButtonBottom.textContent = "Complete Deal at " + formatCurrency(workingDealPrice);
+    }
+
+    const finalReviewWorkingTotal = document.getElementById("finalReviewWorkingTotal");
+    const finalReviewDealPrice = document.getElementById("finalReviewDealPrice");
+    const finalReviewCashNeeded = document.getElementById("finalReviewCashNeeded");
+    const finalReviewProfit = document.getElementById("finalReviewProfit");
+
+    if (finalReviewWorkingTotal) {
+        finalReviewWorkingTotal.textContent = formatCurrency(askingPrice);
+    }
+
+    if (finalReviewDealPrice) {
+        finalReviewDealPrice.textContent = formatCurrency(workingDealPrice);
+    }
+
+    if (finalReviewCashNeeded) {
+        finalReviewCashNeeded.textContent = formatCurrency(cashNeeded);
+    }
+
+    if (finalReviewProfit) {
+        finalReviewProfit.textContent = formatCurrency(profitAfterTrade);
+        finalReviewProfit.classList.remove("text-success", "text-danger");
+        finalReviewProfit.classList.add(profitAfterTrade >= 0 ? "text-success" : "text-danger");
     }
 
 
