@@ -289,7 +289,7 @@ def dashboard():
     today_value = date.today()
     today = today_value.isoformat()
 
-    recent_sales_range = request.args.get("recent_sales_range", "3d")
+    recent_sales_range = request.args.get("recent_sales_range", "30d")
 
     recent_sales_range_days = {
     "today": 0,
@@ -1219,17 +1219,9 @@ def clone_card(card_id):
         f"Cloning {source_card.card_code}. Review the details, adjust what changed, then save as a new card."
     )
 
-    recent_added_cards = (
-        Card.query
-        .order_by(Card.id.desc())
-        .limit(5)
-        .all()
-    )
-
     return render_template(
         "add_card.html",
-        clone_source=source_card,
-        recent_added_cards=recent_added_cards
+        clone_source=source_card
     )
 
 
@@ -1468,18 +1460,7 @@ def add_card():
 
         return redirect(url_for("card_detail", card_id=new_card.id))
 
-    recent_added_cards = (
-        Card.query
-        .order_by(Card.id.desc())
-        .limit(5)
-        .all()
-    )
-
-    return render_template(
-        "add_card.html",
-        clone_source=None,
-        recent_added_cards=recent_added_cards
-    )
+    return render_template("add_card.html", clone_source=None)
 
 
 @app.route("/fulfillment")
