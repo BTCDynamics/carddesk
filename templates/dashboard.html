@@ -128,8 +128,12 @@
 </div>
 
 
-{% set active_dashboard_tab = request.args.get('dashboard_tab', 'sales') %}
 {% set purchase_summary_range = request.args.get('purchase_summary_range', purchase_summary_range or '3d') %}
+{% if request.args.get('dashboard_tab') == 'purchases' and request.args.get('purchase_summary_range') %}
+    {% set active_dashboard_tab = 'purchases' %}
+{% else %}
+    {% set active_dashboard_tab = 'sales' %}
+{% endif %}
 {% if purchase_summary_range == 'today' %}
     {% set purchase_summary_label = 'Today' %}
 {% elif purchase_summary_range == '7d' %}
