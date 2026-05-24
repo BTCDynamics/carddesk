@@ -289,6 +289,76 @@
     }
 }
 
+
+/* Comp Assist modal */
+.comp-assist-card {
+    background: linear-gradient(145deg, #111827, #1f2937);
+    border: 1px solid rgba(96, 165, 250, .35);
+    color: #ffffff;
+}
+
+.comp-assist-card .modal-header,
+.comp-assist-card .modal-footer {
+    border-color: rgba(148, 163, 184, .25);
+}
+
+.comp-assist-card .btn-close {
+    filter: invert(1);
+}
+
+.comp-assist-title {
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.comp-assist-subtitle {
+    color: #cbd5e1;
+    font-size: .86rem;
+}
+
+.comp-assist-box {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #111827;
+    border-radius: .85rem;
+    padding: .85rem;
+}
+
+.comp-assist-label {
+    color: #cbd5e1;
+    font-size: .74rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .35rem;
+}
+
+.comp-assist-search-term {
+    font-weight: 900;
+    color: #111827;
+    word-break: break-word;
+}
+
+.comp-assist-card .form-control,
+.comp-assist-card .form-select {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 700;
+}
+
+.comp-source-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(170px, 1fr));
+    gap: .65rem;
+}
+
+@media (max-width: 575.98px) {
+    .comp-source-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 </style>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
@@ -344,7 +414,7 @@
 
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
-                    <label class="form-label fw-bold">Current Asking Total (All Cards)</label>
+                    <label class="form-label fw-bold">Working Card Total</label>
                     <input class="form-control" id="cartAskingPrice" type="number" step="0.01" value="{{ "%.2f"|format(total_asking or 0) }}" readonly>
                 </div>
                 <div class="col-md-3">
@@ -435,13 +505,14 @@
                     <tr>
                         <th>Card</th>
                         <th>Breakdown</th>
+                        <th>Comp Assist</th>
                         <th>Type</th>
                         <th>Qty</th>
                         <th>Cost</th>
                         <th>Est. Value</th>
                         <th>Est. Profit / Loss</th>
                         <th>Original Ask</th>
-                        <th>COMP (Current)</th>
+                        <th>Comp</th>
                         <th>Comp Source</th>
                         <th>Working Ask</th>
                         <th>Lowest Acceptable (80%)</th>
@@ -472,6 +543,21 @@
                                     aria-expanded="false"
                                 >
                                     Breakdown
+                                </button>
+                            </td>
+                            <td>
+                                {% set comp_search_term = (card.year|string ~ ' ' ~ (card.player_name or '') ~ ' ' ~ (card.brand or '') ~ ' ' ~ (card.set_name or '') ~ ' ' ~ ('#' ~ card.card_number if card.card_number else '') ~ ' ' ~ (card.variation or '') ~ ' ' ~ (card.grading_company or '') ~ ' ' ~ (card.actual_grade or ''))|trim %}
+                                <button
+                                    class="btn btn-sm btn-primary comp-assist-btn"
+                                    type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#compAssistModal"
+                                    data-card-id="{{ card.id }}"
+                                    data-card-code="{{ card.card_code }}"
+                                    data-player-name="{{ card.player_name }}"
+                                    data-search-term="{{ comp_search_term }}"
+                                >
+                                    Comp Assist
                                 </button>
                             </td>
                             <td><span class="badge {% if card.card_type == 'Graded' %}text-bg-success{% else %}text-bg-dark{% endif %}">{{ card.card_type }}</span></td>
@@ -541,7 +627,7 @@
                             </td>
                         </tr>
                         <tr class="dealer-breakdown-row" id="breakdown-{{ card.id }}">
-                            <td colspan="15">
+                            <td colspan="16">
                                 <div class="dealer-breakdown-panel">
                                     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
                                         <div>
@@ -682,6 +768,74 @@
         </div>
     </div>
 {% endif %}
+
+<!-- Comp Assist Modal -->
+<div class="modal fade" id="compAssistModal" tabindex="-1" aria-labelledby="compAssistModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content comp-assist-card">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title comp-assist-title" id="compAssistModalTitle">Comp Assist</h5>
+                    <div class="comp-assist-subtitle" id="compAssistCardLabel">—</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="comp-assist-label">Generated Search Term</div>
+                <div class="comp-assist-box mb-3">
+                    <div class="comp-assist-search-term" id="compAssistSearchTerm">—</div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <button class="btn btn-outline-light btn-sm" type="button" id="copyCompSearchButton">Copy Search Term</button>
+                    <button class="btn btn-outline-info btn-sm" type="button" id="openAllCompSourcesButton">Open Main Searches</button>
+                </div>
+
+                <div class="comp-assist-label">Quick Search Sources</div>
+                <div class="comp-source-grid mb-4">
+                    <a class="btn btn-light fw-bold" id="compEbaySoldLink" href="#" target="_blank" rel="noopener">eBay Search</a>
+                    <a class="btn btn-light fw-bold" id="comp130PointLink" href="#" target="_blank" rel="noopener">130Point</a>
+                    <a class="btn btn-light fw-bold" id="compSportsCardsProLink" href="#" target="_blank" rel="noopener">SportsCardsPro</a>
+                    <a class="btn btn-light fw-bold" id="compCardLadderLink" href="#" target="_blank" rel="noopener">Card Ladder</a>
+                    <a class="btn btn-light fw-bold" id="compMarketMoversLink" href="#" target="_blank" rel="noopener">Market Movers</a>
+                </div>
+
+                <div class="alert alert-info small">
+                    Use these searches to quickly verify comps, then enter the number below to push it back into the selected card row.
+                </div>
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-white">Comp Value Found</label>
+                        <input class="form-control" type="number" step="0.01" min="0" id="compAssistValue" placeholder="0.00">
+                    </div>
+
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold text-white">Comp Source</label>
+                        <select class="form-select" id="compAssistSource">
+                            <option value="eBay sold">eBay sold</option>
+                            <option value="130Point">130Point</option>
+                            <option value="SportsCardsPro">SportsCardsPro</option>
+                            <option value="Card Ladder">Card Ladder</option>
+                            <option value="Market Movers">Market Movers</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <button class="btn btn-success w-100 fw-bold" type="button" id="applyCompAssistButton">Apply Comp</button>
+                    </div>
+                </div>
+
+                <div class="small mt-3" style="color:#cbd5e1;">
+                    Applying a comp fills the card's Comp field, Comp Source field, Working Ask, and 80% Lowest Acceptable floor.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 
@@ -1027,6 +1181,155 @@ if (completeDealForm) {
         }
     });
 }
+
+
+const compAssistModal = document.getElementById("compAssistModal");
+let activeCompAssistCardId = null;
+let activeCompAssistSearchTerm = "";
+
+function buildCompSearchUrls(searchTerm) {
+    const encoded = encodeURIComponent(searchTerm);
+
+    return {
+        ebay: "https://www.ebay.com/sch/i.html?_nkw=" + encoded + "&LH_Sold=1&LH_Complete=1",
+        point130: "https://130point.com/sales/?search=" + encoded,
+        sportsCardsPro: "https://www.sportscardspro.com/search-products?q=" + encoded,
+        cardLadder: "https://www.cardladder.com/search?q=" + encoded,
+        marketMovers: "https://www.sportscardinvestor.com/cards/search?search=" + encoded
+    };
+}
+
+function setCompAssistLinks(searchTerm) {
+    const urls = buildCompSearchUrls(searchTerm);
+
+    const ebay = document.getElementById("compEbaySoldLink");
+    const point130 = document.getElementById("comp130PointLink");
+    const sportsCardsPro = document.getElementById("compSportsCardsProLink");
+    const cardLadder = document.getElementById("compCardLadderLink");
+    const marketMovers = document.getElementById("compMarketMoversLink");
+
+    if (ebay) ebay.href = urls.ebay;
+    if (point130) point130.href = urls.point130;
+    if (sportsCardsPro) sportsCardsPro.href = urls.sportsCardsPro;
+    if (cardLadder) cardLadder.href = urls.cardLadder;
+    if (marketMovers) marketMovers.href = urls.marketMovers;
+}
+
+if (compAssistModal) {
+    compAssistModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget;
+
+        if (!button) {
+            return;
+        }
+
+        activeCompAssistCardId = button.dataset.cardId;
+        activeCompAssistSearchTerm = button.dataset.searchTerm || "";
+
+        const cardLabel = document.getElementById("compAssistCardLabel");
+        const searchTermBox = document.getElementById("compAssistSearchTerm");
+        const compValue = document.getElementById("compAssistValue");
+        const compSource = document.getElementById("compAssistSource");
+
+        if (cardLabel) {
+            cardLabel.textContent = (button.dataset.cardCode || "") + " · " + (button.dataset.playerName || "");
+        }
+
+        if (searchTermBox) {
+            searchTermBox.textContent = activeCompAssistSearchTerm || "No search term available";
+        }
+
+        if (compValue) {
+            compValue.value = "";
+        }
+
+        if (compSource) {
+            compSource.value = "eBay sold";
+        }
+
+        setCompAssistLinks(activeCompAssistSearchTerm);
+    });
+}
+
+const copyCompSearchButton = document.getElementById("copyCompSearchButton");
+if (copyCompSearchButton) {
+    copyCompSearchButton.addEventListener("click", function () {
+        if (!activeCompAssistSearchTerm) {
+            return;
+        }
+
+        navigator.clipboard.writeText(activeCompAssistSearchTerm).then(function () {
+            copyCompSearchButton.textContent = "Copied!";
+            setTimeout(function () {
+                copyCompSearchButton.textContent = "Copy Search Term";
+            }, 1200);
+        });
+    });
+}
+
+const openAllCompSourcesButton = document.getElementById("openAllCompSourcesButton");
+if (openAllCompSourcesButton) {
+    openAllCompSourcesButton.addEventListener("click", function () {
+        if (!activeCompAssistSearchTerm) {
+            return;
+        }
+
+        const urls = buildCompSearchUrls(activeCompAssistSearchTerm);
+        window.open(urls.ebay, "_blank", "noopener");
+        window.open(urls.point130, "_blank", "noopener");
+        window.open(urls.sportsCardsPro, "_blank", "noopener");
+    });
+}
+
+const applyCompAssistButton = document.getElementById("applyCompAssistButton");
+if (applyCompAssistButton) {
+    applyCompAssistButton.addEventListener("click", function () {
+        if (!activeCompAssistCardId) {
+            return;
+        }
+
+        const valueField = document.getElementById("compAssistValue");
+        const sourceField = document.getElementById("compAssistSource");
+        const compValue = Number(valueField ? valueField.value : 0) || 0;
+        const sourceValue = sourceField ? sourceField.value : "";
+
+        if (compValue <= 0) {
+            alert("Enter a comp value first.");
+            return;
+        }
+
+        const rowCompInput = document.querySelector('.comp-value-input[data-card-id="' + activeCompAssistCardId + '"]');
+        const rowSourceInput = document.querySelector('.comp-source-input[data-card-id="' + activeCompAssistCardId + '"]');
+        const workingAskInput = document.querySelector('.working-ask-input[data-card-id="' + activeCompAssistCardId + '"]');
+        const lowestInput = document.querySelector('.lowest-acceptable-input[data-card-id="' + activeCompAssistCardId + '"]');
+
+        if (rowCompInput) {
+            rowCompInput.value = compValue.toFixed(2);
+        }
+
+        if (rowSourceInput) {
+            rowSourceInput.value = sourceValue;
+        }
+
+        if (workingAskInput) {
+            workingAskInput.value = compValue.toFixed(2);
+        }
+
+        if (lowestInput) {
+            lowestInput.value = (compValue * 0.80).toFixed(2);
+        }
+
+        refreshWorkingAskTotal(true);
+        updateTradeCalculator();
+        refreshDealerBreakdowns();
+
+        const modalInstance = bootstrap.Modal.getInstance(compAssistModal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+}
+
 
 refreshWorkingAskTotal(false);
 updateTradeCalculator();
