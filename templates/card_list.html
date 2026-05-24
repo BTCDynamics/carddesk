@@ -37,6 +37,20 @@
     background-color: #111827 !important;
     border-color: #374151 !important;
 }
+
+/* Light gray inventory column headers */
+.table thead th,
+.table-light th {
+    background: #e5e7eb !important;
+    color: #111827 !important;
+    border-bottom: 1px solid rgba(15,23,42,.12) !important;
+    font-size: .72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
 </style>
 {% set current_view = request.args.get('view', 'table') %}
 
