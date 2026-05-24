@@ -1,225 +1,711 @@
 {% extends "base.html" %}
 
-{% block title %}Add Card{% endblock %}
+{% block title %}{% if clone_source %}Clone Card{% else %}Add Card{% endif %} | CardDesk{% endblock %}
 
 {% block content %}
 <style>
-/* Add Card page: keep Raw/Graded boxes dark on page load, not white */
-.cw-form-compact #raw-fields,
-.cw-form-compact #graded-fields {
-    background: linear-gradient(145deg, #202b3a, #253246) !important;
-    border-color: rgba(148, 163, 184, .24) !important;
+/* CardDesk Add Card redesign */
+.add-card-page {
+    color: #0f172a;
 }
 
-.cw-form-compact #raw-fields:hover,
-.cw-form-compact #graded-fields:hover {
-    background: linear-gradient(145deg, #253246, #2c3a50) !important;
-    border-color: rgba(96, 165, 250, .45) !important;
+.add-card-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
 }
 
-/* Fix invisible outline buttons on page load */
-.cw-form-compact .btn-outline-secondary {
-    color: #dbe7ff !important;
-    border-color: rgba(148, 163, 184, .45) !important;
-    background-color: rgba(37, 50, 70, 0.55) !important;
+.add-card-title-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: .9rem;
 }
 
-.cw-form-compact .btn-outline-secondary:hover {
-    color: #ffffff !important;
-    background-color: #111827 !important;
-    border-color: rgba(96, 165, 250, .65) !important;
+.add-card-icon {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(15, 23, 42, .14);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 1.35rem;
+    box-shadow: 0 .35rem 1rem rgba(15, 23, 42, .06);
 }
+
+.add-card-page h1 {
+    color: #0f172a;
+    font-weight: 800;
+}
+
+.add-card-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.cd-panel {
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, .10);
+    border-radius: 14px;
+    box-shadow: 0 .45rem 1.4rem rgba(15, 23, 42, .06);
+}
+
+.cd-panel-body {
+    padding: 1.25rem;
+}
+
+.cd-section {
+    border-bottom: 1px solid rgba(15, 23, 42, .10);
+    padding-bottom: 1.05rem;
+    margin-bottom: 1.05rem;
+}
+
+.cd-section:last-of-type {
+    border-bottom: 0;
+    margin-bottom: 0;
+}
+
+.cd-section-title {
+    color: #0d47a1;
+    font-weight: 800;
+    font-size: .78rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: .85rem;
+}
+
+.add-card-page .form-label {
+    color: #0f172a;
+    font-weight: 700;
+    font-size: .82rem;
+    margin-bottom: .35rem;
+}
+
+.add-card-page .form-control,
+.add-card-page .form-select {
+    background-color: #eef2f7;
+    border: 1px solid rgba(15, 23, 42, .16);
+    color: #111827;
+    min-height: 42px;
+    border-radius: 9px;
+    font-weight: 500;
+}
+
+.add-card-page .form-control:focus,
+.add-card-page .form-select:focus {
+    background-color: #f8fafc;
+    border-color: #2563eb;
+    color: #0f172a;
+    box-shadow: 0 0 0 .2rem rgba(37, 99, 235, .14);
+}
+
+.add-card-page .form-control::placeholder {
+    color: #6b7280;
+}
+
+.add-card-page textarea.form-control {
+    color: #111827;
+}
+
+.add-card-page .form-select {
+    color: #111827;
+}
+
+.cd-check-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: .85rem;
+}
+
+.cd-check-row .form-check-label,
+.cd-inline-check .form-check-label {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.cd-type-toggle {
+    display: grid;
+    grid-template-columns: repeat(2, 180px);
+    gap: .65rem;
+    justify-content: start;
+}
+
+.cd-type-option {
+    position: relative;
+}
+
+.cd-type-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cd-type-option label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    min-height: 40px;
+    padding: .25rem .75rem;
+    font-size: .9rem;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, .18);
+    background: #fbfaf8;
+    color: #0f172a;
+    font-weight: 800;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cd-type-option input:checked + label {
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, .08);
+    color: #0d47a1;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .35);
+}
+
+.cd-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(15, 23, 42, .10);
+    background: rgba(248, 250, 252, .75);
+    border-radius: 0 0 14px 14px;
+}
+
+.cd-actions-right {
+    display: flex;
+    gap: .75rem;
+}
+
+.cd-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.cd-sidebar-title {
+    color: #0d47a1;
+    font-weight: 800;
+    font-size: .82rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: .75rem;
+}
+
+.cd-preview-box {
+    border: 1px dashed rgba(15, 23, 42, .24);
+    border-radius: 13px;
+    min-height: 260px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    background: #fffdf9;
+    color: #64748b;
+    padding: 1rem;
+}
+
+.cd-preview-icon {
+    font-size: 3rem;
+    opacity: .25;
+    line-height: 1;
+    margin-bottom: .7rem;
+}
+
+.cd-tips {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.cd-tips li {
+    color: #334155;
+    font-size: .88rem;
+    margin-bottom: .6rem;
+    display: flex;
+    gap: .5rem;
+}
+
+.cd-tips li::before {
+    content: "✓";
+    color: #0d47a1;
+    font-weight: 900;
+}
+
+.cd-recent-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 0;
+    border-bottom: 1px solid rgba(15, 23, 42, .08);
+}
+
+.cd-recent-row:last-child {
+    border-bottom: 0;
+}
+
+.cd-recent-name {
+    color: #0f172a;
+    font-weight: 800;
+}
+
+.cd-recent-meta {
+    color: #64748b;
+    font-size: .82rem;
+}
+
+.cd-grade-pill {
+    background: rgba(34, 197, 94, .12);
+    color: #15803d;
+    border-radius: 8px;
+    padding: .25rem .5rem;
+    font-size: .8rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.cd-upload-zone {
+    border: 1px dashed rgba(37, 99, 235, .35);
+    border-radius: 12px;
+    background: rgba(37, 99, 235, .03);
+    padding: 1rem;
+}
+
+.cd-small-help {
+    color: #64748b;
+    font-size: .82rem;
+}
+
+@media (max-width: 1199.98px) {
+    .add-card-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .cd-sidebar {
+        display: none;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .add-card-hero {
+        flex-direction: column;
+    }
+
+    .cd-actions {
+        flex-direction: column;
+    }
+
+    .cd-actions-right {
+        width: 100%;
+    }
+
+    .cd-actions-right .btn,
+    .cd-actions > .btn {
+        width: 100%;
+    }
+}
+
+/* Strong light input override: wins against global dark form styling */
+.add-card-page input.form-control,
+.add-card-page select.form-select,
+.add-card-page textarea.form-control {
+    background-color: #eef2f7 !important;
+    color: #111827 !important;
+    border-color: rgba(15, 23, 42, .22) !important;
+    box-shadow: none;
+}
+
+.add-card-page input.form-control:focus,
+.add-card-page select.form-select:focus,
+.add-card-page textarea.form-control:focus {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 .2rem rgba(37, 99, 235, .14) !important;
+}
+
+.add-card-page input.form-control::placeholder,
+.add-card-page textarea.form-control::placeholder {
+    color: #6b7280 !important;
+    opacity: 1 !important;
+}
+
+.add-card-page select.form-select option {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+}
+
+
+/* Keep Add Card fields from stretching excessively wide */
+.add-card-page .row.g-3 {
+    align-items: flex-start;
+}
+
+.add-card-page .cd-section .row {
+    max-width: 1100px;
+}
+
+
+/* Force Raw / Graded selector to stay compact */
+.add-card-page .cd-type-toggle {
+    display: inline-grid !important;
+    grid-template-columns: 140px 140px !important;
+    width: auto !important;
+    max-width: 300px !important;
+    gap: .5rem !important;
+}
+
+.add-card-page .cd-type-option label {
+    min-height: 34px !important;
+    padding: .2rem .55rem !important;
+    font-size: .84rem !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
+}
+
+
+.cd-recent-row {
+    justify-content: flex-start;
+}
+
+.cd-recent-thumb {
+    width: 42px;
+    height: 58px;
+    border-radius: 7px;
+    object-fit: cover;
+    border: 1px solid rgba(15, 23, 42, .14);
+    background: #e5e7eb;
+    flex: 0 0 auto;
+}
+
+.cd-recent-thumb-placeholder {
+    width: 42px;
+    height: 58px;
+    border-radius: 7px;
+    border: 1px dashed rgba(15, 23, 42, .22);
+    background: #eef2f7;
+    color: #64748b;
+    display: grid;
+    place-items: center;
+    font-size: .65rem;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.05;
+    flex: 0 0 auto;
+}
+
+.cd-recent-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.cd-recent-grade-wrap {
+    margin-left: auto;
+}
+
 </style>
-<div class="d-flex justify-content-between align-items-center mb-4 cw-page-title">
-    <div>
-        <h1 class="h2 mb-1">{% if clone_source %}Clone Card{% else %}Add Card{% endif %}</h1>
-        <p class="text-muted mb-0">{% if clone_source %}Start from an existing card and save it as a new inventory record.{% else %}Create a new inventory record.{% endif %}</p>
-    </div>
-    <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Back to Cards</a>
-</div>
 
-<form method="POST" enctype="multipart/form-data" class="card page-card cw-form-compact">
-    <div class="card-body">
+<div class="add-card-page">
+    <div class="add-card-hero">
+        <div class="add-card-title-wrap">
+            <div class="add-card-icon">▣</div>
+            <div>
+                <h1 class="h2 mb-1">{% if clone_source %}Clone Card{% else %}Add Card to Inventory{% endif %}</h1>
+                <p class="text-muted mb-0">
+                    {% if clone_source %}
+                        Start from an existing card and save it as a new inventory record.
+                    {% else %}
+                        Enter all card details below to add it to your inventory.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">← Back to Cards</a>
+    </div>
+
+    {% if clone_source %}
+    <div class="alert alert-info mb-3">
+        Cloning <strong>{{ clone_source.card_code }}</strong>. A new card code will be generated when saved. Image is not copied automatically.
+    </div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="add-card-shell" id="add-card-form">
         {% if clone_source %}
         <input type="hidden" name="force_new" value="1">
-        <div class="alert alert-info mb-3">
-            Cloning <strong>{{ clone_source.card_code }}</strong>. A new card code will be generated when saved. Image is not copied automatically.
-        </div>
         {% endif %}
 
-        <p class="text-muted"><strong>Card Code:</strong> Auto-generated when saved</p>
+        <div class="cd-panel">
+            <div class="cd-panel-body">
+                <p class="text-muted mb-3"><strong>Card Code:</strong> Auto-generated when saved</p>
 
-        <div class="cw-section-label mb-2">Card Identity</div>
-        <div class="row g-3 align-items-end cw-form-row cw-row-a flex-nowrap overflow-auto">
-            <div class="col-md-auto cw-field-player">
-                <label class="form-label">Player Name</label>
-                <input class="form-control" type="text" name="player_name" required value="{{ clone_source.player_name if clone_source else '' }}">
+                <section class="cd-section">
+                    <div class="cd-section-title">Player</div>
+                    <div class="row g-3">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Player / Subject</label>
+                            <input class="form-control" type="text" name="player_name" required placeholder="e.g. Mike Trout" value="{{ clone_source.player_name if clone_source else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="cd-check-row">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_hof" id="is_hof" {% if clone_source and clone_source.is_hof %}checked{% endif %}>
+                            <label class="form-check-label" for="is_hof">Hall of Famer</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_rookie" id="is_rookie" {% if clone_source and clone_source.is_rookie %}checked{% endif %}>
+                            <label class="form-check-label" for="is_rookie">Rookie Card</label>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="cd-section">
+                    <div class="cd-section-title">Card Details</div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Year</label>
+                            <input class="form-control" type="number" name="year" placeholder="e.g. 2011" value="{{ clone_source.year if clone_source and clone_source.year else '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Brand</label>
+                            <input class="form-control" type="text" name="brand" placeholder="e.g. Topps, Panini" value="{{ clone_source.brand if clone_source else '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Set Name</label>
+                            <input class="form-control" type="text" name="set_name" placeholder="e.g. Update, Prizm" value="{{ clone_source.set_name if clone_source else '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Card #</label>
+                            <input class="form-control" type="text" name="card_number" placeholder="e.g. US175" value="{{ clone_source.card_number if clone_source else '' }}">
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Variation / Parallel</label>
+                            <input class="form-control" type="text" name="variation" placeholder="e.g. RC, Silver Prizm, Holo, Gold /10 — leave blank if base" value="{{ clone_source.variation if clone_source else '' }}">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="cd-section">
+                    <div class="cd-section-title">Type</div>
+                    <input type="hidden" name="card_type" id="card_type_value" value="{{ clone_source.card_type if clone_source else 'Raw' }}">
+
+                    <div class="cd-type-toggle mb-3">
+                        <div class="cd-type-option">
+                            <input type="radio" id="card_type_raw" name="card_type_choice" value="Raw" {% if not clone_source or clone_source.card_type != "Graded" %}checked{% endif %}>
+                            <label for="card_type_raw">● Raw / Ungraded</label>
+                        </div>
+                        <div class="cd-type-option">
+                            <input type="radio" id="card_type_graded" name="card_type_choice" value="Graded" {% if clone_source and clone_source.card_type == "Graded" %}checked{% endif %}>
+                            <label for="card_type_graded">○ Graded</label>
+                        </div>
+                    </div>
+
+                    <div id="raw-fields">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Grade Estimate</label>
+                                <input class="form-control" type="text" name="grade_estimate" placeholder="e.g. PSA 8" value="{{ clone_source.grade_estimate if clone_source else '' }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="graded-fields">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Grading Company</label>
+                                <input class="form-control" type="text" name="grading_company" placeholder="PSA, SGC, BGS, CGC" value="{{ clone_source.grading_company if clone_source else '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Actual Grade</label>
+                                <input class="form-control" type="text" name="actual_grade" placeholder="e.g. 10, 9.5, 8" value="{{ clone_source.actual_grade if clone_source else '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Cert Number</label>
+                                <input class="form-control" type="text" name="cert_number" placeholder="e.g. 12345678" value="">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="cd-section">
+                    <div class="cd-section-title">Pricing & Listing</div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Quantity</label>
+                            <input class="form-control" type="number" name="quantity" min="1" value="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Purchase Price</label>
+                            <input class="form-control" type="number" step="0.01" name="purchase_price" placeholder="0.00" value="{{ clone_source.purchase_price if clone_source and clone_source.purchase_price else '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Comp Value</label>
+                            <input class="form-control" type="number" step="0.01" name="estimated_value" placeholder="0.00" value="{{ clone_source.estimated_value if clone_source and clone_source.estimated_value else '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Asking Price</label>
+                            <input class="form-control" type="number" step="0.01" name="asking_price" placeholder="0.00" value="{{ clone_source.asking_price if clone_source and clone_source.asking_price else '' }}">
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Collection Type</label>
+                            <select class="form-select" name="collection_type">
+                                <option value="Inventory" {% if not clone_source or clone_source.collection_type == "Inventory" %}selected{% endif %}>Inventory</option>
+                                <option value="Personal Collection" {% if clone_source and clone_source.collection_type == "Personal Collection" %}selected{% endif %}>Personal Collection</option>
+                                <option value="Trade Bait" {% if clone_source and clone_source.collection_type == "Trade Bait" %}selected{% endif %}>Trade Bait</option>
+                                <option value="Grading Queue" {% if clone_source and clone_source.collection_type == "Grading Queue" %}selected{% endif %}>Grading Queue</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Purchase Date</label>
+                            <input class="form-control" type="date" name="purchase_date" value="{{ clone_source.purchase_date if clone_source else '' }}">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="cd-section">
+                    <div class="cd-section-title">Storage</div>
+                    <div class="row g-3">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Storage Location</label>
+                            <input class="form-control" type="text" name="storage_location" placeholder="Binder-1 / Page-3 / Pocket-2" value="{{ clone_source.storage_location if clone_source else '' }}">
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="2" placeholder="Any additional notes...">{{ clone_source.notes if clone_source else '' }}</textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="cd-section">
+                    <div class="cd-section-title">Images</div>
+                    <div class="row g-3 align-items-center">
+                        <div class="col-lg-4 col-md-6">
+                            <div class="cd-upload-zone">
+                                <label class="form-label">Card Image</label>
+                                <input class="form-control" type="file" name="card_image" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="cd-small-help">
+                                You can upload a front image now. Additional image support can be added later.
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
-            <div class="col-md-auto cw-field-select-sm">
-                <label class="form-label">Sport</label>
-                <select class="form-select" name="sport">
-                    {% for sport in ["Baseball", "Football", "Basketball", "Hockey", "Soccer", "Golf", "Racing", "Wrestling", "Boxing", "Other"] %}
-                        <option value="{{ sport }}" {% if clone_source and clone_source.sport == sport %}selected{% endif %}>{{ sport }}</option>
-                    {% endfor %}
-                </select>
+            <div class="cd-actions">
+                <button class="btn btn-outline-secondary" type="reset">Clear Form</button>
+                <div class="cd-actions-right">
+                    <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Cancel</a>
+                    <button class="btn btn-primary" type="submit">{% if clone_source %}Save Cloned Card{% else %}Add to Inventory{% endif %}</button>
+                </div>
             </div>
+        </div>
 
-            <div class="col-md-auto cw-field-select-xs">
-                <label class="form-label">Card Type</label>
-                <select class="form-select" name="card_type">
-                    <option value="Raw" {% if clone_source and clone_source.card_type == "Raw" %}selected{% endif %}>Raw</option>
-                    <option value="Graded" {% if clone_source and clone_source.card_type == "Graded" %}selected{% endif %}>Graded</option>
-                </select>
-            </div>
-
-            <div class="col-md-auto cw-field-md">
-                <label class="form-label">Brand</label>
-                <input class="form-control" type="text" name="brand" placeholder="Topps" value="{{ clone_source.brand if clone_source else '' }}">
-            </div>
-
-            <div class="col-md-auto cw-field-xs">
-                <label class="form-label">Year</label>
-                <input class="form-control cw-input-xs" type="number" name="year" value="{{ clone_source.year if clone_source and clone_source.year else '' }}">
-            </div>
-
-            <div class="col-md-auto cw-field-sm">
-                <label class="form-label">Card #</label>
-                <input class="form-control cw-input-sm" type="text" name="card_number" value="{{ clone_source.card_number if clone_source else '' }}">
-            </div>
-
-            <div class="col-md-auto">
-                <div class="form-check mt-4">
-                    <input class="form-check-input" type="checkbox" name="is_hof" id="is_hof" {% if clone_source and clone_source.is_hof %}checked{% endif %}>
-                    <label class="form-check-label" for="is_hof">Hall of Famer</label>
+        <aside class="cd-sidebar">
+            <div class="cd-panel">
+                <div class="cd-panel-body">
+                    <div class="cd-sidebar-title">Card Preview</div>
+                    <div class="cd-preview-box">
+                        <div>
+                            <div class="cd-preview-icon">▧</div>
+                            <div class="fw-bold text-dark">No image selected</div>
+                            <div class="cd-small-help mt-2">Upload an image to attach it to this inventory record.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="col-md-auto">
-                <div class="form-check mt-4">
-                    <input class="form-check-input" type="checkbox" name="is_rookie" id="is_rookie" {% if clone_source and clone_source.is_rookie %}checked{% endif %}>
-                    <label class="form-check-label" for="is_rookie">Rookie Card</label>
+            <div class="cd-panel">
+                <div class="cd-panel-body">
+                    <div class="cd-sidebar-title">Quick Tips</div>
+                    <ul class="cd-tips">
+                        <li>Start typing the player name first.</li>
+                        <li>Use exact set names for better tracking.</li>
+                        <li>Mark Hall of Famer and Rookie Card when applicable.</li>
+                        <li>Select Raw or Graded to show relevant fields.</li>
+                        <li>New cards are saved as Active by default.</li>
+                    </ul>
                 </div>
             </div>
-        </div>
 
-        <div class="row g-3 align-items-end cw-form-row cw-row-b">
-            <div class="col-12 col-md-auto cw-field-lg">
-                <label class="form-label">Set Name</label>
-                <input class="form-control" type="text" name="set_name" value="{{ clone_source.set_name if clone_source else '' }}">
-            </div>
+            <div class="cd-panel">
+                <div class="cd-panel-body">
+                    <div class="cd-sidebar-title">Recent Additions</div>
 
-            <div class="col-7 col-md-auto cw-field-md">
-                <label class="form-label">Variation</label>
-                <input class="form-control" type="text" name="variation" value="{{ clone_source.variation if clone_source else '' }}">
-            </div>
+                    {% if recent_added_cards %}
+                        {% for card in recent_added_cards %}
+                            <a class="cd-recent-row text-decoration-none" href="{{ url_for('card_detail', card_id=card.id) }}">
+                                {% if card.image_filename %}
+                                    <img class="cd-recent-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name or 'Card' }} thumbnail">
+                                {% else %}
+                                    <div class="cd-recent-thumb-placeholder">No<br>Image</div>
+                                {% endif %}
 
-            <div class="col-12 col-md-auto cw-field-file">
-                <label class="form-label">Card Image</label>
-                <input class="form-control" type="file" name="card_image" accept="image/*">
-            </div>
-        </div>
+                                <div class="cd-recent-info">
+                                    <div class="cd-recent-name">{{ card.player_name or 'Unknown Player' }}</div>
+                                    <div class="cd-recent-meta">
+                                        {{ card.year or '' }} {{ card.brand or '' }}
+                                        {% if card.card_number %}#{{ card.card_number }}{% endif %}
+                                    </div>
+                                </div>
 
-        <hr>
+                                <div class="cd-recent-grade-wrap">
+                                    {% if card.card_type == "Graded" and card.actual_grade %}
+                                        <span class="cd-grade-pill">{{ card.grading_company or 'Graded' }} {{ card.actual_grade }}</span>
+                                    {% elif card.card_type == "Raw" and card.grade_estimate %}
+                                        <span class="cd-grade-pill">Est. {{ card.grade_estimate }}</span>
+                                    {% else %}
+                                        <span class="cd-grade-pill">{{ card.card_type or 'Raw' }}</span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted small">
+                            Recently added cards will appear here after inventory records are saved.
+                        </div>
+                    {% endif %}
 
-        <div id="raw-heading" class="cw-section-label mb-2">Raw Card Info</div>
-        <div id="raw-fields" class="row g-3 cw-form-row cw-grade-row">
-            <div class="col-6 col-md-auto cw-field-sm">
-                <label class="form-label">Grade Estimate</label>
-                <input class="form-control cw-input-sm" type="text" name="grade_estimate" placeholder="PSA 8" value="{{ clone_source.grade_estimate if clone_source else '' }}">
-            </div>
-        </div>
-
-        <div id="graded-heading" class="cw-section-label mt-3 mb-2">Graded Card Info</div>
-        <div id="graded-fields" class="row g-3 cw-form-row cw-grade-row">
-            <div class="col-12 col-md-auto cw-field-md">
-                <label class="form-label">Grading Company</label>
-                <input class="form-control" type="text" name="grading_company" placeholder="PSA, SGC, BGS, CGC" value="{{ clone_source.grading_company if clone_source else '' }}">
-            </div>
-            <div class="col-6 col-md-auto cw-field-sm">
-                <label class="form-label">Actual Grade</label>
-                <input class="form-control cw-input-sm" type="text" name="actual_grade" placeholder="PSA 8" value="{{ clone_source.actual_grade if clone_source else '' }}">
-            </div>
-            <div class="col-12 col-md-auto cw-field-md">
-                <label class="form-label">Cert Number</label>
-                <input class="form-control" type="text" name="cert_number" value="">
-            </div>
-        </div>
-
-        <hr>
-
-        <div class="cw-section-label mb-2">Inventory</div>
-        <div class="row g-3 align-items-end cw-form-row cw-row-a">
-            <div class="col-6 col-md-auto cw-field-select-md">
-                <label class="form-label">Collection Type</label>
-                <select class="form-select" name="collection_type">
-                    <option value="Inventory" {% if not clone_source or clone_source.collection_type == "Inventory" %}selected{% endif %}>Inventory</option>
-                    <option value="Personal Collection" {% if clone_source and clone_source.collection_type == "Personal Collection" %}selected{% endif %}>Personal Collection</option>
-                    <option value="Trade Bait" {% if clone_source and clone_source.collection_type == "Trade Bait" %}selected{% endif %}>Trade Bait</option>
-                    <option value="Grading Queue" {% if clone_source and clone_source.collection_type == "Grading Queue" %}selected{% endif %}>Grading Queue</option>
-                </select>
-            </div>
-            <div class="col-5 col-md-auto cw-field-xs">
-                <label class="form-label">Quantity</label>
-                <input class="form-control cw-input-xs" type="number" name="quantity" min="1" value="1">
-            </div>
-            <div class="col-7 col-md-auto cw-field-sm">
-                <label class="form-label">Purchase Price</label>
-                <input class="form-control cw-input-sm" type="number" step="0.01" name="purchase_price" value="{{ clone_source.purchase_price if clone_source and clone_source.purchase_price else '' }}">
-            </div>
-            <div class="col-7 col-md-auto cw-field-sm">
-                <label class="form-label">Comp Value</label>
-                <input class="form-control cw-input-sm" type="number" step="0.01" name="estimated_value" value="{{ clone_source.estimated_value if clone_source and clone_source.estimated_value else '' }}">
-            </div>
-            <div class="col-7 col-md-auto cw-field-sm">
-                <label class="form-label">Asking Price</label>
-                <input class="form-control cw-input-sm" type="number" step="0.01" name="asking_price" value="{{ clone_source.asking_price if clone_source and clone_source.asking_price else '' }}">
-            </div>
-            <div class="col-6 col-md-auto cw-field-date">
-                <label class="form-label">Purchase Date</label>
-                <input class="form-control" type="date" name="purchase_date" value="{{ clone_source.purchase_date if clone_source else '' }}">
-            </div>
-            <div class="col-12">
-                <div class="alert alert-info mb-0 small">
-                    New cards are saved as <strong>Active</strong> by default. Use <strong>Quick Sell</strong> or the <strong>Deal Cart</strong> when a card sells.
+                    <a class="btn btn-outline-secondary w-100 mt-3" href="{{ url_for('cards') }}">View All Cards</a>
                 </div>
             </div>
-        </div>
-
-        <div class="row g-3 align-items-end cw-form-row cw-row-b">
-            <div class="col-12 col-md-auto cw-field-storage">
-                <label class="form-label">Storage Location</label>
-                <input class="form-control" type="text" name="storage_location" placeholder="Binder-1 / Page-3 / Pocket-2" value="{{ clone_source.storage_location if clone_source else '' }}">
-            </div>
-            <div class="col-12">
-                <label class="form-label">Notes</label>
-                <textarea class="form-control" name="notes" rows="4">{{ clone_source.notes if clone_source else '' }}</textarea>
-            </div>
-        </div>
-
-        <div class="mt-4 d-flex gap-2">
-            <button class="btn btn-primary" type="submit">{% if clone_source %}Save Cloned Card{% else %}Save Card{% endif %}</button>
-            <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Cancel</a>
-        </div>
-    </div>
-</form>
+        </aside>
+    </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 function toggleCardTypeFields() {
-    const cardType = document.querySelector('[name="card_type"]').value;
+    const selected = document.querySelector('[name="card_type_choice"]:checked');
+    const cardType = selected ? selected.value : "Raw";
+    const hiddenCardType = document.getElementById("card_type_value");
+
+    if (hiddenCardType) {
+        hiddenCardType.value = cardType;
+    }
+
     const showRaw = cardType === "Raw";
     const showGraded = cardType === "Graded";
 
-    document.getElementById("raw-heading").style.display = showRaw ? "block" : "none";
-    document.getElementById("raw-fields").style.display = showRaw ? "flex" : "none";
-
-    document.getElementById("graded-heading").style.display = showGraded ? "block" : "none";
-    document.getElementById("graded-fields").style.display = showGraded ? "flex" : "none";
+    document.getElementById("raw-fields").style.display = showRaw ? "block" : "none";
+    document.getElementById("graded-fields").style.display = showGraded ? "block" : "none";
 }
-document.querySelector('[name="card_type"]').addEventListener("change", toggleCardTypeFields);
-toggleCardTypeFields();
 
+document.querySelectorAll('[name="card_type_choice"]').forEach(input => {
+    input.addEventListener("change", toggleCardTypeFields);
+});
+
+toggleCardTypeFields();
 </script>
 {% endblock %}
