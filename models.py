@@ -80,4 +80,15 @@ class Card(db.Model):
 
     fulfillment_status = db.Column(db.String(50), default="In Storage")
 
+    # Shipping / fulfillment details
+    shipping_carrier = db.Column(db.String(50))
+
+    tracking_number = db.Column(db.String(100))
+
+    shipping_cost = db.Column(db.Float)
+
+    shipped_date = db.Column(db.String(20))
+
+    shipping_notes = db.Column(db.Text)
+
     created_at = db.Column(db.DateTime, server_default=db.func.now())

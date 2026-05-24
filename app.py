@@ -86,6 +86,36 @@ def ensure_database_columns():
         )
         db.session.commit()
 
+    if "shipping_carrier" not in existing_columns:
+        db.session.execute(
+            text("ALTER TABLE card ADD COLUMN shipping_carrier VARCHAR(50)")
+        )
+        db.session.commit()
+
+    if "tracking_number" not in existing_columns:
+        db.session.execute(
+            text("ALTER TABLE card ADD COLUMN tracking_number VARCHAR(100)")
+        )
+        db.session.commit()
+
+    if "shipping_cost" not in existing_columns:
+        db.session.execute(
+            text("ALTER TABLE card ADD COLUMN shipping_cost FLOAT")
+        )
+        db.session.commit()
+
+    if "shipped_date" not in existing_columns:
+        db.session.execute(
+            text("ALTER TABLE card ADD COLUMN shipped_date VARCHAR(20)")
+        )
+        db.session.commit()
+
+    if "shipping_notes" not in existing_columns:
+        db.session.execute(
+            text("ALTER TABLE card ADD COLUMN shipping_notes TEXT")
+        )
+        db.session.commit()
+
 
 
 with app.app_context():
@@ -1466,7 +1496,7 @@ def add_card():
 @app.route("/fulfillment")
 def fulfillment_queue():
     """Show sold cards that still need post-sale handling."""
-    status_filter = request.args.get("status", "Needs Pulling")
+    status_filter = request.args.get("status", "")
 
     query = Card.query.filter(Card.status == "Sold")
 
@@ -1477,6 +1507,7 @@ def fulfillment_queue():
             db.or_(
                 Card.fulfillment_status == "Needs Pulling",
                 Card.fulfillment_status == "Pulled",
+                Card.fulfillment_status == "Ready to Ship",
                 Card.fulfillment_status == "Shipped",
                 Card.fulfillment_status == "Delivered",
                 Card.fulfillment_status == "Completed",
@@ -1493,8 +1524,10 @@ def fulfillment_queue():
     counts = {
         "needs_pulling": Card.query.filter(Card.status == "Sold", Card.fulfillment_status == "Needs Pulling").count(),
         "pulled": Card.query.filter(Card.status == "Sold", Card.fulfillment_status == "Pulled").count(),
+        "ready_to_ship": Card.query.filter(Card.status == "Sold", Card.fulfillment_status == "Ready to Ship").count(),
         "shipped": Card.query.filter(Card.status == "Sold", Card.fulfillment_status == "Shipped").count(),
         "delivered": Card.query.filter(Card.status == "Sold", Card.fulfillment_status == "Delivered").count(),
+        "completed": Card.query.filter(Card.status == "Sold", Card.fulfillment_status == "Completed").count(),
     }
 
     return render_template(
@@ -1510,7 +1543,7 @@ def update_fulfillment_status(card_id):
     card = Card.query.get_or_404(card_id)
 
     new_status = request.form.get("fulfillment_status") or "Needs Pulling"
-    valid_statuses = ["Needs Pulling", "Pulled", "Shipped", "Delivered", "Completed"]
+    valid_statuses = ["Needs Pulling", "Pulled", "Ready to Ship", "Shipped", "Delivered", "Completed"]
 
     if new_status not in valid_statuses:
         flash("Invalid fulfillment status.")
@@ -1518,6 +1551,13 @@ def update_fulfillment_status(card_id):
 
     old_status = card.fulfillment_status or "Needs Pulling"
     card.fulfillment_status = new_status
+
+    if new_status == "Ready to Ship":
+        card.shipping_carrier = clean_value(request.form.get("shipping_carrier"))
+        card.tracking_number = clean_value(request.form.get("tracking_number"))
+        card.shipping_cost = request.form.get("shipping_cost") or None
+        card.shipped_date = request.form.get("shipped_date")
+        card.shipping_notes = clean_value(request.form.get("shipping_notes"))
 
     status_note = f"Fulfillment updated from {old_status} to {new_status}."
     if new_status == "Pulled" and card.storage_location:
