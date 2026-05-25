@@ -319,7 +319,7 @@
 .comp-assist-box {
     background: #ffffff;
     border: 1px solid #cbd5e1;
-    color: #111827;
+    color: #f8fafc;
     border-radius: .85rem;
     padding: .85rem;
 }
@@ -359,6 +359,48 @@
     }
 }
 
+
+/* In Deal toggle */
+.deal-include-cell {
+    min-width: 92px;
+}
+
+.deal-include-check {
+    transform: scale(1.15);
+    margin-right: .35rem;
+}
+
+.deal-include-label {
+    font-size: .78rem;
+    font-weight: 900;
+    color: #ffffff !important;
+    white-space: nowrap;
+}
+
+.inventory-row.deal-excluded {
+    opacity: .42;
+}
+
+.inventory-row.deal-excluded td {
+    background: rgba(148, 163, 184, .10) !important;
+}
+
+.dealer-breakdown-row.deal-excluded {
+    opacity: .42;
+}
+
+.excluded-note {
+    display: none;
+    color: #fca5a5;
+    font-size: .74rem;
+    font-weight: 900;
+    margin-top: .25rem;
+}
+
+.inventory-row.deal-excluded .excluded-note {
+    display: block;
+}
+
 </style>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
@@ -378,7 +420,7 @@
 {% if selected_cards %}
     <form method="POST" action="{{ url_for('bulk_sell') }}" id="completeDealForm" class="d-none">
         {% for card in selected_cards %}
-            <input type="hidden" name="card_ids" value="{{ card.id }}">
+            <input type="hidden" name="card_ids" value="{{ card.id }}" class="deal-card-id-input" data-card-id="{{ card.id }}">
         {% endfor %}
 
         <input type="hidden" name="complete_deal" value="1">
@@ -395,8 +437,8 @@
     </div>
 
     <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-4">
-        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Selected Cards</div><div class="detail-value">{{ selected_card_count or selected_cards|length }}</div></div></div></div>
-        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Cost Basis</div><div class="detail-value">${{ "%.2f"|format(total_cost or 0) }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Selected Cards</div><div class="detail-value" id="includedCardCount">{{ selected_card_count or selected_cards|length }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Cost Basis</div><div class="detail-value" id="includedCostTotal">${{ "%.2f"|format(total_cost or 0) }}</div></div></div></div>
         <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Working Ask Total</div><div class="detail-value" id="topWorkingAskTotal">${{ "%.2f"|format(total_asking or 0) }}</div></div></div></div>
         <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Est. Value</div><div class="detail-value">${{ "%.2f"|format(total_estimated_value or 0) }}</div></div></div></div>
         <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Est. Profit / Loss</div><div class="detail-value {% if total_estimated_profit_loss >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.2f"|format(total_estimated_profit_loss or 0) }}</div></div></div></div>
@@ -503,6 +545,7 @@
             <table class="table table-hover mb-0 align-middle negotiation-table">
                 <thead class="table-light">
                     <tr>
+                        <th>In Deal</th>
                         <th>Card</th>
                         <th>Breakdown</th>
                         <th>Comp Assist</th>
@@ -523,7 +566,20 @@
                 </thead>
                 <tbody>
                     {% for card in selected_cards %}
-                        <tr class="inventory-row">
+                        <tr class="inventory-row" data-card-id="{{ card.id }}">
+                            <td class="deal-include-cell">
+                                <div class="form-check d-flex align-items-center">
+                                    <input
+                                        class="form-check-input deal-include-check deal-include-toggle"
+                                        type="checkbox"
+                                        checked
+                                        data-card-id="{{ card.id }}"
+                                        id="dealInclude{{ card.id }}"
+                                    >
+                                    <label class="form-check-label deal-include-label" for="dealInclude{{ card.id }}">In Deal</label>
+                                </div>
+                                <div class="excluded-note">Excluded from current total</div>
+                            </td>
                             <td>
                                 <div class="fw-bold">
                                     <a href="{{ url_for('card_detail', card_id=card.id) }}" class="text-decoration-none">{{ card.player_name }}</a>
@@ -605,6 +661,7 @@
                                     min="0"
                                     value="{{ "%.2f"|format(original_ask_total) }}"
                                     data-original-ask="{{ "%.2f"|format(original_ask_total) }}"
+                                    data-card-cost="{{ "%.2f"|format((card.purchase_price or 0) * (card.quantity or 1)) }}"
                                     data-card-id="{{ card.id }}"
                                     form="completeDealForm"
                                     name="working_ask_{{ card.id }}"
@@ -627,7 +684,7 @@
                             </td>
                         </tr>
                         <tr class="dealer-breakdown-row" id="breakdown-{{ card.id }}">
-                            <td colspan="16">
+                            <td colspan="17">
                                 <div class="dealer-breakdown-panel">
                                     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
                                         <div>
@@ -854,11 +911,42 @@ function numericFieldValue(id) {
     return field ? Number(field.value) || 0 : 0;
 }
 
+function isCardIncluded(cardId) {
+    const toggle = document.querySelector('.deal-include-toggle[data-card-id="' + cardId + '"]');
+    return !toggle || toggle.checked;
+}
+
+function getIncludedCardCount() {
+    let count = 0;
+
+    document.querySelectorAll(".deal-include-toggle").forEach(function (toggle) {
+        if (toggle.checked) {
+            count += 1;
+        }
+    });
+
+    return count;
+}
+
+function getIncludedCostTotal() {
+    let total = 0;
+
+    document.querySelectorAll(".working-ask-input").forEach(function (input) {
+        if (isCardIncluded(input.dataset.cardId)) {
+            total += Number(input.dataset.cardCost) || 0;
+        }
+    });
+
+    return total;
+}
+
 function getWorkingAskTotal() {
     let total = 0;
 
     document.querySelectorAll(".working-ask-input").forEach(function (input) {
-        total += Number(input.value) || 0;
+        if (isCardIncluded(input.dataset.cardId)) {
+            total += Number(input.value) || 0;
+        }
     });
 
     return total;
@@ -882,6 +970,16 @@ function refreshWorkingAskTotal(syncFinalDealPrice) {
         finalWorkingAskTotalInput.value = workingAskTotal.toFixed(2);
     }
 
+    const includedCardCount = document.getElementById("includedCardCount");
+    if (includedCardCount) {
+        includedCardCount.textContent = getIncludedCardCount();
+    }
+
+    const includedCostTotal = document.getElementById("includedCostTotal");
+    if (includedCostTotal) {
+        includedCostTotal.textContent = formatCurrency(getIncludedCostTotal());
+    }
+
     if (syncFinalDealPrice) {
         const workingDealPriceField = document.getElementById("workingDealPrice");
         if (workingDealPriceField) {
@@ -896,7 +994,7 @@ function updateTradeCalculator() {
     const askingPrice = numericFieldValue("cartAskingPrice");
     const workingDealPrice = numericFieldValue("workingDealPrice");
     const tradeCredit = numericFieldValue("tradeCredit");
-    const totalCost = {{ "%.2f"|format(total_cost or 0) }};
+    const totalCost = getIncludedCostTotal();
 
     const discountAmount = askingPrice - workingDealPrice;
     const discountPercent = askingPrice > 0 ? (discountAmount / askingPrice) * 100 : 0;
@@ -1156,6 +1254,38 @@ if (resetButton) {
     });
 }
 
+
+function syncIncludedCards() {
+    document.querySelectorAll(".deal-include-toggle").forEach(function (toggle) {
+        const cardId = toggle.dataset.cardId;
+        const row = document.querySelector('.inventory-row[data-card-id="' + cardId + '"]');
+        const breakdownRow = document.getElementById("breakdown-" + cardId);
+        const hiddenInput = document.querySelector('.deal-card-id-input[data-card-id="' + cardId + '"]');
+
+        if (row) {
+            row.classList.toggle("deal-excluded", !toggle.checked);
+        }
+
+        if (breakdownRow) {
+            breakdownRow.classList.toggle("deal-excluded", !toggle.checked);
+        }
+
+        if (hiddenInput) {
+            hiddenInput.disabled = !toggle.checked;
+        }
+    });
+}
+
+document.querySelectorAll(".deal-include-toggle").forEach(function (toggle) {
+    toggle.addEventListener("change", function () {
+        syncIncludedCards();
+        refreshWorkingAskTotal(true);
+        updateTradeCalculator();
+        refreshDealerBreakdowns();
+    });
+});
+
+
 const completeDealForm = document.getElementById("completeDealForm");
 if (completeDealForm) {
     completeDealForm.addEventListener("submit", function (event) {
@@ -1172,7 +1302,7 @@ if (completeDealForm) {
             "Final Deal Price: $" + dealPrice + "\n" +
             "Trade-In Credit: $" + tradeCredit + "\n" +
             "Discount: " + discountPercent + "%\n\n" +
-            "All selected cards will be marked Sold.\n" +
+            "Only cards checked In Deal will be marked Sold. Unchecked cards stay in the cart/inventory.\n" +
             "Note: comp values, working asks, and lowest acceptable floors are submitted with the form for future backend use."
         );
 
@@ -1331,6 +1461,7 @@ if (applyCompAssistButton) {
 }
 
 
+syncIncludedCards();
 refreshWorkingAskTotal(false);
 updateTradeCalculator();
 refreshDealerBreakdowns();
