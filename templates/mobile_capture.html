@@ -140,7 +140,7 @@
             <div class="capture-shell">
                 <div class="capture-video-wrap">
                     <video id="captureVideo" autoplay playsinline muted></video>
-                    <div class="capture-card-guide">
+                    <div class="capture-card-guide" id="captureGuide">
                         <div class="capture-corners">
                             <span></span><span></span><span></span><span></span>
                         </div>
@@ -235,11 +235,70 @@ function captureFrame() {
         return;
     }
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const guide = document.getElementById("captureGuide");
+    const videoRect = video.getBoundingClientRect();
+    const guideRect = guide.getBoundingClientRect();
+
+    // The video uses object-fit: contain, so the visible camera image may have
+    // letterboxing. Calculate the actual displayed video image area first.
+    const videoAspect = video.videoWidth / video.videoHeight;
+    const elementAspect = videoRect.width / videoRect.height;
+
+    let displayedWidth;
+    let displayedHeight;
+    let displayedLeft;
+    let displayedTop;
+
+    if (elementAspect > videoAspect) {
+        displayedHeight = videoRect.height;
+        displayedWidth = displayedHeight * videoAspect;
+        displayedLeft = videoRect.left + (videoRect.width - displayedWidth) / 2;
+        displayedTop = videoRect.top;
+    } else {
+        displayedWidth = videoRect.width;
+        displayedHeight = displayedWidth / videoAspect;
+        displayedLeft = videoRect.left;
+        displayedTop = videoRect.top + (videoRect.height - displayedHeight) / 2;
+    }
+
+    // Intersect the guide box with the actual displayed camera image.
+    const cropLeftCss = Math.max(guideRect.left, displayedLeft);
+    const cropTopCss = Math.max(guideRect.top, displayedTop);
+    const cropRightCss = Math.min(guideRect.right, displayedLeft + displayedWidth);
+    const cropBottomCss = Math.min(guideRect.bottom, displayedTop + displayedHeight);
+
+    const cropWidthCss = cropRightCss - cropLeftCss;
+    const cropHeightCss = cropBottomCss - cropTopCss;
+
+    if (cropWidthCss <= 0 || cropHeightCss <= 0) {
+        setStatus("Could not match the guide box to the camera image. Try rotating the phone or restarting the camera.");
+        return;
+    }
+
+    // Convert CSS pixel crop area back to real camera pixels.
+    const scaleX = video.videoWidth / displayedWidth;
+    const scaleY = video.videoHeight / displayedHeight;
+
+    const sourceX = (cropLeftCss - displayedLeft) * scaleX;
+    const sourceY = (cropTopCss - displayedTop) * scaleY;
+    const sourceWidth = cropWidthCss * scaleX;
+    const sourceHeight = cropHeightCss * scaleY;
+
+    canvas.width = Math.round(sourceWidth);
+    canvas.height = Math.round(sourceHeight);
 
     const context = canvas.getContext("2d");
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    context.drawImage(
+        video,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
 
     canvas.toBlob(function(blob) {
         if (!blob) {
@@ -254,7 +313,7 @@ function captureFrame() {
         previewEmpty.style.display = "none";
         saveBtn.disabled = false;
 
-        setStatus("Captured. Review the preview, then Save to CardDesk or capture again.");
+        setStatus("Captured the guide-box area. Review the cropped image, then Save to CardDesk or capture again.");
     }, "image/jpeg", 0.94);
 }
 
