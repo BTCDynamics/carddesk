@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}AI Import Review | CardDesk{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+    <div>
+        <h1 class="h2 mb-1">AI Import Review</h1>
+        <p class="text-muted mb-0">Confirm Ximilar results before adding cards to your real inventory.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="{{ url_for('ai_import_upload') }}">Upload More Images</a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Back to Inventory</a>
+    </div>
+</div>
+
+<div class="card page-card mb-4">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-sm {% if status_filter == 'Pending Review' %}btn-info{% else %}btn-outline-info{% endif %}" href="{{ url_for('ai_import_review', status='Pending Review') }}">Pending {{ counts.pending }}</a>
+            <a class="btn btn-sm {% if status_filter == 'Needs Manual Review' %}btn-warning{% else %}btn-outline-warning{% endif %}" href="{{ url_for('ai_import_review', status='Needs Manual Review') }}">Manual {{ counts.manual }}</a>
+            <a class="btn btn-sm {% if status_filter == 'Imported' %}btn-success{% else %}btn-outline-success{% endif %}" href="{{ url_for('ai_import_review', status='Imported') }}">Imported {{ counts.imported }}</a>
+            <a class="btn btn-sm {% if status_filter == 'Rejected' %}btn-danger{% else %}btn-outline-danger{% endif %}" href="{{ url_for('ai_import_review', status='Rejected') }}">Rejected {{ counts.rejected }}</a>
+            <a class="btn btn-sm {% if status_filter == 'All' %}btn-dark{% else %}btn-outline-dark{% endif %}" href="{{ url_for('ai_import_review', status='All') }}">All</a>
+        </div>
+        <div class="text-muted small">Current view: <strong>{{ status_filter }}</strong></div>
+    </div>
+</div>
+
+{% if staged_cards %}
+    <div class="ai-review-list">
+        {% for staged in staged_cards %}
+            {% set duplicate = duplicate_map.get(staged.id) %}
+            <div class="card page-card ai-review-card mb-4">
+                <div class="card-body">
+                    <div class="ai-review-grid">
+                        <div class="ai-review-image-panel">
+                            {% if staged.image_filename %}
+                                <img class="ai-review-image" src="{{ url_for('static', filename='uploads/' ~ staged.image_filename) }}" alt="AI import image">
+                            {% else %}
+                                <div class="gallery-placeholder">Image moved to inventory</div>
+                            {% endif %}
+
+                            <div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
+                                <span class="badge {% if staged.ai_status == 'Imported' %}text-bg-success{% elif staged.ai_status == 'Rejected' %}text-bg-danger{% elif staged.ai_status == 'Needs Manual Review' %}text-bg-warning{% else %}text-bg-info{% endif %}">{{ staged.ai_status }}</span>
+                                {% if staged.ai_confidence %}
+                                    <span class="badge text-bg-dark">{{ "%.1f"|format(staged.ai_confidence) }}% confidence</span>
+                                {% endif %}
+                            </div>
+
+                            {% if staged.ai_error %}
+                                <div class="alert alert-warning small mt-3 mb-0">{{ staged.ai_error }}</div>
+                            {% endif %}
+
+                            {% if duplicate %}
+                                <div class="alert alert-warning small mt-3 mb-0">
+                                    Possible duplicate: <strong>{{ duplicate.card_code }}</strong> · {{ duplicate.player_name }}{% if duplicate.year %} · {{ duplicate.year }}{% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="ai-review-form-panel">
+                            <form method="POST" action="{{ url_for('update_staged_import', staging_id=staged.id, status=status_filter) }}" id="updateStaged{{ staged.id }}">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Player / Subject</label>
+                                        <input class="form-control" type="text" name="player_name" value="{{ staged.player_name or '' }}" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Sport</label>
+                                        <select class="form-select" name="sport">
+                                            {% for sport in ["Baseball", "Football", "Basketball", "Hockey", "Soccer", "Golf", "Racing", "Wrestling", "Boxing", "Other"] %}
+                                                <option value="{{ sport }}" {% if staged.sport == sport %}selected{% endif %}>{{ sport }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Year</label>
+                                        <input class="form-control" type="number" name="year" value="{{ staged.year or '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Brand</label>
+                                        <input class="form-control" type="text" name="brand" value="{{ staged.brand or '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Card #</label>
+                                        <input class="form-control" type="text" name="card_number" value="{{ staged.card_number or '' }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Set Name</label>
+                                        <input class="form-control" type="text" name="set_name" value="{{ staged.set_name or '' }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Variation / Parallel</label>
+                                        <input class="form-control" type="text" name="variation" value="{{ staged.variation or '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Type</label>
+                                        <select class="form-select" name="card_type">
+                                            <option value="Raw" {% if staged.card_type != 'Graded' %}selected{% endif %}>Raw</option>
+                                            <option value="Graded" {% if staged.card_type == 'Graded' %}selected{% endif %}>Graded</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Quantity</label>
+                                        <input class="form-control" type="number" min="1" name="quantity" value="{{ staged.quantity or 1 }}">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label class="form-label">Grading Company</label>
+                                        <input class="form-control" type="text" name="grading_company" value="{{ staged.grading_company or '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Actual Grade</label>
+                                        <input class="form-control" type="text" name="actual_grade" value="{{ staged.actual_grade or '' }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Cert Number</label>
+                                        <input class="form-control" type="text" name="cert_number" value="{{ staged.cert_number or '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Raw Estimate</label>
+                                        <input class="form-control" type="text" name="grade_estimate" value="{{ staged.grade_estimate or '' }}">
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="is_rookie" id="rookie{{ staged.id }}" {% if staged.is_rookie %}checked{% endif %}>
+                                            <label class="form-check-label" for="rookie{{ staged.id }}">RC</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="is_hof" id="hof{{ staged.id }}" {% if staged.is_hof %}checked{% endif %}>
+                                            <label class="form-check-label" for="hof{{ staged.id }}">HOF</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <label class="form-label">Purchase Price</label>
+                                        <input class="form-control" type="number" step="0.01" name="purchase_price" value="{{ staged.purchase_price or '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Comp Value</label>
+                                        <input class="form-control" type="number" step="0.01" name="estimated_value" value="{{ staged.estimated_value or '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Asking Price</label>
+                                        <input class="form-control" type="number" step="0.01" name="asking_price" value="{{ staged.asking_price or '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Purchase Date</label>
+                                        <input class="form-control" type="date" name="purchase_date" value="{{ staged.purchase_date or '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Collection</label>
+                                        <select class="form-select" name="collection_type">
+                                            {% for collection in ["Inventory", "Personal Collection", "Trade Bait", "Grading Queue"] %}
+                                                <option value="{{ collection }}" {% if staged.collection_type == collection %}selected{% endif %}>{{ collection }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" name="status">
+                                            {% for status in ["Active", "Holding"] %}
+                                                <option value="{{ status }}" {% if staged.status == status %}selected{% endif %}>{{ status }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Storage Location</label>
+                                        <input class="form-control" type="text" name="storage_location" value="{{ staged.storage_location or '' }}">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label">Notes</label>
+                                        <textarea class="form-control" name="notes" rows="2">{{ staged.notes or '' }}</textarea>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <div class="ai-review-actions mt-3 d-flex flex-wrap justify-content-between gap-2">
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% if staged.ai_status != 'Imported' %}
+                                        <button class="btn btn-outline-primary" type="submit" form="updateStaged{{ staged.id }}">Save Edits</button>
+                                        <form method="POST" action="{{ url_for('reject_staged_import', staging_id=staged.id) }}" class="d-inline">
+                                            <button class="btn btn-outline-warning" type="submit">Reject</button>
+                                        </form>
+                                    {% endif %}
+                                    <form method="POST" action="{{ url_for('delete_staged_import', staging_id=staged.id) }}" class="d-inline" onsubmit="return confirm('Delete this staged import?');">
+                                        <button class="btn btn-outline-danger" type="submit">Delete</button>
+                                    </form>
+                                </div>
+
+                                {% if staged.ai_status != 'Imported' %}
+                                    <form method="POST" action="{{ url_for('import_staged_card', staging_id=staged.id) }}" class="d-flex flex-wrap gap-2 align-items-center">
+                                        {% if duplicate %}
+                                            <select class="form-select form-select-sm" name="duplicate_action" style="max-width: 220px;">
+                                                <option value="create_new">Import as new record</option>
+                                                <option value="increase_quantity">Increase duplicate quantity</option>
+                                            </select>
+                                        {% else %}
+                                            <input type="hidden" name="duplicate_action" value="create_new">
+                                        {% endif %}
+                                        <button class="btn btn-success" type="submit">Import Card</button>
+                                    </form>
+                                {% elif staged.imported_card_id %}
+                                    <a class="btn btn-success" href="{{ url_for('card_detail', card_id=staged.imported_card_id) }}">View Imported Card</a>
+                                {% endif %}
+                            </div>
+
+                            {% if staged.raw_response_json %}
+                                <details class="mt-3">
+                                    <summary class="small text-muted">View raw Ximilar response</summary>
+                                    <pre class="ai-json-box mt-2">{{ staged.raw_response_json }}</pre>
+                                </details>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card page-card">
+        <div class="card-body text-center text-muted py-5">
+            No staged imports in this view.
+            <div class="mt-3"><a class="btn btn-primary" href="{{ url_for('ai_import_upload') }}">Upload Images</a></div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
