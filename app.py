@@ -3,6 +3,7 @@ import json
 import base64
 import urllib.error
 import urllib.request
+from urllib.parse import quote
 from datetime import date, datetime, timedelta
 from uuid import uuid4
 
@@ -857,6 +858,12 @@ def dashboard():
 
     ai_action_needed_cards = ai_pending_review_cards + ai_manual_review_cards
 
+    mobile_capture_url = url_for("mobile_capture", _external=True)
+    mobile_capture_qr_url = (
+        "https://api.qrserver.com/v1/create-qr-code/"
+        f"?size=220x220&data={quote(mobile_capture_url, safe='')}"
+    )
+
     return render_template(
         "dashboard.html",
         today=today,
@@ -911,7 +918,9 @@ def dashboard():
         ai_manual_review_cards=ai_manual_review_cards,
         ai_imported_cards=ai_imported_cards,
         ai_rejected_cards=ai_rejected_cards,
-        ai_action_needed_cards=ai_action_needed_cards
+        ai_action_needed_cards=ai_action_needed_cards,
+        mobile_capture_url=mobile_capture_url,
+        mobile_capture_qr_url=mobile_capture_qr_url
     )
 
 @app.route("/storage")
