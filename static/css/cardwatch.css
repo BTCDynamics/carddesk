@@ -1894,10 +1894,20 @@ textarea.form-control {
     background: #ffffff;
     border: 1px solid rgba(255,255,255,.28);
     box-shadow: 0 .35rem .85rem rgba(0,0,0,.22);
+
+    transition:
+        transform .18s ease,
+        box-shadow .18s ease;
+
+    transform-origin: top right;
+    position: relative;
+    z-index: 2;
 }
 
 .mobile-capture-mini-qr:hover {
-    transform: scale(1.05);
+    transform: scale(3);
+    z-index: 999;
+    box-shadow: 0 1.25rem 2.5rem rgba(0,0,0,.45);
 }
 
 @media (max-width: 575.98px) {
