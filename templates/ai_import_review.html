@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}AI Import Review | CardDesk{% endblock %}
+{% block title %}AI Import Review | CardDesk<script id="ai-review-auto-scroll">
+document.addEventListener("DOMContentLoaded", function () {
+    const focusedCard = document.querySelector(".ai-review-card-focus");
+
+    if (focusedCard) {
+        focusedCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+});
+</script>
+
+{% endblock %}
 
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
@@ -27,11 +37,33 @@
     </div>
 </div>
 
+{% if imported_success %}
+    <div class="ai-flow-success-banner mb-4">
+        <div class="ai-flow-success-icon">✓</div>
+        <div>
+            <div class="ai-flow-success-title">Card imported successfully.</div>
+            <div class="ai-flow-success-subtitle">Loading next card...</div>
+        </div>
+    </div>
+{% endif %}
+
+{% if missing_fields %}
+    <div class="ai-required-banner mb-4">
+        <div class="ai-required-title">Required fields missing</div>
+        <div class="ai-required-subtitle">Please complete these before importing:</div>
+        <div class="ai-required-list">
+            {% for field in missing_fields %}
+                <span>{{ field }}</span>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
 {% if staged_cards %}
     <div class="ai-review-list">
         {% for staged in staged_cards %}
             {% set duplicate = duplicate_map.get(staged.id) %}
-            <div class="card page-card ai-review-card mb-4">
+            <div class="card page-card ai-review-card mb-4 {% if focus_id == staged.id %}ai-review-card-focus{% endif %}" id="staged-{{ staged.id }}">
                 <div class="card-body">
                     <div class="ai-review-grid">
                         <div class="ai-review-image-panel">
@@ -63,47 +95,47 @@
                             <form method="POST" action="{{ url_for('update_staged_import', staging_id=staged.id, status=status_filter) }}" id="updateStaged{{ staged.id }}">
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label class="form-label">Player / Subject</label>
-                                        <input class="form-control" type="text" name="player_name" value="{{ staged.player_name or '' }}" required>
+                                        <label class="form-label required-field-label">Player / Subject</label>
+                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Player / Subject' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="text" name="player_name" value="{{ staged.player_name or '' }}" required>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Sport</label>
-                                        <select class="form-select" name="sport">
+                                        <label class="form-label required-field-label">Sport</label>
+                                        <select class="form-select required-field-input {% if focus_id == staged.id and 'Sport' in missing_fields %}is-invalid ai-required-missing{% endif %}" name="sport" required>
                                             {% for sport in ["Baseball", "Football", "Basketball", "Hockey", "Soccer", "Golf", "Racing", "Wrestling", "Boxing", "Other"] %}
                                                 <option value="{{ sport }}" {% if staged.sport == sport %}selected{% endif %}>{{ sport }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Year</label>
-                                        <input class="form-control" type="number" name="year" value="{{ staged.year or '' }}">
+                                        <label class="form-label required-field-label">Year</label>
+                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Year' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="number" name="year" required value="{{ staged.year or '' }}">
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Brand</label>
-                                        <input class="form-control" type="text" name="brand" value="{{ staged.brand or '' }}">
+                                        <label class="form-label required-field-label">Brand</label>
+                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Brand' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="text" name="brand" required value="{{ staged.brand or '' }}">
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Card #</label>
-                                        <input class="form-control" type="text" name="card_number" value="{{ staged.card_number or '' }}">
+                                        <label class="form-label required-field-label">Card #</label>
+                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Card Number' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="text" name="card_number" required value="{{ staged.card_number or '' }}">
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">Set Name</label>
-                                        <input class="form-control" type="text" name="set_name" value="{{ staged.set_name or '' }}">
+                                        <label class="form-label required-field-label">Set Name</label>
+                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Set' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="text" name="set_name" required value="{{ staged.set_name or '' }}">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Variation / Parallel</label>
                                         <input class="form-control" type="text" name="variation" value="{{ staged.variation or '' }}">
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Type</label>
-                                        <select class="form-select" name="card_type">
+                                        <label class="form-label required-field-label">Type</label>
+                                        <select class="form-select required-field-input {% if focus_id == staged.id and 'Card Type' in missing_fields %}is-invalid ai-required-missing{% endif %}" name="card_type" required>
                                             <option value="Raw" {% if staged.card_type != 'Graded' %}selected{% endif %}>Raw</option>
                                             <option value="Graded" {% if staged.card_type == 'Graded' %}selected{% endif %}>Graded</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Quantity</label>
-                                        <input class="form-control" type="number" min="1" name="quantity" value="{{ staged.quantity or 1 }}">
+                                        <label class="form-label required-field-label">Quantity</label>
+                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Quantity' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="number" min="1" name="quantity" required value="{{ staged.quantity or 1 }}">
                                     </div>
 
                                     <div class="col-md-3">
@@ -134,8 +166,8 @@
                                     </div>
 
                                     <div class="col-md-2">
-                                        <label class="form-label">Purchase Price</label>
-                                        <input class="form-control" type="number" step="0.01" name="purchase_price" value="{{ staged.purchase_price or '' }}">
+                                        <label class="form-label required-field-label">Cost</label>
+                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Cost' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="number" step="0.01" min="0" name="purchase_price" required value="{{ staged.purchase_price or '' }}">
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label">Comp Value</label>
@@ -150,24 +182,24 @@
                                         <input class="form-control" type="date" name="purchase_date" value="{{ staged.purchase_date or '' }}">
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Collection</label>
-                                        <select class="form-select" name="collection_type">
+                                        <label class="form-label required-field-label">Collection</label>
+                                        <select class="form-select required-field-input {% if focus_id == staged.id and 'Collection Type' in missing_fields %}is-invalid ai-required-missing{% endif %}" name="collection_type" required>
                                             {% for collection in ["Inventory", "Personal Collection", "Trade Bait", "Grading Queue"] %}
                                                 <option value="{{ collection }}" {% if staged.collection_type == collection %}selected{% endif %}>{{ collection }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label">Status</label>
-                                        <select class="form-select" name="status">
+                                        <label class="form-label required-field-label">Status</label>
+                                        <select class="form-select required-field-input {% if focus_id == staged.id and 'Status' in missing_fields %}is-invalid ai-required-missing{% endif %}" name="status" required>
                                             {% for status in ["Active", "Holding"] %}
                                                 <option value="{{ status }}" {% if staged.status == status %}selected{% endif %}>{{ status }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">Storage Location</label>
-                                        <input class="form-control" type="text" name="storage_location" value="{{ staged.storage_location or '' }}">
+                                        <label class="form-label required-field-label">Storage Location</label>
+                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Storage Location' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="text" name="storage_location" required value="{{ staged.storage_location or '' }}">
                                     </div>
                                     <div class="col-md-8">
                                         <label class="form-label">Notes</label>
@@ -179,7 +211,7 @@
                             <div class="ai-review-actions mt-3 d-flex flex-wrap justify-content-between gap-2">
                                 <div class="d-flex flex-wrap gap-2">
                                     {% if staged.ai_status != 'Imported' %}
-                                        <button class="btn btn-outline-primary" type="submit" form="updateStaged{{ staged.id }}">Save Edits</button>
+                                        <button class="btn btn-outline-secondary" type="submit" form="updateStaged{{ staged.id }}">Save Draft</button>
                                         <form method="POST" action="{{ url_for('reject_staged_import', staging_id=staged.id) }}" class="d-inline">
                                             <button class="btn btn-outline-warning" type="submit">Reject</button>
                                         </form>
@@ -190,17 +222,22 @@
                                 </div>
 
                                 {% if staged.ai_status != 'Imported' %}
-                                    <form method="POST" action="{{ url_for('import_staged_card', staging_id=staged.id) }}" class="d-flex flex-wrap gap-2 align-items-center">
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
                                         {% if duplicate %}
-                                            <select class="form-select form-select-sm" name="duplicate_action" style="max-width: 220px;">
+                                            <select class="form-select form-select-sm" name="duplicate_action" form="updateStaged{{ staged.id }}" style="max-width: 220px;">
                                                 <option value="create_new">Import as new record</option>
                                                 <option value="increase_quantity">Increase duplicate quantity</option>
                                             </select>
                                         {% else %}
-                                            <input type="hidden" name="duplicate_action" value="create_new">
+                                            <input type="hidden" name="duplicate_action" value="create_new" form="updateStaged{{ staged.id }}">
                                         {% endif %}
-                                        <button class="btn btn-success" type="submit">Import Card</button>
-                                    </form>
+                                        <button class="btn btn-success ai-import-next-btn"
+                                                type="submit"
+                                                form="updateStaged{{ staged.id }}"
+                                                formaction="{{ url_for('import_staged_card', staging_id=staged.id) }}">
+                                            Import to CardDesk
+                                        </button>
+                                    </div>
                                 {% elif staged.imported_card_id %}
                                     <a class="btn btn-success" href="{{ url_for('card_detail', card_id=staged.imported_card_id) }}">View Imported Card</a>
                                 {% endif %}
