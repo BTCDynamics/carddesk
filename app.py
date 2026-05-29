@@ -128,6 +128,56 @@ def ensure_database_columns():
         db.session.commit()
 
 
+    add_column_if_missing(
+        "card",
+        "acquisition_source",
+        "ALTER TABLE card ADD COLUMN acquisition_source VARCHAR(50) DEFAULT 'Existing Inventory'"
+    )
+    add_column_if_missing(
+        "card",
+        "acquisition_date",
+        "ALTER TABLE card ADD COLUMN acquisition_date VARCHAR(20)"
+    )
+    add_column_if_missing(
+        "card",
+        "acquisition_event",
+        "ALTER TABLE card ADD COLUMN acquisition_event VARCHAR(150)"
+    )
+
+    add_column_if_missing(
+        "card_import_staging",
+        "acquisition_source",
+        "ALTER TABLE card_import_staging ADD COLUMN acquisition_source VARCHAR(50) DEFAULT 'Existing Inventory'"
+    )
+    add_column_if_missing(
+        "card_import_staging",
+        "acquisition_date",
+        "ALTER TABLE card_import_staging ADD COLUMN acquisition_date VARCHAR(20)"
+    )
+    add_column_if_missing(
+        "card_import_staging",
+        "acquisition_event",
+        "ALTER TABLE card_import_staging ADD COLUMN acquisition_event VARCHAR(150)"
+    )
+
+
+
+
+def add_column_if_missing(table_name, column_name, ddl):
+    """Safely add a SQLite column only if it does not already exist."""
+    inspector = inspect(db.engine)
+
+    if table_name not in inspector.get_table_names():
+        return
+
+    existing_columns = {
+        column["name"]
+        for column in inspector.get_columns(table_name)
+    }
+
+    if column_name not in existing_columns:
+        db.session.execute(text(ddl))
+        db.session.commit()
 
 with app.app_context():
     db.create_all()
@@ -139,6 +189,38 @@ def clean_value(value):
     if value:
         return value.strip()
     return None
+
+
+ACQUISITION_SOURCE_OPTIONS = [
+    "Existing Inventory",
+    "Cash Purchase",
+    "Trade-In",
+    "Bulk Collection",
+    "Pack Pull",
+    "Personal Collection",
+    "Other",
+]
+
+ACQUISITION_DASHBOARD_SOURCES = {
+    "Cash Purchase",
+    "Trade-In",
+    "Bulk Collection",
+    "Pack Pull",
+    "Other",
+}
+
+
+def acquisition_value(value):
+    value = clean_value(value)
+    return value or "Existing Inventory"
+
+
+def acquisition_date_value(form_data):
+    return form_data.get("acquisition_date") or form_data.get("purchase_date") or None
+
+
+def is_dashboard_acquisition(card):
+    return getattr(card, "acquisition_source", None) in ACQUISITION_DASHBOARD_SOURCES
 
 
 
@@ -544,6 +626,7 @@ def dashboard():
     today = today_value.isoformat()
 
     recent_sales_range = request.args.get("recent_sales_range", "30d")
+    purchase_summary_range = request.args.get("purchase_summary_range", "30d")
 
     recent_sales_range_days = {
     "today": 0,
@@ -568,6 +651,15 @@ def dashboard():
     recent_sales_start_date = recent_sales_start_date_value.isoformat()
 
     recent_sales_label = recent_sales_range_labels[recent_sales_range]
+
+    if purchase_summary_range not in recent_sales_range_days:
+        purchase_summary_range = "30d"
+
+    purchase_summary_start_date_value = (
+        today_value - timedelta(days=recent_sales_range_days[purchase_summary_range])
+    )
+    purchase_summary_start_date = purchase_summary_start_date_value.isoformat()
+    purchase_summary_label = recent_sales_range_labels[purchase_summary_range]
 
     cards = Card.query.all()
 
@@ -789,13 +881,15 @@ def dashboard():
     )
 
 
-    # Bought-card activity for the selected dashboard range
+    # Acquisition activity for the selected dashboard range.
+    # This separates newly acquired inventory from cards that were only entered into CardDesk.
     bought_range_cards = [
         card for card in active_cards
         if card.collection_type == "Inventory"
         and card.status == "Active"
-        and parse_card_date(card.purchase_date)
-        and parse_card_date(card.purchase_date) >= recent_sales_start_date_value
+        and is_dashboard_acquisition(card)
+        and parse_card_date(getattr(card, "acquisition_date", None) or card.purchase_date)
+        and parse_card_date(getattr(card, "acquisition_date", None) or card.purchase_date) >= purchase_summary_start_date_value
     ]
 
     cards_bought_in_range = sum(
@@ -807,6 +901,13 @@ def dashboard():
         ((card.purchase_price or 0) * (card.quantity or 1))
         for card in bought_range_cards
     )
+
+    value_bought_in_range = sum(
+        ((card.estimated_value or 0) * (card.quantity or 1))
+        for card in bought_range_cards
+    )
+
+    comp_value_bought_in_range = value_bought_in_range
 
     # Keep the original template variable names, but make them follow the selected dashboard sales range.
     today_sold_price = selected_range_sold_price
@@ -906,6 +1007,11 @@ def dashboard():
         today_sales_margin_percent=today_sales_margin_percent,
         cards_bought_in_range=cards_bought_in_range,
         cost_bought_in_range=cost_bought_in_range,
+        value_bought_in_range=value_bought_in_range,
+        comp_value_bought_in_range=comp_value_bought_in_range,
+        purchase_summary_range=purchase_summary_range,
+        purchase_summary_label=purchase_summary_label,
+        purchase_summary_start_date=purchase_summary_start_date,
         recent_sales=recent_sales,
         recent_sales_start_date=recent_sales_start_date,
         recent_sales_range=recent_sales_range,
@@ -958,10 +1064,28 @@ def cards():
     brand_filter = request.args.get("brand", "")
     storage_filter = request.args.get("storage", "")
     variation_filter = request.args.get("variation", "")
+    acquisition_source_filter = request.args.get("acquisition_source", "")
+    acquisition_event_filter = request.args.get("acquisition_event", "")
     min_price = request.args.get("min_price", "")
     max_price = request.args.get("max_price", "")
+    scope = request.args.get("scope", "inventory")
 
     query = Card.query
+
+    # Default inventory view should show cards that are actually available to sell.
+    # If the user chooses filters, those filters take control.
+    has_manual_scope_filter = any([
+        sold_range,
+        status_filter,
+        collection_type_filter,
+    ])
+
+    if scope == "inventory" and not has_manual_scope_filter:
+        query = query.filter(Card.status == "Active")
+        query = query.filter(Card.collection_type == "Inventory")
+
+    # Do not apply LIMIT until after all filters have been added.
+    # SQLAlchemy raises an InvalidRequestError if .filter() is called after .limit().
 
     if search_query:
         query = query.filter(
@@ -979,7 +1103,9 @@ def cards():
                 Card.cert_number.ilike(f"%{search_query}%"),
                 Card.status.ilike(f"%{search_query}%"),
                 Card.collection_type.ilike(f"%{search_query}%"),
-                Card.storage_location.ilike(f"%{search_query}%")
+                Card.storage_location.ilike(f"%{search_query}%"),
+                Card.acquisition_source.ilike(f"%{search_query}%"),
+                Card.acquisition_event.ilike(f"%{search_query}%")
             )
         )
 
@@ -1007,6 +1133,12 @@ def cards():
     if collection_type_filter:
         query = query.filter(Card.collection_type == collection_type_filter)
 
+    if acquisition_source_filter:
+        query = query.filter(Card.acquisition_source == acquisition_source_filter)
+
+    if acquisition_event_filter:
+        query = query.filter(Card.acquisition_event.ilike(f"%{acquisition_event_filter}%"))
+
     if grade_estimate_filter:
         query = query.filter(Card.grade_estimate.ilike(f"%{grade_estimate_filter}%"))
 
@@ -1014,7 +1146,10 @@ def cards():
         query = query.filter(Card.actual_grade.ilike(f"%{actual_grade_filter}%"))
 
     if year_filter:
-        query = query.filter(Card.year == int(year_filter))
+        try:
+            query = query.filter(Card.year == int(year_filter))
+        except ValueError:
+            year_filter = ""
 
     if brand_filter:
         query = query.filter(Card.brand.ilike(f"%{brand_filter}%"))
@@ -1028,10 +1163,16 @@ def cards():
         query = query.filter(Card.variation.ilike(f"%{variation_filter}%"))
 
     if min_price:
-        query = query.filter(Card.purchase_price >= float(min_price))
+        try:
+            query = query.filter(Card.purchase_price >= float(min_price))
+        except ValueError:
+            min_price = ""
 
     if max_price:
-        query = query.filter(Card.purchase_price <= float(max_price))
+        try:
+            query = query.filter(Card.purchase_price <= float(max_price))
+        except ValueError:
+            max_price = ""
 
 
     if sold_range:
@@ -1051,8 +1192,6 @@ def cards():
         if start_date:
             query = query.filter(Card.sold_date >= start_date.isoformat())
 
-    all_cards = query.order_by(Card.id.desc()).all()
-
     has_active_filter = any([
         sold_range,
         search_query,
@@ -1068,17 +1207,23 @@ def cards():
         brand_filter,
         storage_filter,
         variation_filter,
+        acquisition_source_filter,
+        acquisition_event_filter,
         min_price,
         max_price,
     ])
 
-    if has_active_filter:
-        summary_cards = all_cards
-    else:
-        summary_cards = [
-            card for card in all_cards
-            if card.status == "Sold"
-        ]
+    query = query.order_by(Card.id.desc())
+
+    # Keep the unfiltered All Records view from loading the entire database,
+    # but allow searches/filters inside All Records to search the full dataset.
+    if scope == "all" and not has_active_filter:
+        query = query.limit(250)
+
+    all_cards = query.all()
+
+    # Results should summarize the cards currently displayed on the inventory page.
+    summary_cards = all_cards
 
     filtered_card_count = sum(
         (card.quantity or 1)
@@ -1122,6 +1267,27 @@ def cards():
     )
 
     storage_locations = get_storage_locations()
+
+    acquisition_sources = [
+        "Existing Inventory",
+        "Cash Purchase",
+        "Trade-In",
+        "Bulk Collection",
+        "Pack Pull",
+        "Personal Collection",
+        "Other",
+    ]
+
+    acquisition_events = [
+        row[0]
+        for row in db.session.query(Card.acquisition_event)
+        .filter(Card.acquisition_event.isnot(None))
+        .filter(Card.acquisition_event != "")
+        .distinct()
+        .order_by(Card.acquisition_event.asc())
+        .all()
+    ]
+
     deal_cart_ids = get_deal_cart_ids()
     deal_cart_count = get_deal_cart_quantity()
 
@@ -1146,13 +1312,18 @@ def cards():
         brand_filter=brand_filter,
         storage_filter=storage_filter,
         variation_filter=variation_filter,
+        acquisition_source_filter=acquisition_source_filter,
+        acquisition_event_filter=acquisition_event_filter,
         min_price=min_price,
         max_price=max_price,
         storage_locations=storage_locations,
+        acquisition_sources=acquisition_sources,
+        acquisition_events=acquisition_events,
         deal_cart_ids=deal_cart_ids,
         deal_cart_count=deal_cart_count,
         active_inventory_count=active_inventory_count,
-        missing_storage_count=missing_storage_count
+        missing_storage_count=missing_storage_count,
+        scope=scope
     )
 
 
@@ -1419,6 +1590,9 @@ def edit_card(card_id):
         card.sold_date = request.form.get("sold_date")
         card.sales_platform = clean_value(request.form.get("sales_platform"))
         card.purchase_date = request.form.get("purchase_date")
+        card.acquisition_source = acquisition_value(request.form.get("acquisition_source"))
+        card.acquisition_date = acquisition_date_value(request.form)
+        card.acquisition_event = clean_value(request.form.get("acquisition_event"))
         card.storage_location = clean_value(request.form.get("storage_location"))
         card.collection_type = request.form.get("collection_type") or "Inventory"
         card.status = request.form.get("status")
@@ -1554,6 +1728,9 @@ def rapid_entry():
             old_quantity = existing_card.quantity or 1
             existing_card.quantity = old_quantity + quantity_to_add
             existing_card.collection_type = collection_type
+            existing_card.acquisition_source = existing_card.acquisition_source or acquisition_value(request.form.get("acquisition_source"))
+            existing_card.acquisition_date = existing_card.acquisition_date or acquisition_date_value(request.form)
+            existing_card.acquisition_event = existing_card.acquisition_event or clean_value(request.form.get("acquisition_event"))
             db.session.commit()
             flash(f"Duplicate found. Quantity updated from {old_quantity} to {existing_card.quantity}.")
             saved_card_id = existing_card.id
@@ -1582,6 +1759,9 @@ def rapid_entry():
                 sold_date=request.form.get("sold_date"),
                 sales_platform=clean_value(request.form.get("sales_platform")),
                 purchase_date=request.form.get("purchase_date"),
+                acquisition_source=acquisition_value(request.form.get("acquisition_source")),
+                acquisition_date=acquisition_date_value(request.form),
+                acquisition_event=clean_value(request.form.get("acquisition_event")),
                 storage_location=clean_value(request.form.get("storage_location")),
                 collection_type=collection_type,
                 notes=request.form.get("notes"),
@@ -1607,7 +1787,10 @@ def rapid_entry():
             "storage_location": request.form.get("storage_location") or "",
             "collection_type": collection_type or "Inventory",
             "status": request.form.get("status") or "Active",
-            "purchase_date": request.form.get("purchase_date") or ""
+            "purchase_date": request.form.get("purchase_date") or "",
+            "acquisition_source": request.form.get("acquisition_source") or "Existing Inventory",
+            "acquisition_date": request.form.get("acquisition_date") or request.form.get("purchase_date") or "",
+            "acquisition_event": request.form.get("acquisition_event") or ""
         }
 
         return redirect(url_for("rapid_entry", **keep_values))
@@ -1726,6 +1909,9 @@ def add_card():
             sold_date=request.form.get("sold_date"),
             sales_platform=clean_value(request.form.get("sales_platform")),
             purchase_date=request.form.get("purchase_date"),
+            acquisition_source=acquisition_value(request.form.get("acquisition_source")),
+            acquisition_date=acquisition_date_value(request.form),
+            acquisition_event=clean_value(request.form.get("acquisition_event")),
             storage_location=clean_value(
                 request.form.get("storage_location")
             ),
@@ -1777,6 +1963,9 @@ def ai_import_upload():
                 collection_type=request.form.get("collection_type") or "Inventory",
                 status=request.form.get("status") or "Active",
                 purchase_date=request.form.get("purchase_date"),
+                acquisition_source=acquisition_value(request.form.get("acquisition_source")),
+                acquisition_date=acquisition_date_value(request.form),
+                acquisition_event=clean_value(request.form.get("acquisition_event")),
                 storage_location=clean_value(request.form.get("storage_location")),
                 quantity=1,
                 ai_status="Pending Review",
@@ -1905,6 +2094,9 @@ def update_staged_import(staging_id):
     staged_card.estimated_value = request.form.get("estimated_value") or None
     staged_card.asking_price = request.form.get("asking_price") or None
     staged_card.purchase_date = request.form.get("purchase_date")
+    staged_card.acquisition_source = acquisition_value(request.form.get("acquisition_source"))
+    staged_card.acquisition_date = acquisition_date_value(request.form)
+    staged_card.acquisition_event = clean_value(request.form.get("acquisition_event"))
     staged_card.storage_location = clean_value(request.form.get("storage_location"))
     staged_card.collection_type = request.form.get("collection_type") or "Inventory"
     staged_card.status = request.form.get("status") or "Active"
@@ -1941,6 +2133,9 @@ def apply_staged_import_form(staged_card, form_data):
     staged_card.estimated_value = form_data.get("estimated_value") or None
     staged_card.asking_price = form_data.get("asking_price") or None
     staged_card.purchase_date = form_data.get("purchase_date")
+    staged_card.acquisition_source = acquisition_value(form_data.get("acquisition_source"))
+    staged_card.acquisition_date = acquisition_date_value(form_data)
+    staged_card.acquisition_event = clean_value(form_data.get("acquisition_event"))
     staged_card.storage_location = clean_value(form_data.get("storage_location"))
     staged_card.collection_type = form_data.get("collection_type") or "Inventory"
     staged_card.status = form_data.get("status") or "Active"
@@ -2081,6 +2276,9 @@ def import_staged_card(staging_id):
         estimated_value=staged_card.estimated_value,
         asking_price=staged_card.asking_price,
         purchase_date=staged_card.purchase_date,
+        acquisition_source=staged_card.acquisition_source or "Existing Inventory",
+        acquisition_date=staged_card.acquisition_date or staged_card.purchase_date,
+        acquisition_event=staged_card.acquisition_event,
         storage_location=staged_card.storage_location,
         collection_type=staged_card.collection_type or "Inventory",
         image_filename=staged_card.image_filename,

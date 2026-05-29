@@ -53,6 +53,13 @@ class Card(db.Model):
 
     purchase_date = db.Column(db.String(20))
 
+    # Acquisition tracking: separates cards already owned from newly acquired inventory
+    acquisition_source = db.Column(db.String(50), default="Existing Inventory")
+
+    acquisition_date = db.Column(db.String(20))
+
+    acquisition_event = db.Column(db.String(150))
+
     storage_location = db.Column(db.String(200))
 
     image_filename = db.Column(db.String(200))
@@ -125,6 +132,9 @@ class CardImportStaging(db.Model):
     estimated_value = db.Column(db.Float)
     asking_price = db.Column(db.Float)
     purchase_date = db.Column(db.String(20))
+    acquisition_source = db.Column(db.String(50), default="Existing Inventory")
+    acquisition_date = db.Column(db.String(20))
+    acquisition_event = db.Column(db.String(150))
     storage_location = db.Column(db.String(200))
     collection_type = db.Column(db.String(50), default="Inventory")
     status = db.Column(db.String(50), default="Active")
