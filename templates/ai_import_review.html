@@ -353,7 +353,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                         <button class="btn btn-success ai-import-next-btn"
                                                 type="submit"
                                                 form="updateStaged{{ staged.id }}"
-                                                formaction="{{ url_for('import_staged_card', staging_id=staged.id) }}">
+                                                formaction="/ai-import/{{ staged.id }}/import">
                                             Import to CardDesk
                                         </button>
                                     </div>
