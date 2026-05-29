@@ -19,6 +19,7 @@ app.secret_key = "cardwatch-dev-secret"
 
 DATA_DIR = os.environ.get("CARDWATCH_DATA_DIR", "/var/data")
 PERSISTENT_UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
+STATIC_UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(DATA_DIR, 'cardwatch.db')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -37,8 +38,17 @@ db.init_app(app)
 
 
 def ensure_upload_folder():
-    """Create persistent upload storage on Render's mounted disk."""
+    """Create persistent upload storage and remove any old static/uploads symlink.
+
+    Uploaded images are stored on Render's persistent disk at /var/data/uploads.
+    The old symlink approach is intentionally removed because it interfered with
+    Render's static files. Image templates should use url_for('uploaded_file').
+    """
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+    # Clean up a leftover symlink from the failed deploy, if it exists.
+    if os.path.islink(STATIC_UPLOAD_FOLDER):
+        os.unlink(STATIC_UPLOAD_FOLDER)
 
 
 def ensure_database_columns():
