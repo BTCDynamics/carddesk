@@ -1,5 +1,4 @@
 import os
-import shutil
 import json
 import base64
 import urllib.error
@@ -20,7 +19,6 @@ app.secret_key = "cardwatch-dev-secret"
 
 DATA_DIR = os.environ.get("CARDWATCH_DATA_DIR", "/var/data")
 PERSISTENT_UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
-STATIC_UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(DATA_DIR, 'cardwatch.db')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -42,7 +40,7 @@ def ensure_upload_folder():
     """Create persistent upload storage on Render's mounted disk.
 
     Images are saved directly to app.config["UPLOAD_FOLDER"], which defaults
-    to /var/data/uploads. No symlink or migration logic is used.
+    to /var/data/uploads. No symlink, move, or migration logic is used.
     """
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
