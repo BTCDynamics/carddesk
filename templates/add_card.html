@@ -587,6 +587,23 @@
                             <label class="form-label">Purchase Date</label>
                             <input class="form-control" type="date" name="purchase_date" value="{{ clone_source.purchase_date if clone_source else '' }}">
                         </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Acquisition Source</label>
+                            <select class="form-select" name="acquisition_source">
+                                {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
+                                    <option value="{{ source }}" {% if (clone_source and (clone_source.acquisition_source or "Existing Inventory") == source) or (not clone_source and source == "Existing Inventory") %}selected{% endif %}>{{ source }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="cd-small-help mt-1">Use Existing Inventory for cards you already owned before entering them.</div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Acquisition Date</label>
+                            <input class="form-control" type="date" name="acquisition_date" value="{{ clone_source.acquisition_date if clone_source and clone_source.acquisition_date else (clone_source.purchase_date if clone_source else '') }}">
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Acquisition Event / Location</label>
+                            <input class="form-control" type="text" name="acquisition_event" placeholder="Macon Card Show, Facebook, eBay..." value="{{ clone_source.acquisition_event if clone_source else '' }}">
+                        </div>
                     </div>
                 </section>
 

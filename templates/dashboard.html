@@ -163,7 +163,7 @@
 
 <div class="dashboard-tabs">
     <button class="dashboard-tab-btn {% if active_dashboard_tab != 'purchases' %}active{% endif %}" onclick="showDashboardTab('sales-tab', this)">Sales</button>
-    <button class="dashboard-tab-btn {% if active_dashboard_tab == 'purchases' %}active{% endif %}" onclick="showDashboardTab('purchases-tab', this)">Purchases</button>
+    <button class="dashboard-tab-btn {% if active_dashboard_tab == 'purchases' %}active{% endif %}" onclick="showDashboardTab('purchases-tab', this)">Acquisitions</button>
 </div>
 
 <div id="sales-tab" class="dashboard-tab-panel {% if active_dashboard_tab != 'purchases' %}active{% endif %}">
@@ -226,7 +226,7 @@
         <div class="card page-card dashboard-click-card h-100">
             <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-1">
-                    <div class="cw-section-label mb-0">Cards Bought · {{ purchase_summary_label or 'Last 30 Days' }}</div>
+                    <div class="cw-section-label mb-0">Cards Acquired · {{ purchase_summary_label or 'Last 30 Days' }}</div>
 
                     <div class="dashboard-range-links">
                         <a class="{% if purchase_summary_range == 'today' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range=recent_sales_range or '30d', purchase_summary_range='today', dashboard_tab='purchases') }}">Today</a>
@@ -239,7 +239,7 @@
                 <div class="display-6 fw-bold">{{ cards_bought_in_range or 0 }}</div>
 
                 <p class="text-muted mb-0 small">
-                    New inventory entered during the selected range.
+                    Newly acquired inventory in the selected range. Existing Inventory and Personal Collection are excluded.
                 </p>
             </div>
         </div>
@@ -248,12 +248,12 @@
     <div class="col-md-4">
         <div class="card page-card dashboard-click-card h-100">
             <div class="card-body">
-                <div class="cw-section-label mb-1">Purchase Cost · {{ purchase_summary_label or 'Last 30 Days' }}</div>
+                <div class="cw-section-label mb-1">Acquisition Cost · {{ purchase_summary_label or 'Last 30 Days' }}</div>
 
                 <div class="display-6 fw-bold">${{ "%.2f"|format(cost_bought_in_range or 0) }}</div>
 
                 <p class="text-muted mb-0 small">
-                    Total cost basis added during the selected purchase range.
+                    Total cost basis for newly acquired inventory in the selected range.
                 </p>
             </div>
         </div>
@@ -262,12 +262,12 @@
     <div class="col-md-4">
         <div class="card page-card dashboard-click-card h-100">
             <div class="card-body">
-                <div class="cw-section-label mb-1">Comp Value Added · {{ purchase_summary_label or 'Last 30 Days' }}</div>
+                <div class="cw-section-label mb-1">Comp Value Acquired · {{ purchase_summary_label or 'Last 30 Days' }}</div>
 
                 <div class="display-6 fw-bold">${{ "%.2f"|format(comp_value_bought_in_range or value_bought_in_range or 0) }}</div>
 
                 <p class="text-muted mb-0 small">
-                    Estimated market value added from newly entered inventory.
+                    Estimated market value of newly acquired inventory.
                 </p>
             </div>
         </div>

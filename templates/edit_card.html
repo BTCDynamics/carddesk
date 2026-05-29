@@ -184,6 +184,22 @@
                 <label class="form-label">Purchase Date</label>
                 <input class="form-control" type="date" name="purchase_date" value="{{ card.purchase_date or '' }}">
             </div>
+            <div class="col-6 col-md-auto cw-field-select-md">
+                <label class="form-label">Acquisition Source</label>
+                <select class="form-select" name="acquisition_source">
+                    {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
+                        <option value="{{ source }}" {% if (card.acquisition_source or "Existing Inventory") == source %}selected{% endif %}>{{ source }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-auto cw-field-date">
+                <label class="form-label">Acquisition Date</label>
+                <input class="form-control" type="date" name="acquisition_date" value="{{ card.acquisition_date or card.purchase_date or '' }}">
+            </div>
+            <div class="col-12 col-md-auto cw-field-md">
+                <label class="form-label">Acquisition Event</label>
+                <input class="form-control" type="text" name="acquisition_event" value="{{ card.acquisition_event or '' }}" placeholder="Macon Card Show, Facebook, eBay...">
+            </div>
             <div class="col-7 col-md-auto cw-field-sm">
                 <label class="form-label">Sold Price</label>
                 <input class="form-control cw-input-sm" type="number" step="0.01" name="sold_price" value="{{ card.sold_price or '' }}">

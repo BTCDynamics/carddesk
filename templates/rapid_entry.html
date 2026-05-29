@@ -183,9 +183,28 @@
                 <input class="form-control" type="date" name="purchase_date" value="{{ request.args.get('purchase_date', '') }}">
             </div>
 
+            <div class="col-6 col-md-auto cw-field-select-md">
+                <label class="form-label">Acquisition Source</label>
+                <select class="form-select" name="acquisition_source">
+                    {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
+                        <option value="{{ source }}" {% if request.args.get('acquisition_source', 'Existing Inventory') == source %}selected{% endif %}>{{ source }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6 col-md-auto cw-field-date">
+                <label class="form-label">Acquisition Date</label>
+                <input class="form-control" type="date" name="acquisition_date" value="{{ request.args.get('acquisition_date', request.args.get('purchase_date', '')) }}">
+            </div>
+
+            <div class="col-12 col-md-auto cw-field-md">
+                <label class="form-label">Acquisition Event</label>
+                <input class="form-control" type="text" name="acquisition_event" placeholder="Macon Card Show, Facebook, eBay..." value="{{ request.args.get('acquisition_event', '') }}">
+            </div>
+
             <div class="col-12">
                 <div class="alert alert-info mb-0 small">
-                    Rapid Entry can save new cards as <strong>Active</strong>, <strong>Holding</strong>, or <strong>Sold</strong>. Use <strong>Force new record</strong> when you do not want a duplicate to increase quantity.
+                    Rapid Entry can save new cards as <strong>Active</strong>, <strong>Holding</strong>, or <strong>Sold</strong>. Use <strong>Force new record</strong> when you want this acquisition tracked as its own record instead of increasing an older card quantity.
                 </div>
             </div>
         </div>
