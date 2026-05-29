@@ -17,7 +17,7 @@ app = Flask(__name__)
 
 app.secret_key = "cardwatch-dev-secret"
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///cardwatch.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////var/data/cardwatch.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB upload limit
