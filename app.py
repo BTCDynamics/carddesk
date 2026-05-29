@@ -1,4 +1,5 @@
 import os
+import shutil
 import json
 import base64
 import urllib.error
@@ -19,6 +20,7 @@ app.secret_key = "cardwatch-dev-secret"
 
 DATA_DIR = os.environ.get("CARDWATCH_DATA_DIR", "/var/data")
 PERSISTENT_UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
+STATIC_UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(DATA_DIR, 'cardwatch.db')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -37,10 +39,10 @@ db.init_app(app)
 
 
 def ensure_upload_folder():
-    """Create the persistent upload folder on Render's mounted disk.
+    """Create persistent upload storage on Render's mounted disk.
 
-    Images are stored under app.config["UPLOAD_FOLDER"], which defaults to
-    /var/data/uploads when CARDWATCH_DATA_DIR is not set. No symlink is used.
+    Images are saved directly to app.config["UPLOAD_FOLDER"], which defaults
+    to /var/data/uploads. No symlink or migration logic is used.
     """
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
@@ -188,13 +190,14 @@ def add_column_if_missing(table_name, column_name, ddl):
         db.session.commit()
 
 @app.route("/uploads/<path:filename>")
-@app.route("/static/uploads/<path:filename>")
 def uploaded_file(filename):
-    """Serve uploaded card images from Render persistent disk.
+    """Serve uploaded card images from persistent disk."""
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
-    The second route keeps existing templates working when they reference
-    /static/uploads/<filename>, while the actual files live in /var/data/uploads.
-    """
+
+@app.route("/static/uploads/<path:filename>")
+def uploaded_static_file(filename):
+    """Keep existing template image URLs working without a symlink."""
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 
