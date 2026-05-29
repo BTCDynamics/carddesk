@@ -3,6 +3,35 @@
 {% block title %}AI Import | CardDesk{% endblock %}
 
 {% block content %}
+<style>
+.ai-acquisition-note {
+    margin-top: .6rem;
+    padding: .75rem .85rem;
+    border-radius: .85rem;
+    font-size: .86rem;
+    font-weight: 650;
+}
+
+.ai-acquisition-note.existing {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+}
+
+.ai-acquisition-note.new {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #166534;
+}
+
+.ai-import-card .form-control:disabled,
+.ai-import-card .form-select:disabled {
+    background-color: #d1d5db !important;
+    color: #374151 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+</style>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
         <h1 class="h2 mb-1">AI Card Import</h1>
@@ -61,12 +90,33 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Purchase Date</label>
-                        <input class="form-control" type="date" name="purchase_date">
+                        <label class="form-label">Acquisition Source</label>
+                        <select class="form-select" name="acquisition_source" id="aiUploadAcquisitionSource">
+                            {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
+                                <option value="{{ source }}" {% if source == "Existing Inventory" %}selected{% endif %}>{{ source }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Acquisition Date</label>
+                        <input class="form-control" type="date" name="acquisition_date" id="aiUploadAcquisitionDate">
+                        <input type="hidden" name="purchase_date" id="aiUploadPurchaseDate"> {# compatibility field; UI uses Acquisition Date #}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Acquisition Event / Location</label>
+                        <input class="form-control" type="text" name="acquisition_event" id="aiUploadAcquisitionEvent" placeholder="Macon Card Show, Facebook, eBay...">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Storage Location</label>
                         <input class="form-control" type="text" name="storage_location" placeholder="Optional batch location">
+                    </div>
+                    <div class="col-12">
+                        <div class="ai-acquisition-note existing" id="aiUploadExistingNote">
+                            Existing Inventory means these cards were already owned before being entered into CardDesk. They will not count as new dashboard acquisitions.
+                        </div>
+                        <div class="ai-acquisition-note new" id="aiUploadNewNote" style="display: none;">
+                            This batch will count as new acquisitions when Acquisition Date falls inside the dashboard range.
+                        </div>
                     </div>
                 </div>
 
@@ -128,5 +178,64 @@ if (aiImportFileInput && aiImportFileCount) {
         aiImportFileCount.textContent = count ? `${count} file(s) selected.` : "No files selected.";
     });
 }
+
+function toggleAiUploadAcquisitionFields() {
+    const sourceField = document.getElementById("aiUploadAcquisitionSource");
+    const dateField = document.getElementById("aiUploadAcquisitionDate");
+    const eventField = document.getElementById("aiUploadAcquisitionEvent");
+    const purchaseDateField = document.getElementById("aiUploadPurchaseDate");
+    const existingNote = document.getElementById("aiUploadExistingNote");
+    const newNote = document.getElementById("aiUploadNewNote");
+
+    if (!sourceField || !dateField) {
+        return;
+    }
+
+    const isExisting = sourceField.value === "Existing Inventory";
+
+    dateField.disabled = isExisting;
+    if (eventField) {
+        eventField.disabled = isExisting;
+    }
+
+    if (isExisting) {
+        dateField.value = "";
+        if (eventField) {
+            eventField.value = "";
+        }
+        if (purchaseDateField) {
+            purchaseDateField.value = "";
+        }
+        if (existingNote) {
+            existingNote.style.display = "block";
+        }
+        if (newNote) {
+            newNote.style.display = "none";
+        }
+    } else {
+        if (purchaseDateField) {
+            purchaseDateField.value = dateField.value || "";
+        }
+        if (existingNote) {
+            existingNote.style.display = "none";
+        }
+        if (newNote) {
+            newNote.style.display = "block";
+        }
+    }
+}
+
+const aiUploadAcquisitionSource = document.getElementById("aiUploadAcquisitionSource");
+const aiUploadAcquisitionDate = document.getElementById("aiUploadAcquisitionDate");
+
+if (aiUploadAcquisitionSource) {
+    aiUploadAcquisitionSource.addEventListener("change", toggleAiUploadAcquisitionFields);
+}
+if (aiUploadAcquisitionDate) {
+    aiUploadAcquisitionDate.addEventListener("change", toggleAiUploadAcquisitionFields);
+}
+
+toggleAiUploadAcquisitionFields();
+
 </script>
 {% endblock %}
