@@ -1,4 +1,5 @@
 import os
+import shutil
 import json
 import base64
 import urllib.error
@@ -38,17 +39,40 @@ db.init_app(app)
 
 
 def ensure_upload_folder():
-    """Create persistent upload storage and remove any old static/uploads symlink.
+    """Create persistent upload storage and keep /static/uploads URLs working.
 
-    Uploaded images are stored on Render's persistent disk at /var/data/uploads.
-    The old symlink approach is intentionally removed because it interfered with
-    Render's static files. Image templates should use url_for('uploaded_file').
+    Render's app filesystem is temporary, so uploaded images are saved to
+    /var/data/uploads. Existing templates still reference /static/uploads/...,
+    so this creates static/uploads as a symlink to the persistent folder.
     """
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-    # Clean up a leftover symlink from the failed deploy, if it exists.
-    if os.path.islink(STATIC_UPLOAD_FOLDER):
-        os.unlink(STATIC_UPLOAD_FOLDER)
+    static_upload_folder = STATIC_UPLOAD_FOLDER
+    persistent_upload_folder = app.config["UPLOAD_FOLDER"]
+
+    if os.path.islink(static_upload_folder):
+        current_target = os.readlink(static_upload_folder)
+        if current_target != persistent_upload_folder:
+            os.unlink(static_upload_folder)
+            os.symlink(persistent_upload_folder, static_upload_folder)
+        return
+
+    if os.path.exists(static_upload_folder):
+        for filename in os.listdir(static_upload_folder):
+            source_path = os.path.join(static_upload_folder, filename)
+            destination_path = os.path.join(persistent_upload_folder, filename)
+
+            if os.path.isfile(source_path) and not os.path.exists(destination_path):
+                shutil.copy2(source_path, destination_path)
+                os.remove(source_path)
+
+        try:
+            os.rmdir(static_upload_folder)
+        except OSError:
+            return
+
+    os.makedirs(os.path.dirname(static_upload_folder), exist_ok=True)
+    os.symlink(persistent_upload_folder, static_upload_folder)
 
 
 def ensure_database_columns():
