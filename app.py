@@ -1,5 +1,4 @@
 import os
-import shutil
 import json
 import base64
 import urllib.error
@@ -20,7 +19,6 @@ app.secret_key = "cardwatch-dev-secret"
 
 DATA_DIR = os.environ.get("CARDWATCH_DATA_DIR", "/var/data")
 PERSISTENT_UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
-STATIC_UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(DATA_DIR, 'cardwatch.db')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -39,40 +37,12 @@ db.init_app(app)
 
 
 def ensure_upload_folder():
-    """Create persistent upload storage and keep /static/uploads URLs working.
+    """Create the persistent upload folder on Render's mounted disk.
 
-    Render's app filesystem is temporary, so uploaded images are saved to
-    /var/data/uploads. Existing templates still reference /static/uploads/...,
-    so this creates static/uploads as a symlink to the persistent folder.
+    Images are stored under app.config["UPLOAD_FOLDER"], which defaults to
+    /var/data/uploads when CARDWATCH_DATA_DIR is not set. No symlink is used.
     """
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-
-    static_upload_folder = STATIC_UPLOAD_FOLDER
-    persistent_upload_folder = app.config["UPLOAD_FOLDER"]
-
-    if os.path.islink(static_upload_folder):
-        current_target = os.readlink(static_upload_folder)
-        if current_target != persistent_upload_folder:
-            os.unlink(static_upload_folder)
-            os.symlink(persistent_upload_folder, static_upload_folder)
-        return
-
-    if os.path.exists(static_upload_folder):
-        for filename in os.listdir(static_upload_folder):
-            source_path = os.path.join(static_upload_folder, filename)
-            destination_path = os.path.join(persistent_upload_folder, filename)
-
-            if os.path.isfile(source_path) and not os.path.exists(destination_path):
-                shutil.copy2(source_path, destination_path)
-                os.remove(source_path)
-
-        try:
-            os.rmdir(static_upload_folder)
-        except OSError:
-            return
-
-    os.makedirs(os.path.dirname(static_upload_folder), exist_ok=True)
-    os.symlink(persistent_upload_folder, static_upload_folder)
 
 
 def ensure_database_columns():
@@ -218,8 +188,13 @@ def add_column_if_missing(table_name, column_name, ddl):
         db.session.commit()
 
 @app.route("/uploads/<path:filename>")
+@app.route("/static/uploads/<path:filename>")
 def uploaded_file(filename):
-    """Serve uploaded card images from persistent disk."""
+    """Serve uploaded card images from Render persistent disk.
+
+    The second route keeps existing templates working when they reference
+    /static/uploads/<filename>, while the actual files live in /var/data/uploads.
+    """
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 
@@ -336,6 +311,8 @@ def save_uploaded_image(file_storage):
     if not allowed_image(file_storage.filename):
         flash("Image must be a PNG, JPG, JPEG, GIF, or WEBP file.")
         return None
+
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
     original_filename = secure_filename(file_storage.filename)
     extension = original_filename.rsplit(".", 1)[1].lower()
