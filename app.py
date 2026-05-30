@@ -1,4 +1,5 @@
 import os
+import shutil
 import json
 import base64
 import urllib.error
@@ -11,15 +12,15 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from sqlalchemy import inspect, text
 from werkzeug.utils import secure_filename
 
-from models import db, Card, CardImportStaging, ImageInbox
+from models import db, Card, CardImportStaging
 
 app = Flask(__name__)
 
 app.secret_key = "cardwatch-dev-secret"
 
-DATA_DIR = os.environ.get("CARDWATCH_DATA_DIR", os.path.join(app.root_path, "data"))
+DATA_DIR = os.environ.get("CARDWATCH_DATA_DIR", "/var/data")
 PERSISTENT_UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
-os.makedirs(DATA_DIR, exist_ok=True)
+STATIC_UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(DATA_DIR, 'cardwatch.db')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -38,13 +39,40 @@ db.init_app(app)
 
 
 def ensure_upload_folder():
-    """Create persistent upload storage.
+    """Create persistent upload storage and keep /static/uploads URLs working.
 
-    Images are saved directly to app.config["UPLOAD_FOLDER"].
-    No filesystem linking, moving, or migration logic is used, so this works
-    on Windows local development and Render persistent disks.
+    Render's app filesystem is temporary, so uploaded images are saved to
+    /var/data/uploads. Existing templates still reference /static/uploads/...,
+    so this creates static/uploads as a symlink to the persistent folder.
     """
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+    static_upload_folder = STATIC_UPLOAD_FOLDER
+    persistent_upload_folder = app.config["UPLOAD_FOLDER"]
+
+    if os.path.islink(static_upload_folder):
+        current_target = os.readlink(static_upload_folder)
+        if current_target != persistent_upload_folder:
+            os.unlink(static_upload_folder)
+            os.symlink(persistent_upload_folder, static_upload_folder)
+        return
+
+    if os.path.exists(static_upload_folder):
+        for filename in os.listdir(static_upload_folder):
+            source_path = os.path.join(static_upload_folder, filename)
+            destination_path = os.path.join(persistent_upload_folder, filename)
+
+            if os.path.isfile(source_path) and not os.path.exists(destination_path):
+                shutil.copy2(source_path, destination_path)
+                os.remove(source_path)
+
+        try:
+            os.rmdir(static_upload_folder)
+        except OSError:
+            return
+
+    os.makedirs(os.path.dirname(static_upload_folder), exist_ok=True)
+    os.symlink(persistent_upload_folder, static_upload_folder)
 
 
 def ensure_database_columns():
@@ -334,27 +362,6 @@ def save_uploaded_image_with_source(file_storage):
     source_filename = secure_filename(file_storage.filename) if file_storage and file_storage.filename else None
     image_filename = save_uploaded_image(file_storage)
     return image_filename, source_filename
-
-
-def mark_inbox_image_used(inbox_image, card_id):
-    """Mark an Image Inbox item as attached to an inventory card."""
-    if not inbox_image:
-        return
-
-    inbox_image.status = "Used"
-    inbox_image.used_card_id = card_id
-    inbox_image.used_at = datetime.utcnow()
-
-
-def get_available_inbox_images(limit=24):
-    """Return recent unattached images available for Add Card."""
-    return (
-        ImageInbox.query
-        .filter(ImageInbox.status == "Available")
-        .order_by(ImageInbox.created_at.desc(), ImageInbox.id.desc())
-        .limit(limit)
-        .all()
-    )
 
 
 def normalize_year(value):
@@ -661,11 +668,6 @@ def inject_global_counts():
         manual_review_count = 0
         ai_import_action_count = 0
 
-    try:
-        image_inbox_count = ImageInbox.query.filter(ImageInbox.status == "Available").count()
-    except Exception:
-        image_inbox_count = 0
-
     return {
         "deal_cart_count": sum(
             (card.quantity or 1)
@@ -673,8 +675,7 @@ def inject_global_counts():
         ),
         "pending_import_count": pending_import_count,
         "manual_review_count": manual_review_count,
-        "ai_import_action_count": ai_import_action_count,
-        "image_inbox_count": image_inbox_count
+        "ai_import_action_count": ai_import_action_count
     }
 
 
@@ -1743,10 +1744,7 @@ def clone_card(card_id):
 
     return render_template(
         "add_card.html",
-        clone_source=source_card,
-        recent_added_cards=Card.query.order_by(Card.id.desc()).limit(5).all(),
-        image_inbox_items=get_available_inbox_images(limit=24),
-        selected_inbox_image_id=request.args.get("inbox_image_id", type=int)
+        clone_source=source_card
     )
 
 
@@ -1880,21 +1878,6 @@ def add_card():
         card_number = clean_value(request.form.get("card_number"))
         variation = clean_value(request.form.get("variation"))
         uploaded_image = save_uploaded_image(request.files.get("card_image"))
-        selected_inbox_image = None
-        selected_inbox_image_id = request.form.get("inbox_image_id")
-
-        if not uploaded_image and selected_inbox_image_id:
-            try:
-                selected_inbox_image = ImageInbox.query.get(int(selected_inbox_image_id))
-            except (TypeError, ValueError):
-                selected_inbox_image = None
-
-            if selected_inbox_image and selected_inbox_image.status == "Available":
-                uploaded_image = selected_inbox_image.image_filename
-            else:
-                selected_inbox_image = None
-                flash("Selected Image Inbox image is no longer available.")
-
         force_new_card = request.form.get("force_new") == "1"
 
         existing_query = Card.query.filter(
@@ -1940,13 +1923,10 @@ def add_card():
             existing_card.status = card_status
 
             if uploaded_image:
-                if existing_card.image_filename and existing_card.image_filename != uploaded_image:
+                if existing_card.image_filename:
                     delete_image_file(existing_card.image_filename)
 
                 existing_card.image_filename = uploaded_image
-
-            if selected_inbox_image:
-                mark_inbox_image_used(selected_inbox_image, existing_card.id)
 
             db.session.commit()
 
@@ -2006,11 +1986,6 @@ def add_card():
         )
 
         db.session.add(new_card)
-        db.session.flush()
-
-        if selected_inbox_image:
-            mark_inbox_image_used(selected_inbox_image, new_card.id)
-
         db.session.commit()
 
         if force_new_card:
@@ -2020,16 +1995,7 @@ def add_card():
 
         return redirect(url_for("card_detail", card_id=new_card.id))
 
-    recent_added_cards = Card.query.order_by(Card.id.desc()).limit(5).all()
-    image_inbox_items = get_available_inbox_images(limit=24)
-
-    return render_template(
-        "add_card.html",
-        clone_source=None,
-        recent_added_cards=recent_added_cards,
-        image_inbox_items=image_inbox_items,
-        selected_inbox_image_id=request.args.get("inbox_image_id", type=int)
-    )
+    return render_template("add_card.html", clone_source=None)
 
 
 
@@ -2437,9 +2403,8 @@ def mobile_capture():
 
 @app.route("/mobile-capture/upload", methods=["POST"])
 def mobile_capture_upload():
-    """Receive a captured phone image and save it to AI Review or Image Inbox."""
+    """Receive a captured phone image, save it, and send it into the AI import review queue."""
     uploaded_file = request.files.get("card_image")
-    capture_mode = request.form.get("capture_mode") or "ai_review"
 
     if not uploaded_file or not uploaded_file.filename:
         return {"ok": False, "error": "No image received."}, 400
@@ -2448,27 +2413,6 @@ def mobile_capture_upload():
 
     if not image_filename:
         return {"ok": False, "error": "Image could not be saved."}, 400
-
-    if capture_mode == "image_inbox":
-        inbox_image = ImageInbox(
-            image_filename=image_filename,
-            source_filename=source_filename or uploaded_file.filename,
-            source="Mobile Capture",
-            status="Available",
-            notes="Captured from Mobile Capture."
-        )
-        db.session.add(inbox_image)
-        db.session.commit()
-
-        return {
-            "ok": True,
-            "mode": "image_inbox",
-            "filename": image_filename,
-            "image_inbox_id": inbox_image.id,
-            "image_url": url_for("uploaded_file", filename=image_filename),
-            "image_inbox_url": url_for("image_inbox"),
-            "message": "Image saved to Image Inbox."
-        }
 
     staged_card = CardImportStaging(
         image_filename=image_filename,
@@ -2509,60 +2453,12 @@ def mobile_capture_upload():
 
     return {
         "ok": True,
-        "mode": "ai_review",
         "filename": image_filename,
         "staging_id": staged_card.id,
         "ai_status": staged_card.ai_status,
         "review_url": url_for("ai_import_review"),
         "message": "Image saved and added to the AI review queue."
     }
-
-
-@app.route("/image-inbox")
-def image_inbox():
-    """Browse images captured into CardDesk before they are attached to cards."""
-    status_filter = request.args.get("status", "Available")
-
-    query = ImageInbox.query
-
-    if status_filter == "All":
-        pass
-    elif status_filter == "Used":
-        query = query.filter(ImageInbox.status == "Used")
-    else:
-        status_filter = "Available"
-        query = query.filter(ImageInbox.status == "Available")
-
-    images = query.order_by(ImageInbox.created_at.desc(), ImageInbox.id.desc()).all()
-
-    counts = {
-        "available": ImageInbox.query.filter(ImageInbox.status == "Available").count(),
-        "used": ImageInbox.query.filter(ImageInbox.status == "Used").count(),
-        "all": ImageInbox.query.count(),
-    }
-
-    return render_template(
-        "image_inbox.html",
-        images=images,
-        status_filter=status_filter,
-        counts=counts
-    )
-
-
-@app.route("/image-inbox/<int:image_id>/delete", methods=["POST"])
-def delete_image_inbox_item(image_id):
-    inbox_image = ImageInbox.query.get_or_404(image_id)
-
-    if inbox_image.status == "Used" or inbox_image.used_card_id:
-        flash("Used Image Inbox items are kept so existing card images are not broken.")
-        return redirect(request.referrer or url_for("image_inbox"))
-
-    delete_image_file(inbox_image.image_filename)
-    db.session.delete(inbox_image)
-    db.session.commit()
-
-    flash("Image Inbox item deleted.")
-    return redirect(request.referrer or url_for("image_inbox"))
 
 
 @app.route("/fulfillment")
