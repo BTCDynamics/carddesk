@@ -1248,6 +1248,15 @@ def inventory_health():
             "description": "Comp value helps estimate inventory value.",
             "count": active_inventory_query.filter(db.or_(Card.estimated_value.is_(None), Card.estimated_value == 0)).count(),
         },
+        {
+            "key": "ai_review",
+            "label": "AI Review Queue",
+            "description": "Captured or uploaded cards waiting for import review.",
+            "count": CardImportStaging.query.filter(
+                CardImportStaging.ai_status.in_(["Pending Review", "Needs Manual Review"])
+            ).count(),
+            "external_url": url_for("ai_import_review"),
+        },
     ]
 
     if issue_filter == "cost":
@@ -1262,6 +1271,8 @@ def inventory_health():
     elif issue_filter == "value":
         cards_query = active_inventory_query.filter(db.or_(Card.estimated_value.is_(None), Card.estimated_value == 0))
         current_label = "Missing Comp Value"
+    elif issue_filter == "ai_review":
+        return redirect(url_for("ai_import_review"))
     else:
         issue_filter = "all"
         cards_query = base_query.filter(
