@@ -217,23 +217,23 @@ document.addEventListener("DOMContentLoaded", function () {
                                         <input class="form-control required-field-input {% if focus_id == staged.id and 'Card Number' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="text" name="card_number" required value="{{ staged.card_number or '' }}">
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label required-field-label">Set Name</label>
-                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Set' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="text" name="set_name" required value="{{ staged.set_name or '' }}">
+                                        <label class="form-label">Set Name</label>
+                                        <input class="form-control" type="text" name="set_name" value="{{ staged.set_name or '' }}">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Variation / Parallel</label>
                                         <input class="form-control" type="text" name="variation" value="{{ staged.variation or '' }}">
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label required-field-label">Type</label>
-                                        <select class="form-select required-field-input {% if focus_id == staged.id and 'Card Type' in missing_fields %}is-invalid ai-required-missing{% endif %}" name="card_type" required>
+                                        <label class="form-label">Type</label>
+                                        <select class="form-select" name="card_type">
                                             <option value="Raw" {% if staged.card_type != 'Graded' %}selected{% endif %}>Raw</option>
                                             <option value="Graded" {% if staged.card_type == 'Graded' %}selected{% endif %}>Graded</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label required-field-label">Quantity</label>
-                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Quantity' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="number" min="1" name="quantity" required value="{{ staged.quantity or 1 }}">
+                                        <label class="form-label">Quantity</label>
+                                        <input class="form-control" type="number" min="1" name="quantity" value="{{ staged.quantity or 1 }}">
                                     </div>
 
                                     <div class="col-md-3">
@@ -317,8 +317,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                         </select>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label required-field-label">Storage Location</label>
-                                        <input class="form-control required-field-input {% if focus_id == staged.id and 'Storage Location' in missing_fields %}is-invalid ai-required-missing{% endif %}" type="text" name="storage_location" required value="{{ staged.storage_location or '' }}">
+                                        <label class="form-label">Storage Location</label>
+                                        <input class="form-control" type="text" name="storage_location" value="{{ staged.storage_location or '' }}">
                                     </div>
                                     <div class="col-md-8">
                                         <label class="form-label">Notes</label>

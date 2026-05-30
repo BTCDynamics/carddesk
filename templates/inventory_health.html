@@ -27,8 +27,9 @@
 }
 
 .health-tile.active {
-    border: 2px solid #f59e0b;
-    background: linear-gradient(145deg, #fff7ed, #fef3c7);
+    border: 2px solid #2563eb;
+    background: linear-gradient(145deg, #eff6ff, #dbeafe);
+    box-shadow: 0 .75rem 1.5rem rgba(37, 99, 235, .16);
 }
 
 .health-count {
@@ -85,11 +86,11 @@
     <a class="health-tile {% if issue_filter == 'all' %}active{% endif %}" href="{{ url_for('inventory_health') }}">
         <div class="health-count">{{ summary.health_issue_count }}</div>
         <div class="health-label">Total Issues</div>
-        <div class="health-description">All cleanup reminders in one place.</div>
+        <div class="health-description">Inventory cleanup plus staged AI review reminders.</div>
     </a>
 
     {% for item in issue_definitions %}
-        <a class="health-tile {% if issue_filter == item.key %}active{% endif %}" href="{{ url_for('inventory_health', issue=item.key) }}">
+        <a class="health-tile {% if issue_filter == item.key %}active{% endif %}" href="{{ item.external_url if item.external_url is defined else url_for('inventory_health', issue=item.key) }}">
             <div class="health-count">{{ item.count }}</div>
             <div class="health-label">{{ item.label }}</div>
             <div class="health-description">{{ item.description }}</div>
@@ -102,7 +103,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div>
                 <h5 class="mb-1">{{ current_label }}</h5>
-                <div class="text-muted small">Showing up to 100 records that need attention.</div>
+                <div class="text-muted small">Showing up to 100 inventory records that need attention. AI Review items open from the tile above.</div>
             </div>
             <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('inventory_health') }}">Reset View</a>
         </div>
