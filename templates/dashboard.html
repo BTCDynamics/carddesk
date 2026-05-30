@@ -375,7 +375,7 @@
     </div>
 
     <div class="col-lg-4">
-        {% set action_needed_total = (open_workflow_tasks or 0) + (missing_storage_cards or 0) + (ai_action_needed_cards or 0) %}
+        {% set action_needed_total = (open_workflow_tasks or 0) + (ai_action_needed_cards or 0) %}
         <div class="card page-card h-100">
             <div class="card-header fw-bold d-flex justify-content-between align-items-center">
                 <span>Action Needed</span>
@@ -428,16 +428,7 @@
                         </div>
                         <span class="workflow-action-count {% if ai_action_needed_cards and ai_action_needed_cards > 0 %}workflow-count-alert{% endif %}">{{ ai_action_needed_cards or 0 }}</span>
                     </a>
-
-                    <a class="workflow-action-row workflow-yellow" href="{{ url_for('cards', storage='__missing__') }}">
-                        <div>
-                            <div class="workflow-action-title">Missing Storage Location</div>
-                            <div class="workflow-action-subtitle">Active inventory cards that still need a box, binder, or showcase location.</div>
-                        </div>
-                        <span class="workflow-action-count {% if missing_storage_cards and missing_storage_cards > 0 %}workflow-count-alert{% endif %}">{{ missing_storage_cards or 0 }}</span>
-                    </a>
-
-                    <div class="workflow-action-row workflow-muted">
+<div class="workflow-action-row workflow-muted">
                         <div>
                             <div class="workflow-action-title">Inventory Holding</div>
                             <div class="workflow-action-subtitle">Inventory not currently Active / Available.</div>

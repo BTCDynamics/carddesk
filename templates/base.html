@@ -69,6 +69,17 @@
                 AI Upload
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link position-relative {% if health_issue_count %}text-warning fw-bold{% endif %}" href="{{ url_for('inventory_health') }}">
+                Health
+                {% if health_issue_count %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                        {{ health_issue_count }}
+                    </span>
+                {% endif %}
+            </a>
+        </li>
+
 <li class="nav-item">
             <a class="nav-link text-warning position-relative fw-bold"
                href="{{ url_for('deal_cart') }}">
