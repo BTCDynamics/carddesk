@@ -1,171 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}PSA Cert Lookup | CardDesk
-<script src="https://unpkg.com/html5-qrcode" defer></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const certInput = document.getElementById("psa-cert-number");
-    const startButton = document.getElementById("psa-start-scan-btn");
-    const stopButton = document.getElementById("psa-stop-scan-btn");
-    const scanPanel = document.getElementById("psa-scan-panel");
-    const scanStatus = document.getElementById("psa-scan-status");
-
-    let scanner = null;
-    let scannerRunning = false;
-
-    function cleanCertValue(rawValue) {
-        const value = String(rawValue || "").trim();
-        const digitGroups = value.match(/\d{6,}/g);
-
-        if (digitGroups && digitGroups.length) {
-            return digitGroups[digitGroups.length - 1];
-        }
-
-        return value.replace(/[^A-Za-z0-9]/g, "");
-    }
-
-    function setStatus(message, cssClass) {
-        if (!scanStatus) {
-            return;
-        }
-
-        scanStatus.className = "psa-scan-status " + (cssClass || "text-muted");
-        scanStatus.textContent = message;
-    }
-
-    async function stopScanner() {
-        if (scanner && scannerRunning) {
-            try {
-                await scanner.stop();
-            } catch (error) {
-                // Ignore stop errors so the UI can still close cleanly.
-            }
-        }
-
-        scannerRunning = false;
-
-        if (scanPanel) {
-            scanPanel.classList.remove("active");
-        }
-
-        setStatus("Camera stopped.", "text-muted");
-    }
-
-    async function startScanner() {
-        if (!certInput || !startButton) {
-            return;
-        }
-
-        if (!window.Html5Qrcode) {
-            setStatus("Barcode scanner library did not load. Check internet access and try again.", "text-danger");
-            return;
-        }
-
-        if (scanPanel) {
-            scanPanel.classList.add("active");
-        }
-
-        setStatus("Starting camera...", "text-muted");
-
-        if (!scanner) {
-            scanner = new Html5Qrcode("psa-barcode-reader");
-        }
-
-        try {
-            scannerRunning = true;
-
-            await scanner.start(
-                { facingMode: "environment" },
-                {
-                    fps: 10,
-                    qrbox: function(viewfinderWidth, viewfinderHeight) {
-                        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                        return {
-                            width: Math.floor(minEdge * 0.9),
-                            height: Math.floor(minEdge * 0.35)
-                        };
-                    }
-                },
-                async function(decodedText) {
-                    const certNumber = cleanCertValue(decodedText);
-
-                    if (!certNumber) {
-                        setStatus("Barcode detected, but no cert number was found.", "text-warning");
-                        return;
-                    }
-
-                    certInput.value = certNumber;
-                    setStatus("Cert number found: " + certNumber, "text-success");
-
-                    await stopScanner();
-                    certInput.focus();
-                },
-                function() {
-                    // Ignore scan misses; the library calls this frequently while searching.
-                }
-            );
-
-            setStatus("Camera active. Aim at the PSA barcode.", "text-info");
-        } catch (error) {
-            scannerRunning = false;
-            setStatus("Could not start camera: " + error, "text-danger");
-        }
-    }
-
-    if (startButton) {
-        startButton.addEventListener("click", startScanner);
-    }
-
-    if (stopButton) {
-        stopButton.addEventListener("click", stopScanner);
-    }
-
-    window.addEventListener("beforeunload", function () {
-        if (scanner && scannerRunning) {
-            scanner.stop().catch(function () {});
-        }
-    });
-});
-</script>
-
-{% endblock %}
+{% block title %}PSA Cert Lookup | CardDesk{% endblock %}
 
 {% block content %}
-<style>
-.psa-scan-panel {
-    display: none;
-    margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 1rem;
-    border: 1px solid rgba(14, 165, 233, .25);
-    background: rgba(14, 165, 233, .06);
-}
-
-.psa-scan-panel.active {
-    display: block;
-}
-
-#psa-barcode-reader {
-    width: 100%;
-    max-width: 520px;
-    margin: 0 auto;
-    overflow: hidden;
-    border-radius: 1rem;
-    background: #0f172a;
-}
-
-.psa-scan-status {
-    margin-top: .75rem;
-    font-size: .9rem;
-    font-weight: 700;
-}
-
-.psa-scan-tip {
-    font-size: .85rem;
-    color: #64748b;
-}
-</style>
-
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
         <h1 class="h2 mb-1">PSA Cert Lookup</h1>
@@ -189,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <div class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label class="form-label fw-bold">PSA Cert Number</label>
-                    <input id="psa-cert-number" class="form-control form-control-lg" type="text" name="cert_number" placeholder="Example: 98491811" inputmode="numeric" autocomplete="off" required autofocus>
+                    <input class="form-control form-control-lg" type="text" name="cert_number" placeholder="Example: 98491811" required autofocus>
                     <div class="form-text">CardDesk will use PSA's cert data to pre-fill the review record.</div>
                 </div>
                 <div class="col-md-3">
@@ -213,25 +50,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         Lookup PSA Cert
                     </button>
                 </div>
-            </div>
-
-            <div class="mt-3">
-                <button class="btn btn-outline-info" type="button" id="psa-start-scan-btn">
-                    Scan PSA Barcode
-                </button>
-                <span class="text-muted small ms-2">Works best on a phone with camera permission enabled.</span>
-            </div>
-
-            <div class="psa-scan-panel" id="psa-scan-panel">
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                    <div>
-                        <div class="fw-bold">PSA Barcode Scanner</div>
-                        <div class="psa-scan-tip">Point your phone camera at the PSA slab barcode. CardDesk will fill the cert number when detected.</div>
-                    </div>
-                    <button class="btn btn-sm btn-outline-secondary" type="button" id="psa-stop-scan-btn">Close Scanner</button>
-                </div>
-                <div id="psa-barcode-reader"></div>
-                <div class="psa-scan-status text-muted" id="psa-scan-status">Camera not started.</div>
             </div>
 
             <hr class="my-4">
