@@ -243,80 +243,6 @@ def health():
 
 
 
-@app.route("/test-psa/<cert_number>")
-def test_psa_cert_lookup(cert_number):
-    """Temporary PSA cert lookup test route.
-
-    Visit /test-psa/YOURCERTNUMBER after deploying to Render.
-    Remove this route after PSA connectivity is confirmed.
-    """
-    token_present = bool(PSA_ACCESS_TOKEN)
-
-    try:
-        data = lookup_psa_cert(cert_number)
-        response_payload = {
-            "ok": True,
-            "token_present": token_present,
-            "cert_number": cert_number,
-            "response": data,
-        }
-    except Exception as error:
-        response_payload = {
-            "ok": False,
-            "token_present": token_present,
-            "cert_number": cert_number,
-            "error": str(error),
-        }
-
-    return (
-        "<h1>PSA Cert Lookup Test</h1>"
-        "<p><strong>Token present:</strong> "
-        + ("Yes" if token_present else "No")
-        + "</p>"
-        "<pre>"
-        + json.dumps(response_payload, indent=2, sort_keys=True)
-        + "</pre>"
-    )
-
-
-
-@app.route("/test-psa-image/<cert_number>")
-def test_psa_cert_image_lookup(cert_number):
-    """Temporary PSA cert image lookup test route.
-
-    Visit /test-psa-image/YOURCERTNUMBER after deploying to Render.
-    Remove this route after PSA image connectivity/payload is confirmed.
-    """
-    token_present = bool(PSA_ACCESS_TOKEN)
-
-    try:
-        data = lookup_psa_cert_images(cert_number)
-        response_payload = {
-            "ok": True,
-            "token_present": token_present,
-            "cert_number": cert_number,
-            "endpoint": PSA_CERT_IMAGES_ENDPOINT,
-            "response": data,
-        }
-    except Exception as error:
-        response_payload = {
-            "ok": False,
-            "token_present": token_present,
-            "cert_number": cert_number,
-            "endpoint": PSA_CERT_IMAGES_ENDPOINT,
-            "error": str(error),
-        }
-
-    return (
-        "<h1>PSA Cert Image Lookup Test</h1>"
-        "<p><strong>Token present:</strong> "
-        + ("Yes" if token_present else "No")
-        + "</p>"
-        "<pre>"
-        + json.dumps(response_payload, indent=2, sort_keys=True)
-        + "</pre>"
-    )
-
 def clean_value(value):
     if value:
         return value.strip()
@@ -869,19 +795,36 @@ def recognize_card_image(image_filename):
 
 
 
-def lookup_psa_cert(cert_number):
-    """Look up one PSA certification number using PSA's public API.
+def clean_psa_cert_number(cert_number):
+    """Return only the PSA cert-number characters a user might paste or type."""
+    value = clean_value(cert_number)
 
-    This is intentionally lightweight for initial testing. It returns the raw
-    decoded JSON response so we can confirm the token, endpoint, and payload
-    shape before wiring PSA lookup into the normal CardDesk import flow.
-    """
-    cert_number = clean_value(cert_number)
+    if not value:
+        return None
+
+    return re.sub(r"[^A-Za-z0-9]", "", value)
+
+
+def psa_access_token():
+    """Return a trimmed PSA access token from the environment."""
+    token = os.environ.get("PSA_ACCESS_TOKEN") or PSA_ACCESS_TOKEN
+
+    if not token:
+        return None
+
+    return token.strip()
+
+
+def lookup_psa_cert(cert_number):
+    """Look up one PSA certification number using PSA's public API."""
+    cert_number = clean_psa_cert_number(cert_number)
 
     if not cert_number:
         raise RuntimeError("Missing PSA cert number.")
 
-    if not PSA_ACCESS_TOKEN:
+    token = psa_access_token()
+
+    if not token:
         raise RuntimeError("Missing PSA_ACCESS_TOKEN environment variable.")
 
     endpoint = PSA_CERT_LOOKUP_ENDPOINT.rstrip("/")
@@ -890,7 +833,7 @@ def lookup_psa_cert(cert_number):
     api_request = urllib.request.Request(
         lookup_url,
         headers={
-            "Authorization": f"Bearer {PSA_ACCESS_TOKEN}",
+            "Authorization": f"Bearer {token}",
             "Accept": "application/json",
             "User-Agent": "CardDesk/1.0 (+https://carddesk.app)",
         },
@@ -908,20 +851,16 @@ def lookup_psa_cert(cert_number):
         raise RuntimeError(f"PSA connection error: {error.reason}") from error
 
 
-
 def lookup_psa_cert_images(cert_number):
-    """Look up PSA certification images using PSA's public API image endpoint.
-
-    This temporary helper returns the raw decoded JSON response so we can see
-    exactly what PSA provides before wiring images into the normal CardDesk
-    import flow.
-    """
-    cert_number = clean_value(cert_number)
+    """Look up PSA certification front/back images using PSA's public API."""
+    cert_number = clean_psa_cert_number(cert_number)
 
     if not cert_number:
         raise RuntimeError("Missing PSA cert number.")
 
-    if not PSA_ACCESS_TOKEN:
+    token = psa_access_token()
+
+    if not token:
         raise RuntimeError("Missing PSA_ACCESS_TOKEN environment variable.")
 
     endpoint = PSA_CERT_IMAGES_ENDPOINT.rstrip("/")
@@ -930,7 +869,7 @@ def lookup_psa_cert_images(cert_number):
     api_request = urllib.request.Request(
         lookup_url,
         headers={
-            "Authorization": f"Bearer {PSA_ACCESS_TOKEN}",
+            "Authorization": f"Bearer {token}",
             "Accept": "application/json",
             "User-Agent": "CardDesk/1.0 (+https://carddesk.app)",
         },
@@ -946,6 +885,243 @@ def lookup_psa_cert_images(cert_number):
         raise RuntimeError(f"PSA Images HTTP {error.code}: {error_body}") from error
     except urllib.error.URLError as error:
         raise RuntimeError(f"PSA Images connection error: {error.reason}") from error
+
+
+def title_case_psa_value(value):
+    """Make PSA's all-caps values easier to read in CardDesk."""
+    value = clean_value(value)
+
+    if not value:
+        return None
+
+    return " ".join(word.capitalize() if not word.isupper() or len(word) > 3 else word for word in value.title().split())
+
+
+def split_psa_brand_set(brand_value):
+    """Split PSA's Brand field into CardDesk Brand and Set Name values.
+
+    PSA commonly returns values like "TOPPS COSMIC CHROME". CardDesk works
+    better with Brand="Topps" and Set Name="Topps Cosmic Chrome".
+    """
+    display_value = title_case_psa_value(brand_value)
+
+    if not display_value:
+        return None, None
+
+    known_manufacturers = [
+        "Topps",
+        "Panini",
+        "Bowman",
+        "Upper Deck",
+        "Fleer",
+        "Donruss",
+        "Leaf",
+        "Score",
+        "Skybox",
+        "O-Pee-Chee",
+    ]
+
+    upper_value = display_value.upper()
+
+    for manufacturer in known_manufacturers:
+        if upper_value == manufacturer.upper() or upper_value.startswith(manufacturer.upper() + " "):
+            return manufacturer, display_value
+
+    first_word = display_value.split()[0] if display_value.split() else display_value
+
+    return first_word, display_value
+
+
+def sport_from_psa_category(category):
+    category_text = (category or "").upper()
+
+    if "BASEBALL" in category_text:
+        return "Baseball"
+    if "FOOTBALL" in category_text:
+        return "Football"
+    if "BASKETBALL" in category_text:
+        return "Basketball"
+    if "HOCKEY" in category_text:
+        return "Hockey"
+    if "SOCCER" in category_text:
+        return "Soccer"
+    if "GOLF" in category_text:
+        return "Golf"
+    if "RACING" in category_text:
+        return "Racing"
+    if "WRESTLING" in category_text:
+        return "Wrestling"
+    if "BOXING" in category_text:
+        return "Boxing"
+
+    return "Other"
+
+
+def extract_psa_cert_payload(response_json):
+    """Return the nested PSACert object from PSA's cert response."""
+    payload = response_json or {}
+    psa_cert = payload.get("PSACert") or payload.get("psaCert") or payload
+
+    if not isinstance(psa_cert, dict):
+        raise RuntimeError("PSA response did not include a usable cert payload.")
+
+    return psa_cert
+
+
+def select_psa_front_image_url(images_response):
+    """Return PSA's front image URL when available, otherwise any image URL."""
+    images = images_response or []
+
+    if isinstance(images, dict):
+        images = images.get("Images") or images.get("images") or images.get("data") or []
+
+    if not isinstance(images, list):
+        return None
+
+    fallback_url = None
+
+    for image in images:
+        if not isinstance(image, dict):
+            continue
+
+        image_url = clean_value(
+            image.get("ImageURL")
+            or image.get("ImageUrl")
+            or image.get("imageUrl")
+            or image.get("url")
+        )
+
+        if image_url and fallback_url is None:
+            fallback_url = image_url
+
+        if image_url and bool(image.get("IsFrontImage")):
+            return image_url
+
+    return fallback_url
+
+
+def download_psa_image_to_uploads(image_url, cert_number):
+    """Download PSA's front image into CardDesk's upload folder and return filename."""
+    image_url = clean_value(image_url)
+    cert_number = clean_psa_cert_number(cert_number)
+
+    if not image_url or not cert_number:
+        return None
+
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+    url_without_query = image_url.split("?", 1)[0]
+    extension = url_without_query.rsplit(".", 1)[-1].lower() if "." in url_without_query else "jpg"
+
+    if extension not in ALLOWED_IMAGE_EXTENSIONS:
+        extension = "jpg"
+
+    filename = unique_upload_filename(f"psa_{cert_number}_front", extension)
+    destination_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+
+    image_request = urllib.request.Request(
+        image_url,
+        headers={
+            "User-Agent": "CardDesk/1.0 (+https://carddesk.app)",
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        },
+        method="GET",
+    )
+
+    try:
+        with urllib.request.urlopen(image_request, timeout=30) as response:
+            image_bytes = response.read()
+
+        if not image_bytes:
+            return None
+
+        with open(destination_path, "wb") as image_file:
+            image_file.write(image_bytes)
+
+        return filename
+    except Exception:
+        return None
+
+
+def build_psa_notes(psa_cert, images_response=None, image_filename=None):
+    """Build human-readable notes from PSA fields worth preserving."""
+    note_parts = ["Imported from PSA Cert Lookup."]
+
+    if psa_cert.get("TotalPopulation") not in (None, ""):
+        note_parts.append(f"PSA total population: {psa_cert.get('TotalPopulation')}.")
+    if psa_cert.get("PopulationHigher") not in (None, ""):
+        note_parts.append(f"PSA population higher: {psa_cert.get('PopulationHigher')}.")
+    if psa_cert.get("SpecID") not in (None, ""):
+        note_parts.append(f"PSA Spec ID: {psa_cert.get('SpecID')}.")
+    if image_filename:
+        note_parts.append("Official PSA front image saved.")
+
+    return "\n".join(note_parts)
+
+
+def stage_psa_cert_lookup(cert_number, form_data):
+    """Create a CardImportStaging row from a PSA cert lookup."""
+    cert_number = clean_psa_cert_number(cert_number)
+
+    if not cert_number:
+        raise RuntimeError("Enter a PSA cert number.")
+
+    cert_response = lookup_psa_cert(cert_number)
+    psa_cert = extract_psa_cert_payload(cert_response)
+
+    images_response = []
+    image_filename = None
+
+    try:
+        images_response = lookup_psa_cert_images(cert_number)
+        image_url = select_psa_front_image_url(images_response)
+        image_filename = download_psa_image_to_uploads(image_url, cert_number)
+    except Exception:
+        images_response = []
+
+    brand, set_name = split_psa_brand_set(psa_cert.get("Brand"))
+    grade_value = clean_value(psa_cert.get("CardGrade") or psa_cert.get("GradeDescription"))
+    subject = title_case_psa_value(psa_cert.get("Subject"))
+    variety = title_case_psa_value(psa_cert.get("Variety"))
+    raw_response = {
+        "source": "PSA Cert Lookup",
+        "cert_response": cert_response,
+        "images_response": images_response,
+        "stored_image_filename": image_filename,
+    }
+
+    staged_card = CardImportStaging(
+        image_filename=image_filename,
+        source_filename=f"PSA Cert {cert_number}",
+        player_name=subject,
+        year=normalize_year(psa_cert.get("Year")),
+        sport=sport_from_psa_category(psa_cert.get("Category")),
+        brand=brand,
+        set_name=set_name,
+        card_number=clean_value(psa_cert.get("CardNumber")),
+        variation=variety,
+        card_type="Graded",
+        grading_company="PSA",
+        actual_grade=grade_value,
+        cert_number=clean_value(psa_cert.get("CertNumber") or cert_number),
+        quantity=1,
+        collection_type=form_data.get("collection_type") or "Inventory",
+        status=form_data.get("status") or "Active",
+        purchase_date=purchase_date_value(form_data),
+        acquisition_source=acquisition_value(form_data.get("acquisition_source")),
+        acquisition_date=acquisition_date_value(form_data),
+        acquisition_event=clean_value(form_data.get("acquisition_event")),
+        storage_location=clean_value(form_data.get("storage_location")),
+        ai_confidence=100,
+        ai_status="Pending Review",
+        raw_response_json=json.dumps(raw_response, indent=2, sort_keys=True),
+        notes=build_psa_notes(psa_cert, images_response, image_filename),
+    )
+
+    db.session.add(staged_card)
+    db.session.commit()
+
+    return staged_card
 
 def find_probable_duplicate_from_staging(staged_card):
     if not staged_card.player_name:
@@ -2623,6 +2799,42 @@ def add_card():
     return render_template("add_card.html", clone_source=None)
 
 
+
+
+
+@app.route("/psa-lookup", methods=["GET", "POST"])
+def psa_lookup():
+    """Look up a PSA cert number, save the official PSA image, and stage it for review."""
+    if request.method == "POST":
+        cert_number = clean_psa_cert_number(request.form.get("cert_number"))
+
+        if not cert_number:
+            flash("Enter a PSA cert number.")
+            return redirect(url_for("psa_lookup"))
+
+        try:
+            staged_card = stage_psa_cert_lookup(cert_number, request.form)
+            flash(f"PSA cert {cert_number} staged for review.")
+            return redirect(
+                url_for(
+                    "ai_import_review",
+                    status="Pending Review",
+                    focus=staged_card.id
+                )
+            )
+        except Exception as error:
+            flash(f"PSA lookup failed: {error}")
+            return redirect(url_for("psa_lookup"))
+
+    pending_count = CardImportStaging.query.filter(
+        CardImportStaging.ai_status.in_(["Pending Review", "Needs Manual Review"])
+    ).count()
+
+    return render_template(
+        "psa_lookup.html",
+        token_configured=bool(psa_access_token()),
+        pending_count=pending_count,
+    )
 
 @app.route("/ai-import", methods=["GET", "POST"])
 def ai_import_upload():
