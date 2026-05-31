@@ -529,6 +529,13 @@
             </div>
 
             <div class="d-flex flex-wrap gap-2">
+                {% if storage_filter %}
+                    <a class="btn btn-sm btn-outline-info"
+                       href="{{ url_for('pull_sheet', storage=storage_filter, status=status_filter, collection_type=collection_type_filter) }}"
+                       target="_blank">
+                        Print Pull Sheet
+                    </a>
+                {% endif %}
                 <a class="btn btn-sm btn-outline-dark" href="{{ url_for('deal_cart') }}">View Deal Cart</a>
                 {% if deal_cart_count %}
                     <form method="POST" action="{{ url_for('clear_deal_cart') }}" class="d-inline">

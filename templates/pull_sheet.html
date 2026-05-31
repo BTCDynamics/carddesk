@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Pull Sheet{% endblock %}
+
+{% block content %}
+<style>
+.pull-sheet-wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.pull-sheet-header {
+    color: #f8fafc;
+}
+
+.pull-sheet-card {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr) 115px;
+    gap: 14px;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #111827;
+    border: 1px solid #d1d5db;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pull-sheet-thumb {
+    width: 76px;
+    height: 102px;
+    object-fit: contain;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.pull-sheet-no-image {
+    width: 76px;
+    height: 102px;
+    display: grid;
+    place-items: center;
+    border: 1px dashed #94a3b8;
+    border-radius: 8px;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: center;
+    background: #f8fafc;
+}
+
+.pull-sheet-title {
+    font-size: 1.05rem;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.pull-sheet-meta {
+    font-size: 0.88rem;
+    line-height: 1.35;
+    color: #334155;
+}
+
+.pull-sheet-location {
+    font-weight: 900;
+    color: #111827;
+}
+
+.pull-sheet-check {
+    text-align: center;
+    font-weight: 900;
+    color: #111827;
+}
+
+.pull-sheet-box {
+    width: 34px;
+    height: 34px;
+    margin: 0 auto 6px auto;
+    border: 3px solid #111827;
+    border-radius: 4px;
+}
+
+.pull-sheet-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.pull-sheet-summary-item {
+    padding: 8px 12px;
+    border-radius: 999px;
+    color: #111827;
+    background: #e5e7eb;
+    font-weight: 800;
+}
+
+@media print {
+    nav,
+    .navbar,
+    .no-print,
+    .alert,
+    footer {
+        display: none !important;
+    }
+
+    body,
+    main.container-fluid {
+        color: #000000 !important;
+        background: #ffffff !important;
+    }
+
+    .pull-sheet-wrap {
+        max-width: none;
+        margin: 0;
+    }
+
+    .pull-sheet-header {
+        color: #000000 !important;
+        margin-bottom: 12px !important;
+    }
+
+    .pull-sheet-card {
+        box-shadow: none !important;
+        border: 1px solid #000000 !important;
+        border-radius: 0;
+        margin-bottom: 8px;
+    }
+
+    .pull-sheet-summary-item {
+        border: 1px solid #000000;
+        background: #ffffff !important;
+    }
+
+    a {
+        color: #000000 !important;
+        text-decoration: none !important;
+    }
+}
+</style>
+
+<div class="pull-sheet-wrap">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4 pull-sheet-header">
+        <div>
+            <h1 class="h2 mb-1">Pull Sheet</h1>
+            <div class="text-muted">
+                {% if storage_filter == "__missing__" %}
+                    Storage: Missing Location
+                {% elif storage_filter %}
+                    Storage: {{ storage_filter }}
+                {% else %}
+                    Storage: All Locations
+                {% endif %}
+                · Date: {{ today }}
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 no-print">
+            <button class="btn btn-primary" type="button" onclick="window.print()">Print</button>
+            <a class="btn btn-outline-light" href="{{ url_for('cards', storage=storage_filter, status=status_filter, collection_type=collection_type_filter) }}">Back to Cards</a>
+        </div>
+    </div>
+
+    <div class="pull-sheet-summary">
+        <div class="pull-sheet-summary-item">Records: {{ cards|length }}</div>
+        <div class="pull-sheet-summary-item">Cards: {{ total_quantity }}</div>
+        <div class="pull-sheet-summary-item">Ask Total: ${{ "%.2f"|format(total_asking or 0) }}</div>
+        <div class="pull-sheet-summary-item">Comp Total: ${{ "%.2f"|format(total_estimated_value or 0) }}</div>
+    </div>
+
+    {% for card in cards %}
+        <div class="pull-sheet-card">
+            <div>
+                {% if card.image_filename %}
+                    <img class="pull-sheet-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name }} card image">
+                {% else %}
+                    <div class="pull-sheet-no-image">No Image</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <div class="pull-sheet-title">{{ card.player_name }}</div>
+                <div class="pull-sheet-meta">
+                    <strong>{{ card.card_code }}</strong>
+                    · {{ card.year or '' }} {{ card.brand or '' }} {{ card.set_name or '' }}
+                    {% if card.card_number %} #{{ card.card_number }}{% endif %}
+                    {% if card.variation %}<br>Variation: {{ card.variation }}{% endif %}
+                    <br>
+                    Type: {{ card.card_type or '—' }}
+                    {% if card.card_type == "Graded" and (card.grading_company or card.actual_grade) %}
+                        · {{ card.grading_company or '' }} {{ card.actual_grade or '' }}
+                    {% elif card.card_type == "Raw" and card.grade_estimate %}
+                        · Estimate {{ card.grade_estimate }}
+                    {% endif %}
+                    <br>
+                    Qty: <strong>{{ card.quantity or 1 }}</strong>
+                    · Ask: ${{ "%.2f"|format(card.asking_price or 0) }}
+                    · Comp: ${{ "%.2f"|format(card.estimated_value or 0) }}
+                    <br>
+                    Storage: <span class="pull-sheet-location">{{ card.storage_location or 'Missing Location' }}</span>
+                </div>
+            </div>
+
+            <div class="pull-sheet-check">
+                <div class="pull-sheet-box"></div>
+                Pulled
+            </div>
+        </div>
+    {% else %}
+        <div class="card page-card">
+            <div class="card-body text-center text-muted py-5">No cards found for this pull sheet.</div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
