@@ -110,51 +110,14 @@ document.addEventListener("DOMContentLoaded", function () {
     opacity: 1 !important;
     cursor: not-allowed;
 }
-
-.ai-reference-check {
-    margin-top: 1rem;
-    padding: .9rem;
-    border-radius: .95rem;
-    border: 1px solid rgba(148, 163, 184, .35);
-    background: rgba(15, 23, 42, .04);
-}
-
-.ai-reference-check-title {
-    font-size: .78rem;
-    font-weight: 800;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-    color: #334155;
-}
-
-.ai-reference-check-query {
-    margin-top: .25rem;
-    margin-bottom: .65rem;
-    font-size: .84rem;
-    color: #64748b;
-    word-break: break-word;
-}
-
-.psa-verified-note {
-    margin-top: .9rem;
-    padding: .75rem .85rem;
-    border-radius: .9rem;
-    border: 1px solid #bfdbfe;
-    background: #eff6ff;
-    color: #1e3a8a;
-    font-size: .84rem;
-    font-weight: 650;
-}
-
 </style>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
         <h1 class="h2 mb-1">AI Import Review</h1>
-        <p class="text-muted mb-0">Confirm AI and PSA lookup results before adding cards to your real inventory.</p>
+        <p class="text-muted mb-0">Confirm Ximilar results before adding cards to your real inventory.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-primary" href="{{ url_for('ai_import_upload') }}">Upload More Images</a>
-        <a class="btn btn-outline-info" href="{{ url_for('psa_lookup') }}">PSA Cert Lookup</a>
         <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Back to Inventory</a>
     </div>
 </div>
@@ -198,13 +161,24 @@ document.addEventListener("DOMContentLoaded", function () {
     <div class="ai-review-list">
         {% for staged in staged_cards %}
             {% set duplicate = duplicate_map.get(staged.id) %}
-            {% set reference_links = reference_links_map.get(staged.id) if reference_links_map is defined else None %}
             <div class="card page-card ai-review-card mb-4 {% if focus_id == staged.id %}ai-review-card-focus{% endif %}" id="staged-{{ staged.id }}">
                 <div class="card-body">
                     <div class="ai-review-grid">
                         <div class="ai-review-image-panel">
                             {% if staged.image_filename %}
-                                <img class="ai-review-image" src="{{ url_for('static', filename='uploads/' ~ staged.image_filename) }}" alt="AI import image">
+                                <div class="psa-image-pair">
+                                    <div>
+                                        <div class="psa-image-label">Front</div>
+                                        <img class="ai-review-image" src="{{ url_for('static', filename='uploads/' ~ staged.image_filename) }}" alt="AI import front image">
+                                    </div>
+                                    {% if staged.image_back_filename %}
+                                        <details class="psa-back-image-details mt-2">
+                                            <summary>Show back image</summary>
+                                            <div class="psa-image-label mt-2">Back</div>
+                                            <img class="ai-review-image" src="{{ url_for('static', filename='uploads/' ~ staged.image_back_filename) }}" alt="AI import back image">
+                                        </details>
+                                    {% endif %}
+                                </div>
                             {% else %}
                                 <div class="gallery-placeholder">Image moved to inventory</div>
                             {% endif %}
@@ -213,9 +187,6 @@ document.addEventListener("DOMContentLoaded", function () {
                                 <span class="badge {% if staged.ai_status == 'Imported' %}text-bg-success{% elif staged.ai_status == 'Rejected' %}text-bg-danger{% elif staged.ai_status == 'Needs Manual Review' %}text-bg-warning{% else %}text-bg-info{% endif %}">{{ staged.ai_status }}</span>
                                 {% if staged.ai_confidence %}
                                     <span class="badge text-bg-dark">{{ "%.1f"|format(staged.ai_confidence) }}% confidence</span>
-                                {% endif %}
-                                {% if staged.source_filename and staged.source_filename.startswith('PSA Cert') %}
-                                    <span class="badge text-bg-primary">PSA Verified</span>
                                 {% endif %}
                             </div>
 
@@ -226,25 +197,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             {% if duplicate %}
                                 <div class="alert alert-warning small mt-3 mb-0">
                                     Possible duplicate: <strong>{{ duplicate.card_code }}</strong> · {{ duplicate.player_name }}{% if duplicate.year %} · {{ duplicate.year }}{% endif %}
-                                </div>
-                            {% endif %}
-
-                            {% if staged.source_filename and staged.source_filename.startswith('PSA Cert') %}
-                                <div class="psa-verified-note">
-                                    PSA verified cert data{% if staged.image_filename %} with official PSA image saved{% endif %}.
-                                </div>
-                            {% endif %}
-
-                            {% if reference_links and reference_links.query %}
-                                <div class="ai-reference-check">
-                                    <div class="ai-reference-check-title">Visual Verification</div>
-                                    <div class="ai-reference-check-query">{{ reference_links.query }}</div>
-                                    <a class="btn btn-sm btn-outline-info"
-                                       href="{{ reference_links.google_images }}"
-                                       target="_blank"
-                                       rel="noopener noreferrer">
-                                        Verify with Google Images
-                                    </a>
+                                    {% if duplicate_reason_map is defined and duplicate_reason_map.get(staged.id) %}
+                                        <div class="mt-1">{{ duplicate_reason_map.get(staged.id) }}</div>
+                                    {% endif %}
                                 </div>
                             {% endif %}
                         </div>
@@ -424,7 +379,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                             {% if staged.raw_response_json %}
                                 <details class="mt-3">
-                                    <summary class="small text-muted">View raw AI / PSA response</summary>
+                                    <summary class="small text-muted">View raw Ximilar response</summary>
                                     <pre class="ai-json-box mt-2">{{ staged.raw_response_json }}</pre>
                                 </details>
                             {% endif %}

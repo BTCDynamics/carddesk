@@ -178,6 +178,32 @@
     background: #0f172a;
 }
 
+.cd-card-image-back {
+    margin-top: .85rem;
+}
+
+.cd-image-side-label {
+    width: 100%;
+    color: #93c5fd;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    margin-bottom: .35rem;
+    text-transform: uppercase;
+}
+
+.cd-back-image-details {
+    width: 100%;
+    margin-top: .85rem;
+    color: #dbeafe;
+    font-weight: 800;
+    text-align: left;
+}
+
+.cd-back-image-details summary {
+    cursor: pointer;
+}
+
 .cd-empty-image {
     color: #94a3b8;
     font-weight: 800;
@@ -672,7 +698,15 @@
                     <div class="cd-sidebar-title">Card Image</div>
                     <div class="cd-preview-box">
                         {% if card.image_filename %}
-                            <img class="cd-card-image" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name }} card image">
+                            <div class="cd-image-side-label">Front</div>
+                            <img class="cd-card-image" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name }} card front image">
+                            {% if card.image_back_filename %}
+                                <details class="cd-back-image-details">
+                                    <summary>Show back image</summary>
+                                    <div class="cd-image-side-label mt-3">Back</div>
+                                    <img class="cd-card-image cd-card-image-back" src="{{ url_for('static', filename='uploads/' ~ card.image_back_filename) }}" alt="{{ card.player_name }} card back image">
+                                </details>
+                            {% endif %}
                         {% else %}
                             <div class="cd-empty-image">
                                 <div>No image uploaded</div>
