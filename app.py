@@ -16,7 +16,7 @@ from models import db, Card, CardImportStaging
 
 app = Flask(__name__)
 
-app.secret_key = "cardwatch-dev-secret"
+app.secret_key = os.environ.get("CARDWATCH_SECRET_KEY", "cardwatch-dev-secret")
 
 DATA_DIR = os.environ.get("CARDWATCH_DATA_DIR", "/var/data")
 PERSISTENT_UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
@@ -176,6 +176,43 @@ def ensure_database_columns():
         "card",
         "acquisition_event",
         "ALTER TABLE card ADD COLUMN acquisition_event VARCHAR(150)"
+    )
+
+    # Deal / transaction tracking fields. These are safe no-op checks on newer databases.
+    add_column_if_missing(
+        "card",
+        "deal_id",
+        "ALTER TABLE card ADD COLUMN deal_id VARCHAR(100)"
+    )
+    add_column_if_missing(
+        "card",
+        "customer_name",
+        "ALTER TABLE card ADD COLUMN customer_name VARCHAR(150)"
+    )
+    add_column_if_missing(
+        "card",
+        "payment_type",
+        "ALTER TABLE card ADD COLUMN payment_type VARCHAR(50)"
+    )
+    add_column_if_missing(
+        "card",
+        "deal_discount_percent",
+        "ALTER TABLE card ADD COLUMN deal_discount_percent FLOAT"
+    )
+    add_column_if_missing(
+        "card",
+        "trade_credit",
+        "ALTER TABLE card ADD COLUMN trade_credit FLOAT"
+    )
+    add_column_if_missing(
+        "card",
+        "cash_received",
+        "ALTER TABLE card ADD COLUMN cash_received FLOAT"
+    )
+    add_column_if_missing(
+        "card",
+        "deal_notes",
+        "ALTER TABLE card ADD COLUMN deal_notes TEXT"
     )
 
     add_column_if_missing(
@@ -3354,6 +3391,9 @@ def mobile_capture_upload():
         collection_type=request.form.get("collection_type") or "Inventory",
         status=request.form.get("status") or "Active",
         purchase_date=purchase_date_value(request.form),
+        acquisition_source=acquisition_value(request.form.get("acquisition_source")),
+        acquisition_date=acquisition_date_value(request.form),
+        acquisition_event=clean_value(request.form.get("acquisition_event")),
         storage_location=clean_value(request.form.get("storage_location")),
         quantity=1,
         ai_status="Pending Review",
@@ -3364,8 +3404,6 @@ def mobile_capture_upload():
         
         recognition_provider, raw_response, extracted = recognize_card_image(image_filename)
 
-        print(f"Recognition Provider: {recognition_provider}")
-        print(json.dumps(raw_response, indent=2))
 
         staged_card.raw_response_json = json.dumps(raw_response, indent=2, sort_keys=True)
         staged_card.player_name = clean_value(extracted.get("player_name"))
@@ -3519,4 +3557,4 @@ def mark_selected_fulfillment_pulled():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=os.environ.get("FLASK_DEBUG", "0") == "1")
