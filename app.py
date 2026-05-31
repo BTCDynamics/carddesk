@@ -42,6 +42,13 @@ CARDSIGHT_IDENTIFY_ENDPOINT = os.environ.get(
     "https://api.cardsight.ai/v1/identify/card"
 )
 
+# PSA cert lookup testing. Add PSA_ACCESS_TOKEN in Render environment variables.
+PSA_ACCESS_TOKEN = os.environ.get("PSA_ACCESS_TOKEN")
+PSA_CERT_LOOKUP_ENDPOINT = os.environ.get(
+    "PSA_CERT_LOOKUP_ENDPOINT",
+    "https://api.psacard.com/publicapi/cert/GetByCertNumber"
+)
+
 db.init_app(app)
 
 
@@ -229,6 +236,43 @@ def health():
 
     except Exception as error:
         return {"status": "error", "message": str(error)}, 500
+
+
+
+@app.route("/test-psa/<cert_number>")
+def test_psa_cert_lookup(cert_number):
+    """Temporary PSA cert lookup test route.
+
+    Visit /test-psa/YOURCERTNUMBER after deploying to Render.
+    Remove this route after PSA connectivity is confirmed.
+    """
+    token_present = bool(PSA_ACCESS_TOKEN)
+
+    try:
+        data = lookup_psa_cert(cert_number)
+        response_payload = {
+            "ok": True,
+            "token_present": token_present,
+            "cert_number": cert_number,
+            "response": data,
+        }
+    except Exception as error:
+        response_payload = {
+            "ok": False,
+            "token_present": token_present,
+            "cert_number": cert_number,
+            "error": str(error),
+        }
+
+    return (
+        "<h1>PSA Cert Lookup Test</h1>"
+        "<p><strong>Token present:</strong> "
+        + ("Yes" if token_present else "No")
+        + "</p>"
+        "<pre>"
+        + json.dumps(response_payload, indent=2, sort_keys=True)
+        + "</pre>"
+    )
 
 
 def clean_value(value):
@@ -780,6 +824,46 @@ def recognize_card_image(image_filename):
 
     raw_response = call_ximilar_for_image(image_filename)
     return "Ximilar", raw_response, extract_card_data_from_ximilar(raw_response)
+
+
+
+def lookup_psa_cert(cert_number):
+    """Look up one PSA certification number using PSA's public API.
+
+    This is intentionally lightweight for initial testing. It returns the raw
+    decoded JSON response so we can confirm the token, endpoint, and payload
+    shape before wiring PSA lookup into the normal CardDesk import flow.
+    """
+    cert_number = clean_value(cert_number)
+
+    if not cert_number:
+        raise RuntimeError("Missing PSA cert number.")
+
+    if not PSA_ACCESS_TOKEN:
+        raise RuntimeError("Missing PSA_ACCESS_TOKEN environment variable.")
+
+    endpoint = PSA_CERT_LOOKUP_ENDPOINT.rstrip("/")
+    lookup_url = f"{endpoint}/{quote(cert_number, safe='')}"
+
+    api_request = urllib.request.Request(
+        lookup_url,
+        headers={
+            "Authorization": f"Bearer {PSA_ACCESS_TOKEN}",
+            "Accept": "application/json",
+            "User-Agent": "CardDesk/1.0 (+https://carddesk.app)",
+        },
+        method="GET",
+    )
+
+    try:
+        with urllib.request.urlopen(api_request, timeout=30) as response:
+            response_body = response.read().decode("utf-8")
+            return json.loads(response_body)
+    except urllib.error.HTTPError as error:
+        error_body = error.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"PSA HTTP {error.code}: {error_body}") from error
+    except urllib.error.URLError as error:
+        raise RuntimeError(f"PSA connection error: {error.reason}") from error
 
 
 def find_probable_duplicate_from_staging(staged_card):
