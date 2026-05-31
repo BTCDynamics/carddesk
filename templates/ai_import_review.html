@@ -114,10 +114,11 @@ document.addEventListener("DOMContentLoaded", function () {
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
         <h1 class="h2 mb-1">AI Import Review</h1>
-        <p class="text-muted mb-0">Confirm Ximilar results before adding cards to your real inventory.</p>
+        <p class="text-muted mb-0">Confirm AI and PSA lookup results before adding cards to your inventory.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-primary" href="{{ url_for('ai_import_upload') }}">Upload More Images</a>
+        <a class="btn btn-outline-info" href="{{ url_for('psa_lookup') }}">PSA Cert Lookup</a>
         <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Back to Inventory</a>
     </div>
 </div>
