@@ -83,6 +83,12 @@ def ensure_database_columns():
         )
         db.session.commit()
 
+    if "image_back_filename" not in existing_columns:
+        db.session.execute(
+            text("ALTER TABLE card ADD COLUMN image_back_filename VARCHAR(200)")
+        )
+        db.session.commit()
+
     if "estimated_value" not in existing_columns:
         db.session.execute(
             text("ALTER TABLE card ADD COLUMN estimated_value FLOAT")
@@ -186,6 +192,12 @@ def ensure_database_columns():
         "card_import_staging",
         "acquisition_event",
         "ALTER TABLE card_import_staging ADD COLUMN acquisition_event VARCHAR(150)"
+    )
+
+    add_column_if_missing(
+        "card_import_staging",
+        "image_back_filename",
+        "ALTER TABLE card_import_staging ADD COLUMN image_back_filename VARCHAR(200)"
     )
 
 
@@ -968,42 +980,76 @@ def extract_psa_cert_payload(response_json):
     return psa_cert
 
 
-def select_psa_front_image_url(images_response):
-    """Return PSA's front image URL when available, otherwise any image URL."""
+def normalize_psa_images_response(images_response):
+    """Return PSA image records as a list regardless of response wrapper shape."""
     images = images_response or []
 
     if isinstance(images, dict):
         images = images.get("Images") or images.get("images") or images.get("data") or []
 
     if not isinstance(images, list):
+        return []
+
+    return [image for image in images if isinstance(image, dict)]
+
+
+def get_psa_image_url(image_record):
+    """Return a URL from one PSA image record."""
+    if not isinstance(image_record, dict):
         return None
 
-    fallback_url = None
+    return clean_value(
+        image_record.get("ImageURL")
+        or image_record.get("ImageUrl")
+        or image_record.get("imageUrl")
+        or image_record.get("url")
+    )
 
-    for image in images:
-        if not isinstance(image, dict):
+
+def select_psa_image_url(images_response, front=True):
+    """Return PSA's front or back image URL when available.
+
+    If the requested side is unavailable, return None instead of silently
+    using the wrong side.
+    """
+    for image in normalize_psa_images_response(images_response):
+        image_url = get_psa_image_url(image)
+
+        if not image_url:
             continue
 
-        image_url = clean_value(
-            image.get("ImageURL")
-            or image.get("ImageUrl")
-            or image.get("imageUrl")
-            or image.get("url")
-        )
-
-        if image_url and fallback_url is None:
-            fallback_url = image_url
-
-        if image_url and bool(image.get("IsFrontImage")):
+        if bool(image.get("IsFrontImage")) == front:
             return image_url
 
-    return fallback_url
+    return None
 
 
-def download_psa_image_to_uploads(image_url, cert_number):
-    """Download PSA's front image into CardDesk's upload folder and return filename."""
+def select_psa_front_image_url(images_response):
+    """Return PSA's front image URL when available, otherwise any image URL."""
+    front_url = select_psa_image_url(images_response, front=True)
+
+    if front_url:
+        return front_url
+
+    for image in normalize_psa_images_response(images_response):
+        image_url = get_psa_image_url(image)
+        if image_url:
+            return image_url
+
+    return None
+
+
+def select_psa_back_image_url(images_response):
+    """Return PSA's back image URL when available."""
+    return select_psa_image_url(images_response, front=False)
+
+
+
+def download_psa_image_to_uploads(image_url, cert_number, side="front"):
+    """Download a PSA cert image into CardDesk's upload folder and return filename."""
     image_url = clean_value(image_url)
     cert_number = clean_psa_cert_number(cert_number)
+    side = "back" if str(side).lower() == "back" else "front"
 
     if not image_url or not cert_number:
         return None
@@ -1016,7 +1062,7 @@ def download_psa_image_to_uploads(image_url, cert_number):
     if extension not in ALLOWED_IMAGE_EXTENSIONS:
         extension = "jpg"
 
-    filename = unique_upload_filename(f"psa_{cert_number}_front", extension)
+    filename = unique_upload_filename(f"psa_{cert_number}_{side}", extension)
     destination_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
 
     image_request = urllib.request.Request(
@@ -1043,7 +1089,8 @@ def download_psa_image_to_uploads(image_url, cert_number):
         return None
 
 
-def build_psa_notes(psa_cert, images_response=None, image_filename=None):
+
+def build_psa_notes(psa_cert, images_response=None, image_filename=None, image_back_filename=None):
     """Build human-readable notes from PSA fields worth preserving."""
     note_parts = ["Imported from PSA Cert Lookup."]
 
@@ -1055,6 +1102,8 @@ def build_psa_notes(psa_cert, images_response=None, image_filename=None):
         note_parts.append(f"PSA Spec ID: {psa_cert.get('SpecID')}.")
     if image_filename:
         note_parts.append("Official PSA front image saved.")
+    if image_back_filename:
+        note_parts.append("Official PSA back image saved.")
 
     return "\n".join(note_parts)
 
@@ -1071,11 +1120,14 @@ def stage_psa_cert_lookup(cert_number, form_data):
 
     images_response = []
     image_filename = None
+    image_back_filename = None
 
     try:
         images_response = lookup_psa_cert_images(cert_number)
-        image_url = select_psa_front_image_url(images_response)
-        image_filename = download_psa_image_to_uploads(image_url, cert_number)
+        front_image_url = select_psa_front_image_url(images_response)
+        back_image_url = select_psa_back_image_url(images_response)
+        image_filename = download_psa_image_to_uploads(front_image_url, cert_number, side="front")
+        image_back_filename = download_psa_image_to_uploads(back_image_url, cert_number, side="back")
     except Exception:
         images_response = []
 
@@ -1087,11 +1139,13 @@ def stage_psa_cert_lookup(cert_number, form_data):
         "source": "PSA Cert Lookup",
         "cert_response": cert_response,
         "images_response": images_response,
-        "stored_image_filename": image_filename,
+        "stored_front_image_filename": image_filename,
+        "stored_back_image_filename": image_back_filename,
     }
 
     staged_card = CardImportStaging(
         image_filename=image_filename,
+        image_back_filename=image_back_filename,
         source_filename=f"PSA Cert {cert_number}",
         player_name=subject,
         year=normalize_year(psa_cert.get("Year")),
@@ -1115,7 +1169,7 @@ def stage_psa_cert_lookup(cert_number, form_data):
         ai_confidence=100,
         ai_status="Pending Review",
         raw_response_json=json.dumps(raw_response, indent=2, sort_keys=True),
-        notes=build_psa_notes(psa_cert, images_response, image_filename),
+        notes=build_psa_notes(psa_cert, images_response, image_filename, image_back_filename),
     )
 
     db.session.add(staged_card)
@@ -1123,7 +1177,38 @@ def stage_psa_cert_lookup(cert_number, form_data):
 
     return staged_card
 
+def find_duplicate_by_cert_number(cert_number):
+    """Return an existing inventory card with the same grading cert number."""
+    clean_cert = clean_psa_cert_number(cert_number)
+
+    if not clean_cert:
+        return None
+
+    exact_match = Card.query.filter(Card.cert_number == clean_cert).first()
+    if exact_match:
+        return exact_match
+
+    # Fallback handles values that may have spaces/dashes from manual entry.
+    candidates = Card.query.filter(Card.cert_number.isnot(None)).all()
+
+    for card in candidates:
+        if clean_psa_cert_number(card.cert_number) == clean_cert:
+            return card
+
+    return None
+
+
 def find_probable_duplicate_from_staging(staged_card):
+    """Find likely duplicate inventory.
+
+    Graded cards with cert numbers are checked by cert first because a grading
+    cert number is stronger than player/year/card-number matching.
+    """
+    cert_duplicate = find_duplicate_by_cert_number(getattr(staged_card, "cert_number", None))
+
+    if cert_duplicate:
+        return cert_duplicate
+
     if not staged_card.player_name:
         return None
 
@@ -1144,6 +1229,21 @@ def find_probable_duplicate_from_staging(staged_card):
         query = query.filter(db.or_(Card.variation.is_(None), Card.variation == ""))
 
     return query.first()
+
+
+def duplicate_reason_from_staging(staged_card, duplicate):
+    """Return a user-friendly reason for a duplicate match."""
+    if not staged_card or not duplicate:
+        return None
+
+    staged_cert = clean_psa_cert_number(getattr(staged_card, "cert_number", None))
+    duplicate_cert = clean_psa_cert_number(getattr(duplicate, "cert_number", None))
+
+    if staged_cert and duplicate_cert and staged_cert == duplicate_cert:
+        return f"Cert #{getattr(staged_card, 'cert_number', None)} already exists in inventory."
+
+    return "Card identity looks similar to an existing inventory record."
+
 
 
 def get_storage_locations():
@@ -2430,7 +2530,9 @@ def edit_card(card_id):
 
         if request.form.get("remove_image"):
             delete_image_file(card.image_filename)
+            delete_image_file(getattr(card, "image_back_filename", None))
             card.image_filename = None
+            card.image_back_filename = None
 
         card.card_code = request.form["card_code"]
         card.sport = request.form.get("sport")
@@ -2480,6 +2582,7 @@ def delete_card(card_id):
     card = Card.query.get_or_404(card_id)
 
     delete_image_file(card.image_filename)
+    delete_image_file(getattr(card, "image_back_filename", None))
 
     db.session.delete(card)
     db.session.commit()
@@ -2952,6 +3055,7 @@ def ai_import_review():
         )
 
     duplicate_map = {card.id: find_probable_duplicate_from_staging(card) for card in staged_cards}
+    duplicate_reason_map = {card.id: duplicate_reason_from_staging(card, duplicate_map.get(card.id)) for card in staged_cards}
     reference_links_map = {card.id: build_reference_links(card) for card in staged_cards}
 
     counts = {
@@ -2965,6 +3069,7 @@ def ai_import_review():
         "ai_import_review.html",
         staged_cards=staged_cards,
         duplicate_map=duplicate_map,
+        duplicate_reason_map=duplicate_reason_map,
         reference_links_map=reference_links_map,
         status_filter=status_filter,
         counts=counts,
@@ -3117,6 +3222,13 @@ def import_staged_card(staging_id):
             )
             staged_card.image_filename = None
 
+        if getattr(staged_card, "image_back_filename", None) and not getattr(probable_duplicate, "image_back_filename", None):
+            probable_duplicate.image_back_filename = rename_image_for_inventory(
+                staged_card.image_back_filename,
+                staged_card
+            )
+            staged_card.image_back_filename = None
+
         staged_card.imported_card_id = probable_duplicate.id
         staged_card.ai_status = "Imported"
         staged_card.imported_at = datetime.utcnow()
@@ -3164,6 +3276,7 @@ def import_staged_card(staging_id):
         storage_location=staged_card.storage_location,
         collection_type=staged_card.collection_type or "Inventory",
         image_filename=rename_image_for_inventory(staged_card.image_filename, staged_card),
+        image_back_filename=rename_image_for_inventory(getattr(staged_card, "image_back_filename", None), staged_card),
         notes=staged_card.notes,
         status=staged_card.status or "Active",
     )
@@ -3175,6 +3288,7 @@ def import_staged_card(staging_id):
     staged_card.ai_status = "Imported"
     staged_card.imported_at = datetime.utcnow()
     staged_card.image_filename = None
+    staged_card.image_back_filename = None
 
     db.session.commit()
 
@@ -3206,6 +3320,7 @@ def reject_staged_import(staging_id):
 def delete_staged_import(staging_id):
     staged_card = CardImportStaging.query.get_or_404(staging_id)
     delete_image_file(staged_card.image_filename)
+    delete_image_file(getattr(staged_card, "image_back_filename", None))
     db.session.delete(staged_card)
     db.session.commit()
     flash("AI import draft deleted.")
