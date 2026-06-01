@@ -3,6 +3,60 @@
 {% block title %}PSA Cert Lookup | CardDesk{% endblock %}
 
 {% block content %}
+<style>
+.psa-mobile-qr-card {
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+    border: 1px solid rgba(96, 165, 250, .35);
+    border-radius: 1rem;
+    color: #ffffff;
+}
+
+.psa-mobile-qr-card .text-muted {
+    color: #cbd5e1 !important;
+}
+
+.psa-mobile-qr-img {
+    width: 180px;
+    height: 180px;
+    border-radius: .85rem;
+    background: #ffffff;
+    padding: .5rem;
+}
+
+.psa-scan-panel {
+    display: none;
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(14, 165, 233, .25);
+    background: rgba(14, 165, 233, .06);
+}
+
+.psa-scan-panel.active {
+    display: block;
+}
+
+#psa-barcode-reader {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 1rem;
+    background: #0f172a;
+}
+
+.psa-scan-status {
+    margin-top: .75rem;
+    font-size: .9rem;
+    font-weight: 700;
+}
+
+.psa-scan-tip {
+    font-size: .85rem;
+    color: #64748b;
+}
+</style>
+
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
         <h1 class="h2 mb-1">PSA Cert Lookup</h1>
@@ -26,7 +80,7 @@
             <div class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label class="form-label fw-bold">PSA Cert Number</label>
-                    <input class="form-control form-control-lg" type="text" name="cert_number" placeholder="Example: 98491811" required autofocus>
+                    <input id="psa-cert-number" class="form-control form-control-lg" type="text" name="cert_number" placeholder="Example: 98491811" inputmode="numeric" autocomplete="off" required autofocus>
                     <div class="form-text">CardDesk will use PSA's cert data to pre-fill the review record.</div>
                 </div>
                 <div class="col-md-3">
@@ -49,6 +103,22 @@
                     <button class="btn btn-primary btn-lg w-100" type="submit" {% if not token_configured %}disabled{% endif %}>
                         Lookup PSA Cert
                     </button>
+                </div>
+            </div>
+
+            <div class="card psa-mobile-qr-card mt-4">
+                <div class="card-body">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-8">
+                            <div class="fw-bold h5 mb-1">Scan PSA Slabs With Your Phone</div>
+                            <p class="text-muted mb-2">Open the dedicated mobile scanner by scanning this QR code. The phone page is simplified for barcode intake and sends scanned slabs straight to the AI Review Queue.</p>
+                            <a class="btn btn-info" href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener">Open Mobile PSA Scanner</a>
+                        </div>
+                        <div class="col-md-4 text-md-end text-center">
+                            <img class="psa-mobile-qr-img" src="{{ psa_mobile_scan_qr_url }}" alt="QR code for CardDesk PSA mobile scanner">
+                            <div class="small text-muted mt-2">Scan this with your phone camera.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PSA Mobile Scanner | CardDesk</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode" defer></script>
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #020617, #0f172a 45%, #1e293b);
+            color: #ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .mobile-shell {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .scanner-card {
+            background: rgba(15, 23, 42, .92);
+            border: 1px solid rgba(96, 165, 250, .35);
+            border-radius: 1.25rem;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+            overflow: hidden;
+        }
+
+        .scanner-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid rgba(148, 163, 184, .25);
+            background: linear-gradient(145deg, rgba(30, 64, 175, .35), rgba(15, 23, 42, .4));
+        }
+
+        .scanner-body {
+            padding: 1.25rem;
+        }
+
+        .scanner-title {
+            font-size: 1.35rem;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .scanner-subtitle {
+            color: #cbd5e1;
+            margin: .35rem 0 0;
+            font-size: .95rem;
+        }
+
+        #psa-mobile-reader {
+            width: 100%;
+            overflow: hidden;
+            border-radius: 1rem;
+            background: #000000;
+            border: 1px solid rgba(148, 163, 184, .3);
+        }
+
+        .scanner-status {
+            font-weight: 800;
+            margin-top: .85rem;
+            min-height: 1.5rem;
+        }
+
+        .form-control,
+        .form-select {
+            min-height: 48px;
+            font-weight: 800;
+        }
+
+        .btn-lg {
+            min-height: 52px;
+            font-weight: 900;
+        }
+
+        .small-help {
+            color: #cbd5e1;
+            font-size: .88rem;
+        }
+
+        .success-card {
+            background: rgba(22, 163, 74, .18);
+            border: 1px solid rgba(74, 222, 128, .4);
+            border-radius: 1rem;
+            padding: 1rem;
+            color: #dcfce7;
+        }
+
+        .warning-card {
+            background: rgba(245, 158, 11, .16);
+            border: 1px solid rgba(251, 191, 36, .45);
+            border-radius: 1rem;
+            padding: 1rem;
+            color: #fef3c7;
+        }
+    </style>
+</head>
+<body>
+    <main class="mobile-shell">
+        <div class="scanner-card">
+            <div class="scanner-header">
+                <h1 class="scanner-title">CardDesk PSA Scanner</h1>
+                <p class="scanner-subtitle">Scan PSA slab barcodes and stage cards for review.</p>
+            </div>
+
+            <div class="scanner-body">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-warning">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% if staged_success %}
+                    <div class="success-card mb-3">
+                        <div class="fw-bold">PSA cert {{ scanned_cert }} was staged for review.</div>
+                        <div class="small-help">Scan another slab, or open the review queue from your desktop.</div>
+                    </div>
+                {% endif %}
+
+                {% if not token_configured %}
+                    <div class="warning-card mb-3">
+                        <div class="fw-bold">PSA API token is not configured.</div>
+                        <div class="small-help">Add PSA_ACCESS_TOKEN in Render before using this scanner.</div>
+                    </div>
+                {% endif %}
+
+                <div class="d-grid gap-2 mb-3">
+                    <button class="btn btn-info btn-lg" type="button" id="startScannerBtn">Start Barcode Scanner</button>
+                    <button class="btn btn-outline-light" type="button" id="stopScannerBtn">Stop Scanner</button>
+                </div>
+
+                <div id="psa-mobile-reader" class="mb-2"></div>
+                <div class="scanner-status text-info" id="scannerStatus">Camera not started.</div>
+
+                <form method="POST" action="{{ url_for('psa_mobile_scan') }}" class="mt-4" id="psaMobileForm">
+                    <label class="form-label fw-bold">PSA Cert Number</label>
+                    <input class="form-control form-control-lg mb-3" id="mobileCertNumber" type="text" name="cert_number" value="{{ scanned_cert }}" placeholder="Scan or enter cert #" inputmode="numeric" autocomplete="off" required>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label class="form-label small-help">Collection</label>
+                            <select class="form-select" name="collection_type">
+                                <option value="Inventory" selected>Inventory</option>
+                                <option value="Personal Collection">Personal Collection</option>
+                                <option value="Trade Bait">Trade Bait</option>
+                                <option value="Grading Queue">Grading Queue</option>
+                            </select>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label small-help">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="Active" selected>Active</option>
+                                <option value="Holding">Holding</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small-help">Storage Location</label>
+                        <input class="form-control" type="text" name="storage_location" placeholder="PSA Box / Slab Case / Row">
+                    </div>
+
+                    <input type="hidden" name="acquisition_source" value="Existing Inventory">
+                    <input type="hidden" name="acquisition_date" value="">
+                    <input type="hidden" name="purchase_date" value="">
+                    <input type="hidden" name="acquisition_event" value="">
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-lg" type="submit" {% if not token_configured %}disabled{% endif %}>Stage PSA Cert for Review</button>
+                        <a class="btn btn-outline-light" href="{{ url_for('ai_import_review') }}">Review Queue ({{ pending_count }})</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const certInput = document.getElementById("mobileCertNumber");
+        const startButton = document.getElementById("startScannerBtn");
+        const stopButton = document.getElementById("stopScannerBtn");
+        const status = document.getElementById("scannerStatus");
+        let scanner = null;
+        let scannerRunning = false;
+
+        function cleanCertValue(rawValue) {
+            const value = String(rawValue || "").trim();
+            const digitGroups = value.match(/\d{6,}/g);
+
+            if (digitGroups && digitGroups.length) {
+                return digitGroups[digitGroups.length - 1];
+            }
+
+            return value.replace(/[^A-Za-z0-9]/g, "");
+        }
+
+        function setStatus(message, cssClass) {
+            status.className = "scanner-status " + (cssClass || "text-info");
+            status.textContent = message;
+        }
+
+        async function stopScanner() {
+            if (scanner && scannerRunning) {
+                try {
+                    await scanner.stop();
+                } catch (error) {}
+            }
+            scannerRunning = false;
+            setStatus("Camera stopped.", "text-secondary");
+        }
+
+        async function startScanner() {
+            if (!window.Html5Qrcode) {
+                setStatus("Scanner library did not load. Check internet access and reload.", "text-warning");
+                return;
+            }
+
+            if (!scanner) {
+                scanner = new Html5Qrcode("psa-mobile-reader");
+            }
+
+            setStatus("Starting camera...", "text-info");
+
+            try {
+                scannerRunning = true;
+                await scanner.start(
+                    { facingMode: "environment" },
+                    {
+                        fps: 12,
+                        qrbox: function(viewfinderWidth, viewfinderHeight) {
+                            const width = Math.floor(viewfinderWidth * 0.9);
+                            const height = Math.max(90, Math.floor(viewfinderHeight * 0.25));
+                            return { width: width, height: height };
+                        },
+                        rememberLastUsedCamera: true
+                    },
+                    async function(decodedText) {
+                        const certNumber = cleanCertValue(decodedText);
+
+                        if (!certNumber) {
+                            setStatus("Barcode found, but no cert number was detected.", "text-warning");
+                            return;
+                        }
+
+                        certInput.value = certNumber;
+                        setStatus("Cert found: " + certNumber + ". Tap Stage PSA Cert for Review.", "text-success");
+                        await stopScanner();
+                        certInput.focus();
+                    },
+                    function() {}
+                );
+
+                setStatus("Camera active. Aim at the PSA slab barcode.", "text-info");
+            } catch (error) {
+                scannerRunning = false;
+                setStatus("Could not start camera: " + error, "text-warning");
+            }
+        }
+
+        startButton.addEventListener("click", startScanner);
+        stopButton.addEventListener("click", stopScanner);
+
+        window.addEventListener("beforeunload", function () {
+            if (scanner && scannerRunning) {
+                scanner.stop().catch(function () {});
+            }
+        });
+    });
+    </script>
+</body>
+</html>
