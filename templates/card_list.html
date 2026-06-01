@@ -247,6 +247,8 @@
 
 </style>
 {% set current_view = request.args.get('view', 'table') %}
+{% set pull_sheet_status_filter = status_filter if status_filter else ('Active' if scope != 'all' else '') %}
+{% set pull_sheet_collection_type_filter = collection_type_filter if collection_type_filter else ('Inventory' if scope != 'all' else '') %}
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
@@ -258,6 +260,13 @@
             AI Import
             {% if pending_import_count %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">{{ pending_import_count }}</span>{% endif %}
         </a>
+        {% if storage_filter %}
+            <a class="btn btn-warning"
+               href="{{ url_for('pull_sheet', storage=storage_filter, status=pull_sheet_status_filter, collection_type=pull_sheet_collection_type_filter) }}"
+               target="_blank">
+                Print Pull Sheet
+            </a>
+        {% endif %}
         <a class="btn btn-outline-light" href="{{ url_for('rapid_entry') }}">Rapid Entry</a>
         <a class="btn btn-primary" href="{{ url_for('add_card') }}">Add Card</a>
     </div>
@@ -489,7 +498,7 @@
                             <input class="form-control {% if max_price %}filter-active-field{% endif %}" type="number" step="0.01" name="max_price" placeholder="0.00" value="{{ max_price or '' }}">
                         </div>
                     </div>
-                </div>>
+                </div>
 
                 <div class="d-flex flex-wrap gap-2 mt-3">
                     <button class="btn btn-dark" type="submit">Apply Advanced Filters</button>
@@ -529,6 +538,13 @@
             </div>
 
             <div class="d-flex flex-wrap gap-2">
+                {% if storage_filter %}
+                    <a class="btn btn-sm btn-warning"
+                       href="{{ url_for('pull_sheet', storage=storage_filter, status=pull_sheet_status_filter, collection_type=pull_sheet_collection_type_filter) }}"
+                       target="_blank">
+                        Print Pull Sheet
+                    </a>
+                {% endif %}
                 <a class="btn btn-sm btn-outline-dark" href="{{ url_for('deal_cart') }}">View Deal Cart</a>
                 {% if deal_cart_count %}
                     <form method="POST" action="{{ url_for('clear_deal_cart') }}" class="d-inline">
