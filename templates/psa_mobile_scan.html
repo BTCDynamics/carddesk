@@ -102,6 +102,17 @@
             color: #dcfce7;
         }
 
+        .success-card.post-submit-focus {
+            animation: post-submit-focus-pulse 1.05s ease-in-out 2;
+            box-shadow: 0 0 28px rgba(34, 197, 94, .42);
+        }
+
+        @keyframes post-submit-focus-pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+            50% { transform: scale(1.025); box-shadow: 0 0 34px rgba(34, 197, 94, .68); }
+            100% { transform: scale(1); box-shadow: 0 0 28px rgba(34, 197, 94, .42); }
+        }
+
         .warning-card {
             background: rgba(245, 158, 11, .16);
             border: 1px solid rgba(251, 191, 36, .45);
@@ -226,7 +237,7 @@
                 {% endwith %}
 
                 {% if staged_success %}
-                    <div class="success-card mb-3">
+                    <div class="success-card mb-3" id="stagedSuccessBanner">
                         <div class="fw-bold">PSA cert {{ scanned_cert }} was staged for review.</div>
                         <div class="small-help">Scan another slab, or open the review queue from your desktop.</div>
                     </div>
@@ -336,6 +347,64 @@
         function setStatus(message, cssClass) {
             status.className = "scanner-status " + (cssClass || "text-info");
             status.textContent = message;
+        }
+
+        function playConfirmationChime() {
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+                if (!AudioContextClass) {
+                    return;
+                }
+
+                const audioContext = new AudioContextClass();
+                const gainNode = audioContext.createGain();
+                gainNode.connect(audioContext.destination);
+
+                const notes = [
+                    { frequency: 659, start: 0.00, duration: 0.11 },
+                    { frequency: 880, start: 0.11, duration: 0.13 },
+                    { frequency: 1175, start: 0.24, duration: 0.18 }
+                ];
+
+                notes.forEach(function(note) {
+                    const oscillator = audioContext.createOscillator();
+                    oscillator.type = "sine";
+                    oscillator.frequency.setValueAtTime(note.frequency, audioContext.currentTime + note.start);
+                    oscillator.connect(gainNode);
+                    oscillator.start(audioContext.currentTime + note.start);
+                    oscillator.stop(audioContext.currentTime + note.start + note.duration);
+                });
+
+                gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.48);
+            } catch (error) {
+                // Some mobile browsers block audio until the next user gesture.
+            }
+        }
+
+        function focusStagedSuccessBanner() {
+            const successBanner = document.getElementById("stagedSuccessBanner");
+
+            if (!successBanner) {
+                return;
+            }
+
+            setStatus("✅ PSA cert staged for review. Ready for the next scan.", "text-success");
+            successBanner.classList.add("post-submit-focus");
+
+            setTimeout(function () {
+                successBanner.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 250);
+
+            if (navigator.vibrate) {
+                navigator.vibrate([120, 70, 120]);
+            }
+
+            // Browsers may block autoplay audio on page load. This works where allowed;
+            // the visual scroll/highlight still confirms success everywhere.
+            setTimeout(playConfirmationChime, 350);
         }
 
         function playScanSuccessSound() {
@@ -605,6 +674,8 @@
                 setStatus("Torch is not available on this camera/browser.", "text-warning");
             }
         });
+
+        focusStagedSuccessBanner();
 
         startButton.addEventListener("click", startScanner);
         stopButton.addEventListener("click", stopScanner);
