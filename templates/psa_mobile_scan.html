@@ -117,9 +117,98 @@
             padding: .85rem;
             color: #dbeafe;
         }
+
+
+        .scan-success-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+            background: rgba(2, 6, 23, .72);
+            backdrop-filter: blur(4px);
+        }
+
+        .scan-success-overlay.active {
+            display: flex;
+        }
+
+        .scan-success-box {
+            width: min(92vw, 420px);
+            padding: 1.35rem;
+            border-radius: 1.35rem;
+            text-align: center;
+            color: #ffffff;
+            background: linear-gradient(145deg, #16a34a, #15803d);
+            border: 2px solid rgba(187, 247, 208, .75);
+            box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, .42), 0 0 36px rgba(34, 197, 94, .4);
+            animation: scan-success-pop .22s ease-out;
+        }
+
+        .scan-success-check {
+            display: grid;
+            place-items: center;
+            width: 72px;
+            height: 72px;
+            margin: 0 auto .85rem;
+            border-radius: 999px;
+            color: #166534;
+            background: #dcfce7;
+            font-size: 2.45rem;
+            font-weight: 1000;
+            line-height: 1;
+        }
+
+        .scan-success-title {
+            font-size: 1.3rem;
+            font-weight: 1000;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .scan-success-cert {
+            margin-top: .35rem;
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: #dcfce7;
+            word-break: break-word;
+        }
+
+        .scan-success-hint {
+            margin-top: .5rem;
+            color: #bbf7d0;
+            font-size: .9rem;
+            font-weight: 750;
+        }
+
+        .scan-success-field {
+            animation: scan-field-pulse .75s ease-in-out 2;
+        }
+
+        @keyframes scan-success-pop {
+            from { transform: scale(.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes scan-field-pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+            50% { transform: scale(1.025); box-shadow: 0 0 22px rgba(34, 197, 94, .95); }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+        }
     </style>
 </head>
 <body>
+    <div class="scan-success-overlay" id="scanSuccessOverlay" aria-live="polite" aria-hidden="true">
+        <div class="scan-success-box">
+            <div class="scan-success-check">✓</div>
+            <div class="scan-success-title">PSA Cert Scanned</div>
+            <div class="scan-success-cert" id="scanSuccessCert">Cert found</div>
+            <div class="scan-success-hint">Ready to stage for review</div>
+        </div>
+    </div>
+
     <main class="mobile-shell">
         <div class="scanner-card">
             <div class="scanner-header">
@@ -225,6 +314,8 @@
         const zoomSlider = document.getElementById("zoomSlider");
         const zoomValue = document.getElementById("zoomValue");
         const torchButton = document.getElementById("torchButton");
+        const scanSuccessOverlay = document.getElementById("scanSuccessOverlay");
+        const scanSuccessCert = document.getElementById("scanSuccessCert");
 
         let scanner = null;
         let scannerRunning = false;
@@ -245,6 +336,71 @@
         function setStatus(message, cssClass) {
             status.className = "scanner-status " + (cssClass || "text-info");
             status.textContent = message;
+        }
+
+        function playScanSuccessSound() {
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+                if (!AudioContextClass) {
+                    return;
+                }
+
+                const audioContext = new AudioContextClass();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(1175, audioContext.currentTime + 0.08);
+
+                gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.2, audioContext.currentTime + 0.015);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.18);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (error) {
+                // Some mobile browsers block audio until the next user gesture.
+            }
+        }
+
+        function showScanSuccessFeedback(certNumber) {
+            if (navigator.vibrate) {
+                navigator.vibrate([140, 70, 140]);
+            }
+
+            playScanSuccessSound();
+
+            certInput.classList.add("border-success", "scan-success-field");
+            certInput.style.boxShadow = "0 0 22px rgba(34, 197, 94, .95)";
+
+            setTimeout(function () {
+                certInput.classList.remove("scan-success-field");
+                certInput.style.boxShadow = "";
+            }, 1700);
+
+            if (scanSuccessOverlay && scanSuccessCert) {
+                scanSuccessCert.textContent = "Cert #" + certNumber;
+                scanSuccessOverlay.classList.add("active");
+                scanSuccessOverlay.setAttribute("aria-hidden", "false");
+
+                setTimeout(function () {
+                    scanSuccessOverlay.classList.remove("active");
+                    scanSuccessOverlay.setAttribute("aria-hidden", "true");
+                }, 1700);
+            }
+        }
+
+        async function handleSuccessfulCertScan(certNumber) {
+            certInput.value = certNumber;
+            showScanSuccessFeedback(certNumber);
+            setStatus("✅ PSA cert " + certNumber + " scanned. Tap Stage PSA Cert for Review.", "text-success");
+            await stopScanner();
+            certInput.focus();
         }
 
         function barcodeFormats() {
@@ -377,10 +533,7 @@
                             return;
                         }
 
-                        certInput.value = certNumber;
-                        setStatus("Cert found: " + certNumber + ". Tap Stage PSA Cert for Review.", "text-success");
-                        await stopScanner();
-                        certInput.focus();
+                        await handleSuccessfulCertScan(certNumber);
                     },
                     function() {}
                 );
@@ -410,10 +563,7 @@
                         async function(decodedText) {
                             const certNumber = cleanCertValue(decodedText);
                             if (certNumber) {
-                                certInput.value = certNumber;
-                                setStatus("Cert found: " + certNumber + ". Tap Stage PSA Cert for Review.", "text-success");
-                                await stopScanner();
-                                certInput.focus();
+                                await handleSuccessfulCertScan(certNumber);
                             }
                         },
                         function() {}
