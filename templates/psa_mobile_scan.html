@@ -263,7 +263,7 @@
 
                 <form method="POST" action="{{ url_for('psa_mobile_scan') }}" class="mt-4" id="psaMobileForm">
                     <label class="form-label fw-bold">PSA Cert Number</label>
-                    <input class="form-control form-control-lg mb-3" id="mobileCertNumber" type="text" name="cert_number" value="{{ scanned_cert }}" placeholder="Scan or enter cert #" inputmode="numeric" autocomplete="off" required>
+                    <input class="form-control form-control-lg mb-3" id="mobileCertNumber" type="text" name="cert_number" value="{{ '' if staged_success else scanned_cert }}" placeholder="Scan or enter cert #" inputmode="numeric" autocomplete="off" required>
 
                     <div class="row g-2 mb-3">
                         <div class="col-7">
@@ -381,7 +381,7 @@
             setTimeout(function () {
                 certInput.classList.remove("scan-success-field");
                 certInput.style.boxShadow = "";
-            }, 1700);
+            }, 3000);
 
             if (scanSuccessOverlay && scanSuccessCert) {
                 scanSuccessCert.textContent = "Cert #" + certNumber;
@@ -391,7 +391,7 @@
                 setTimeout(function () {
                     scanSuccessOverlay.classList.remove("active");
                     scanSuccessOverlay.setAttribute("aria-hidden", "true");
-                }, 1700);
+                }, 3000);
             }
         }
 
