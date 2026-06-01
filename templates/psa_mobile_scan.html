@@ -15,7 +15,7 @@
         }
 
         .mobile-shell {
-            max-width: 640px;
+            max-width: 720px;
             margin: 0 auto;
             padding: 1rem;
         }
@@ -34,28 +34,21 @@
             background: linear-gradient(145deg, rgba(30, 64, 175, .35), rgba(15, 23, 42, .4));
         }
 
-        .scanner-body {
-            padding: 1.25rem;
-        }
-
-        .scanner-title {
-            font-size: 1.35rem;
-            font-weight: 900;
-            margin: 0;
-        }
-
-        .scanner-subtitle {
-            color: #cbd5e1;
-            margin: .35rem 0 0;
-            font-size: .95rem;
-        }
+        .scanner-body { padding: 1.25rem; }
+        .scanner-title { font-size: 1.35rem; font-weight: 900; margin: 0; }
+        .scanner-subtitle { color: #cbd5e1; margin: .35rem 0 0; font-size: .95rem; }
 
         #psa-mobile-reader {
             width: 100%;
+            min-height: 330px;
             overflow: hidden;
             border-radius: 1rem;
             background: #000000;
             border: 1px solid rgba(148, 163, 184, .3);
+        }
+
+        #psa-mobile-reader video {
+            object-fit: cover !important;
         }
 
         .scanner-status {
@@ -63,6 +56,27 @@
             margin-top: .85rem;
             min-height: 1.5rem;
         }
+
+        .scanner-tools {
+            display: none;
+            gap: .75rem;
+            margin-top: .85rem;
+            padding: .85rem;
+            border-radius: 1rem;
+            background: rgba(15, 23, 42, .72);
+            border: 1px solid rgba(148, 163, 184, .22);
+        }
+
+        .scanner-tools.active { display: grid; }
+
+        .zoom-row {
+            display: none;
+            grid-template-columns: 76px 1fr 46px;
+            gap: .65rem;
+            align-items: center;
+        }
+
+        .zoom-row.active { display: grid; }
 
         .form-control,
         .form-select {
@@ -94,6 +108,14 @@
             border-radius: 1rem;
             padding: 1rem;
             color: #fef3c7;
+        }
+
+        .scan-tip-card {
+            background: rgba(96, 165, 250, .10);
+            border: 1px solid rgba(96, 165, 250, .26);
+            border-radius: 1rem;
+            padding: .85rem;
+            color: #dbeafe;
         }
     </style>
 </head>
@@ -135,6 +157,20 @@
 
                 <div id="psa-mobile-reader" class="mb-2"></div>
                 <div class="scanner-status text-info" id="scannerStatus">Camera not started.</div>
+
+                <div class="scanner-tools" id="scannerTools">
+                    <div class="zoom-row" id="zoomRow">
+                        <label class="small-help mb-0" for="zoomSlider">Zoom</label>
+                        <input class="form-range" id="zoomSlider" type="range" min="1" max="1" step="0.1" value="1">
+                        <span class="small-help" id="zoomValue">1x</span>
+                    </div>
+                    <button class="btn btn-outline-warning" type="button" id="torchButton" style="display:none;">Toggle Light</button>
+                    <div class="small-help">Tip: hold the phone 4–8 inches from the slab, tap the barcode area to focus, then use zoom only after focus locks.</div>
+                </div>
+
+                <div class="scan-tip-card mt-3 mb-3 small">
+                    For tiny PSA barcodes, light and focus matter more than getting extremely close. Use bright light, keep the slab flat, and let the phone focus before zooming.
+                </div>
 
                 <form method="POST" action="{{ url_for('psa_mobile_scan') }}" class="mt-4" id="psaMobileForm">
                     <label class="form-label fw-bold">PSA Cert Number</label>
@@ -184,8 +220,16 @@
         const startButton = document.getElementById("startScannerBtn");
         const stopButton = document.getElementById("stopScannerBtn");
         const status = document.getElementById("scannerStatus");
+        const scannerTools = document.getElementById("scannerTools");
+        const zoomRow = document.getElementById("zoomRow");
+        const zoomSlider = document.getElementById("zoomSlider");
+        const zoomValue = document.getElementById("zoomValue");
+        const torchButton = document.getElementById("torchButton");
+
         let scanner = null;
         let scannerRunning = false;
+        let activeTrack = null;
+        let torchOn = false;
 
         function cleanCertValue(rawValue) {
             const value = String(rawValue || "").trim();
@@ -203,13 +247,87 @@
             status.textContent = message;
         }
 
+        function barcodeFormats() {
+            if (!window.Html5QrcodeSupportedFormats) {
+                return undefined;
+            }
+
+            return [
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.QR_CODE
+            ].filter(Boolean);
+        }
+
+        function currentVideoTrack() {
+            const video = document.querySelector("#psa-mobile-reader video");
+            if (!video || !video.srcObject) {
+                return null;
+            }
+
+            const tracks = video.srcObject.getVideoTracks();
+            return tracks && tracks.length ? tracks[0] : null;
+        }
+
+        async function configureCameraControls() {
+            activeTrack = currentVideoTrack();
+
+            if (!activeTrack) {
+                return;
+            }
+
+            scannerTools.classList.add("active");
+
+            const capabilities = activeTrack.getCapabilities ? activeTrack.getCapabilities() : {};
+
+            // Ask for continuous focus where the browser/camera supports it.
+            try {
+                const constraints = { advanced: [] };
+
+                if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
+                    constraints.advanced.push({ focusMode: "continuous" });
+                }
+
+                if (constraints.advanced.length) {
+                    await activeTrack.applyConstraints(constraints);
+                }
+            } catch (error) {}
+
+            if (capabilities.zoom) {
+                zoomSlider.min = capabilities.zoom.min || 1;
+                zoomSlider.max = capabilities.zoom.max || 1;
+                zoomSlider.step = capabilities.zoom.step || 0.1;
+
+                const startingZoom = Math.min(Math.max(2, zoomSlider.min), zoomSlider.max);
+                zoomSlider.value = startingZoom;
+                zoomValue.textContent = Number(startingZoom).toFixed(1) + "x";
+                zoomRow.classList.add("active");
+
+                try {
+                    await activeTrack.applyConstraints({ advanced: [{ zoom: Number(startingZoom) }] });
+                } catch (error) {}
+            }
+
+            if (capabilities.torch) {
+                torchButton.style.display = "block";
+            }
+        }
+
         async function stopScanner() {
             if (scanner && scannerRunning) {
                 try {
                     await scanner.stop();
                 } catch (error) {}
             }
+
             scannerRunning = false;
+            activeTrack = null;
+            torchOn = false;
+            scannerTools.classList.remove("active");
             setStatus("Camera stopped.", "text-secondary");
         }
 
@@ -227,17 +345,30 @@
 
             try {
                 scannerRunning = true;
-                await scanner.start(
-                    { facingMode: "environment" },
-                    {
-                        fps: 12,
-                        qrbox: function(viewfinderWidth, viewfinderHeight) {
-                            const width = Math.floor(viewfinderWidth * 0.9);
-                            const height = Math.max(90, Math.floor(viewfinderHeight * 0.25));
-                            return { width: width, height: height };
-                        },
-                        rememberLastUsedCamera: true
+
+                const config = {
+                    fps: 18,
+                    qrbox: function(viewfinderWidth, viewfinderHeight) {
+                        // PSA slab barcodes are short and wide, so use a wide, shallow scan area.
+                        const width = Math.floor(viewfinderWidth * 0.96);
+                        const height = Math.max(70, Math.floor(viewfinderHeight * 0.18));
+                        return { width: width, height: height };
                     },
+                    aspectRatio: 1.777778,
+                    rememberLastUsedCamera: true,
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true
+                    }
+                };
+
+                const formats = barcodeFormats();
+                if (formats) {
+                    config.formatsToSupport = formats;
+                }
+
+                await scanner.start(
+                    { facingMode: { exact: "environment" } },
+                    config,
                     async function(decodedText) {
                         const certNumber = cleanCertValue(decodedText);
 
@@ -254,12 +385,76 @@
                     function() {}
                 );
 
-                setStatus("Camera active. Aim at the PSA slab barcode.", "text-info");
+                setStatus("Camera active. Fill the wide rectangle with the PSA barcode.", "text-info");
+                setTimeout(configureCameraControls, 650);
             } catch (error) {
                 scannerRunning = false;
-                setStatus("Could not start camera: " + error, "text-warning");
+
+                // Some browsers reject exact environment mode. Fall back to ideal mode.
+                try {
+                    await scanner.start(
+                        { facingMode: "environment" },
+                        {
+                            fps: 18,
+                            qrbox: function(viewfinderWidth, viewfinderHeight) {
+                                return {
+                                    width: Math.floor(viewfinderWidth * 0.96),
+                                    height: Math.max(70, Math.floor(viewfinderHeight * 0.18))
+                                };
+                            },
+                            aspectRatio: 1.777778,
+                            rememberLastUsedCamera: true,
+                            experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+                            formatsToSupport: barcodeFormats()
+                        },
+                        async function(decodedText) {
+                            const certNumber = cleanCertValue(decodedText);
+                            if (certNumber) {
+                                certInput.value = certNumber;
+                                setStatus("Cert found: " + certNumber + ". Tap Stage PSA Cert for Review.", "text-success");
+                                await stopScanner();
+                                certInput.focus();
+                            }
+                        },
+                        function() {}
+                    );
+
+                    scannerRunning = true;
+                    setStatus("Camera active. Fill the wide rectangle with the PSA barcode.", "text-info");
+                    setTimeout(configureCameraControls, 650);
+                } catch (fallbackError) {
+                    setStatus("Could not start camera: " + fallbackError, "text-warning");
+                }
             }
         }
+
+        zoomSlider.addEventListener("input", async function () {
+            if (!activeTrack) {
+                return;
+            }
+
+            const zoom = Number(zoomSlider.value);
+            zoomValue.textContent = zoom.toFixed(1) + "x";
+
+            try {
+                await activeTrack.applyConstraints({ advanced: [{ zoom: zoom }] });
+            } catch (error) {}
+        });
+
+        torchButton.addEventListener("click", async function () {
+            if (!activeTrack) {
+                return;
+            }
+
+            torchOn = !torchOn;
+
+            try {
+                await activeTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
+                torchButton.textContent = torchOn ? "Turn Light Off" : "Toggle Light";
+            } catch (error) {
+                setStatus("Torch is not available on this camera/browser.", "text-warning");
+            }
+        });
 
         startButton.addEventListener("click", startScanner);
         stopButton.addEventListener("click", stopScanner);
