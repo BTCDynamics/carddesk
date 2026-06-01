@@ -2050,6 +2050,63 @@ def storage_explorer():
     )
 
 
+@app.route("/pull-sheet")
+def pull_sheet():
+    """Print a pull sheet for cards matching the current storage/filter view."""
+    storage_filter = request.args.get("storage", "")
+    status_filter = request.args.get("status", "")
+    collection_type_filter = request.args.get("collection_type", "")
+
+    query = Card.query
+
+    if storage_filter == "__missing__":
+        query = query.filter(
+            db.or_(
+                Card.storage_location.is_(None),
+                Card.storage_location == ""
+            )
+        )
+    elif storage_filter:
+        # Storage Explorer sends an exact storage location. Keep pull sheets exact
+        # so one box/bin does not accidentally include similarly named locations.
+        query = query.filter(Card.storage_location == storage_filter)
+
+    if status_filter:
+        query = query.filter(Card.status == status_filter)
+
+    if collection_type_filter:
+        query = query.filter(Card.collection_type == collection_type_filter)
+
+    cards = (
+        query
+        .order_by(
+            Card.storage_location.asc(),
+            Card.player_name.asc(),
+            Card.year.asc(),
+            Card.brand.asc(),
+            Card.card_number.asc(),
+            Card.id.asc(),
+        )
+        .all()
+    )
+
+    total_quantity = sum((card.quantity or 1) for card in cards)
+    total_asking = sum((card.asking_price or 0) * (card.quantity or 1) for card in cards)
+    total_estimated_value = sum((card.estimated_value or 0) * (card.quantity or 1) for card in cards)
+
+    return render_template(
+        "pull_sheet.html",
+        cards=cards,
+        storage_filter=storage_filter,
+        status_filter=status_filter,
+        collection_type_filter=collection_type_filter,
+        total_quantity=total_quantity,
+        total_asking=total_asking,
+        total_estimated_value=total_estimated_value,
+        today=date.today().isoformat(),
+    )
+
+
 @app.route("/cards")
 def cards():
     sold_range = request.args.get("sold_range")
