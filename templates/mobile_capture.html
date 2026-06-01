@@ -84,6 +84,87 @@
     transform: translate(-50%, -50%) scale(1);
 }
 
+.capture-save-success-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(2, 6, 23, .72);
+    backdrop-filter: blur(4px);
+}
+
+.capture-save-success-overlay.active {
+    display: flex;
+}
+
+.capture-save-success-box {
+    width: min(92vw, 440px);
+    padding: 1.4rem;
+    border-radius: 1.35rem;
+    text-align: center;
+    color: #ffffff;
+    background: linear-gradient(145deg, #16a34a, #15803d);
+    border: 2px solid rgba(187, 247, 208, .75);
+    box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, .42), 0 0 36px rgba(34, 197, 94, .4);
+    animation: capture-save-pop .22s ease-out;
+}
+
+.capture-save-success-check {
+    display: grid;
+    place-items: center;
+    width: 74px;
+    height: 74px;
+    margin: 0 auto .85rem;
+    border-radius: 999px;
+    color: #166534;
+    background: #dcfce7;
+    font-size: 2.5rem;
+    font-weight: 1000;
+    line-height: 1;
+}
+
+.capture-save-success-title {
+    font-size: 1.35rem;
+    font-weight: 1000;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.capture-save-success-detail {
+    margin-top: .4rem;
+    font-size: .95rem;
+    font-weight: 750;
+    color: #dcfce7;
+}
+
+.capture-save-success-hint {
+    margin-top: .55rem;
+    color: #bbf7d0;
+    font-size: .9rem;
+    font-weight: 750;
+}
+
+.capture-control-focus {
+    animation: capture-control-pulse 1.05s ease-in-out 2;
+    box-shadow: 0 0 28px rgba(59, 130, 246, .46);
+    border-radius: 1rem;
+}
+
+@keyframes capture-save-pop {
+    from { transform: scale(.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes capture-control-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+    50% { transform: scale(1.018); box-shadow: 0 0 34px rgba(59, 130, 246, .72); }
+    100% { transform: scale(1); box-shadow: 0 0 18px rgba(59, 130, 246, .35); }
+}
+
+
 #captureVideo {
     width: 100%;
     max-height: 72vh;
@@ -182,6 +263,15 @@
 }
 </style>
 
+<div class="capture-save-success-overlay" id="saveSuccessOverlay" aria-live="polite" aria-hidden="true">
+    <div class="capture-save-success-box">
+        <div class="capture-save-success-check">✓</div>
+        <div class="capture-save-success-title">Card Saved</div>
+        <div class="capture-save-success-detail" id="saveSuccessDetail">Added to AI Review Queue</div>
+        <div class="capture-save-success-hint">Ready to capture the next card</div>
+    </div>
+</div>
+
 <div class="mobile-capture-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
         <div>
@@ -205,7 +295,7 @@
                     <div id="captureToast" class="capture-toast">Image Captured</div>
                 </div>
 
-                <div class="capture-controls">
+                <div class="capture-controls" id="captureControls">
                     <div class="row g-2 align-items-center">
                         <div class="col-md-4">
                             <button class="btn btn-primary w-100" id="startCameraBtn" type="button">Start Camera</button>
@@ -266,6 +356,9 @@ const saveBtn = document.getElementById("saveBtn");
 const statusBox = document.getElementById("captureStatus");
 const preview = document.getElementById("capturePreview");
 const previewEmpty = document.getElementById("previewEmpty");
+const captureControls = document.getElementById("captureControls");
+const saveSuccessOverlay = document.getElementById("saveSuccessOverlay");
+const saveSuccessDetail = document.getElementById("saveSuccessDetail");
 
 let stream = null;
 let lastCapturedBlob = null;
@@ -299,6 +392,83 @@ function playCaptureBeep() {
         oscillator.stop(audioContext.currentTime + 0.13);
     } catch (error) {
         // Some mobile browsers may block generated audio. Visual feedback still works.
+    }
+}
+
+function focusStartCameraControls() {
+    if (!captureControls) {
+        return;
+    }
+
+    setTimeout(function () {
+        captureControls.scrollIntoView({ behavior: "smooth", block: "center" });
+        captureControls.classList.add("capture-control-focus");
+
+        setTimeout(function () {
+            captureControls.classList.remove("capture-control-focus");
+        }, 2200);
+    }, 250);
+}
+
+function playSaveSuccessChime() {
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContextClass) {
+            return;
+        }
+
+        const audioContext = new AudioContextClass();
+        const gainNode = audioContext.createGain();
+        gainNode.connect(audioContext.destination);
+
+        const notes = [
+            { frequency: 659, start: 0.00, duration: 0.11 },
+            { frequency: 880, start: 0.11, duration: 0.13 },
+            { frequency: 1175, start: 0.24, duration: 0.18 }
+        ];
+
+        notes.forEach(function(note) {
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(note.frequency, audioContext.currentTime + note.start);
+            oscillator.connect(gainNode);
+            oscillator.start(audioContext.currentTime + note.start);
+            oscillator.stop(audioContext.currentTime + note.start + note.duration);
+        });
+
+        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.48);
+    } catch (error) {
+        // Some mobile browsers may block generated audio. Visual feedback still works.
+    }
+}
+
+function showSaveSuccessFeedback(aiStatus) {
+    const statusText = aiStatus || "Pending Review";
+
+    if (saveSuccessDetail) {
+        saveSuccessDetail.textContent = "Added to AI Review Queue: " + statusText;
+    }
+
+    if (navigator.vibrate) {
+        navigator.vibrate([140, 70, 140]);
+    }
+
+    playSaveSuccessChime();
+
+    if (saveSuccessOverlay) {
+        saveSuccessOverlay.classList.add("active");
+        saveSuccessOverlay.setAttribute("aria-hidden", "false");
+
+        setTimeout(function () {
+            saveSuccessOverlay.classList.remove("active");
+            saveSuccessOverlay.setAttribute("aria-hidden", "true");
+            focusStartCameraControls();
+        }, 2600);
+    } else {
+        focusStartCameraControls();
     }
 }
 
@@ -454,8 +624,13 @@ async function saveCapture() {
             throw new Error(result.error || "Upload failed.");
         }
 
-        setStatus(`Saved to AI Review Queue: ${result.ai_status || "Pending Review"}. Capture another card when ready.`);
+        const savedStatus = result.ai_status || "Pending Review";
+
+        setStatus(`✅ Saved to AI Review Queue: ${savedStatus}. Capture another card when ready.`);
+        showSaveSuccessFeedback(savedStatus);
+
         lastCapturedBlob = null;
+        saveBtn.disabled = true;
     } catch (error) {
         saveBtn.disabled = false;
         setStatus("Save failed: " + error.message);
