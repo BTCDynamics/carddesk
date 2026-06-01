@@ -164,6 +164,28 @@
     100% { transform: scale(1); box-shadow: 0 0 18px rgba(59, 130, 246, .35); }
 }
 
+.save-review-attention {
+    animation: save-review-pulse .85s ease-in-out 6;
+    box-shadow: 0 0 28px rgba(34, 197, 94, .86) !important;
+    border-color: #bbf7d0 !important;
+}
+
+@keyframes save-review-pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+    }
+    50% {
+        transform: scale(1.045);
+        box-shadow: 0 0 34px rgba(34, 197, 94, .95);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 14px rgba(34, 197, 94, .48);
+    }
+}
+
+
 
 #captureVideo {
     width: 100%;
@@ -400,15 +422,46 @@ function focusStartCameraControls() {
         return;
     }
 
-    setTimeout(function () {
-        captureControls.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Run more than once because mobile browsers sometimes restore scroll position after load.
+    const focusControls = function (behaviorMode) {
+        captureControls.scrollIntoView({ behavior: behaviorMode || "smooth", block: "center" });
         captureControls.classList.add("capture-control-focus");
 
         setTimeout(function () {
             captureControls.classList.remove("capture-control-focus");
         }, 2200);
-    }, 250);
+    };
+
+    setTimeout(function () { focusControls("auto"); }, 100);
+    setTimeout(function () { focusControls("smooth"); }, 650);
+    setTimeout(function () { focusControls("smooth"); }, 1250);
 }
+
+function guideUserToSaveButton() {
+    if (!saveBtn) {
+        return;
+    }
+
+    setTimeout(function () {
+        saveBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+        saveBtn.classList.remove("save-review-attention");
+
+        // Restart animation if button was recently highlighted.
+        void saveBtn.offsetWidth;
+
+        saveBtn.classList.add("save-review-attention");
+        setStatus("Image captured. Tap the green Save to Review Queue button.");
+
+        if (navigator.vibrate) {
+            navigator.vibrate(80);
+        }
+
+        setTimeout(function () {
+            saveBtn.classList.remove("save-review-attention");
+        }, 5200);
+    }, 350);
+}
+
 
 function playSaveSuccessChime() {
     try {
@@ -596,6 +649,7 @@ function captureFrame() {
         saveBtn.disabled = false;
 
         setStatus("Image captured. Review the preview, then Save to Review Queue or tap the camera area to retake.");
+        guideUserToSaveButton();
     }, "image/jpeg", 0.94);
 }
 
