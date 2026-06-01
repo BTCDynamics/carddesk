@@ -302,12 +302,7 @@
                 zoomSlider.max = capabilities.zoom.max || 1;
                 zoomSlider.step = capabilities.zoom.step || 0.1;
 
-                // PSA slab barcodes are tiny, so start zoomed in instead of wide.
-                // If the user adjusted zoom before, reuse that value next time.
-                const savedZoomValue = Number(localStorage.getItem("carddeskPsaScannerZoom"));
-                const preferredZoom = savedZoomValue || 3.0;
-                const startingZoom = Math.min(Math.max(preferredZoom, Number(zoomSlider.min)), Number(zoomSlider.max));
-
+                const startingZoom = Math.min(Math.max(2, zoomSlider.min), zoomSlider.max);
                 zoomSlider.value = startingZoom;
                 zoomValue.textContent = Number(startingZoom).toFixed(1) + "x";
                 zoomRow.classList.add("active");
@@ -440,7 +435,6 @@
 
             const zoom = Number(zoomSlider.value);
             zoomValue.textContent = zoom.toFixed(1) + "x";
-            localStorage.setItem("carddeskPsaScannerZoom", String(zoom));
 
             try {
                 await activeTrack.applyConstraints({ advanced: [{ zoom: zoom }] });
