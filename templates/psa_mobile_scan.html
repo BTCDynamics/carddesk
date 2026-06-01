@@ -305,7 +305,7 @@
                 // PSA slab barcodes are tiny, so start zoomed in instead of wide.
                 // If the user adjusted zoom before, reuse that value next time.
                 const savedZoomValue = Number(localStorage.getItem("carddeskPsaScannerZoom"));
-                const preferredZoom = savedZoomValue || 2.5;
+                const preferredZoom = savedZoomValue || 3.0;
                 const startingZoom = Math.min(Math.max(preferredZoom, Number(zoomSlider.min)), Number(zoomSlider.max));
 
                 zoomSlider.value = startingZoom;
