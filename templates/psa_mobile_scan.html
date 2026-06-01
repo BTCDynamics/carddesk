@@ -208,6 +208,27 @@
             50% { transform: scale(1.025); box-shadow: 0 0 22px rgba(34, 197, 94, .95); }
             100% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
         }
+
+        .stage-submit-attention {
+            animation: stage-submit-pulse .85s ease-in-out 5;
+            box-shadow: 0 0 24px rgba(34, 197, 94, .82) !important;
+            border-color: #bbf7d0 !important;
+        }
+
+        @keyframes stage-submit-pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+            }
+            50% {
+                transform: scale(1.045);
+                box-shadow: 0 0 30px rgba(34, 197, 94, .95);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 12px rgba(34, 197, 94, .48);
+            }
+        }
     </style>
 </head>
 <body>
@@ -306,7 +327,7 @@
                     <input type="hidden" name="acquisition_event" value="">
 
                     <div class="d-grid gap-2">
-                        <button class="btn btn-success btn-lg" type="submit" {% if not token_configured %}disabled{% endif %}>Stage PSA Cert for Review</button>
+                        <button class="btn btn-success btn-lg" type="submit" id="stageReviewButton" {% if not token_configured %}disabled{% endif %}>Stage PSA Cert for Review</button>
                         <a class="btn btn-outline-light" href="{{ url_for('ai_import_review') }}">Review Queue ({{ pending_count }})</a>
                     </div>
                 </form>
@@ -327,6 +348,7 @@
         const torchButton = document.getElementById("torchButton");
         const scanSuccessOverlay = document.getElementById("scanSuccessOverlay");
         const scanSuccessCert = document.getElementById("scanSuccessCert");
+        const stageReviewButton = document.getElementById("stageReviewButton");
 
         let scanner = null;
         let scannerRunning = false;
@@ -437,6 +459,25 @@
             }
         }
 
+        function guideUserToStageButton() {
+            if (!stageReviewButton) {
+                return;
+            }
+
+            stageReviewButton.scrollIntoView({ behavior: "smooth", block: "center" });
+            stageReviewButton.classList.remove("stage-submit-attention");
+
+            // Restart the animation even if the same button was highlighted recently.
+            void stageReviewButton.offsetWidth;
+
+            stageReviewButton.classList.add("stage-submit-attention");
+            setStatus("✅ Cert captured. Tap the green Stage PSA Cert for Review button.", "text-success");
+
+            setTimeout(function () {
+                stageReviewButton.classList.remove("stage-submit-attention");
+            }, 4500);
+        }
+
         function showScanSuccessFeedback(certNumber) {
             if (navigator.vibrate) {
                 navigator.vibrate([140, 70, 140]);
@@ -460,6 +501,9 @@
                 setTimeout(function () {
                     scanSuccessOverlay.classList.remove("active");
                     scanSuccessOverlay.setAttribute("aria-hidden", "true");
+
+                    // Once the green scan confirmation clears, guide the user to the next action.
+                    setTimeout(guideUserToStageButton, 150);
                 }, 3000);
             }
         }
