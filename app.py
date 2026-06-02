@@ -14,6 +14,11 @@ from werkzeug.utils import secure_filename
 
 from models import db, Card, CardImportStaging
 from helpers.psa_helpers import *
+from helpers.cardsight_helpers import (
+    cardsight_api_key,
+    call_cardsight_for_image,
+    extract_card_data_from_cardsight,
+)
 
 app = Flask(__name__)
 
@@ -33,14 +38,6 @@ XIMILAR_API_TOKEN = os.environ.get("XIMILAR_API_TOKEN") or os.environ.get("XIMIL
 XIMILAR_SPORT_CARD_ENDPOINT = os.environ.get(
     "XIMILAR_SPORT_CARD_ENDPOINT",
     "https://api.ximilar.com/collectibles/v2/sport_id"
-)
-
-# CardSight is currently the preferred recognition provider for CardDesk testing.
-# Keep Ximilar variables in Render for now; CardDesk will use CardSight when this key exists.
-CARDSIGHT_API_KEY = os.environ.get("CARDSIGHT_API_KEY")
-CARDSIGHT_IDENTIFY_ENDPOINT = os.environ.get(
-    "CARDSIGHT_IDENTIFY_ENDPOINT",
-    "https://api.cardsight.ai/v1/identify/card"
 )
 
 # PSA cert lookup testing. Add PSA_ACCESS_TOKEN in Render environment variables.
@@ -662,173 +659,6 @@ def call_ximilar_for_image(image_filename):
 
 
 
-def confidence_to_score(value):
-    """Convert provider confidence labels into a numeric score for CardImportStaging.ai_confidence."""
-    if value in (None, ""):
-        return None
-
-    try:
-        number = float(value)
-        if number <= 1:
-            number *= 100
-        return number
-    except (TypeError, ValueError):
-        pass
-
-    normalized = str(value).strip().lower()
-
-    confidence_map = {
-        "very high": 98,
-        "high": 95,
-        "medium": 70,
-        "moderate": 70,
-        "low": 40,
-        "very low": 20,
-    }
-
-    return confidence_map.get(normalized)
-
-
-def normalize_card_attributes(attributes):
-    """Return a clean list of CardSight card attributes."""
-    if not attributes:
-        return []
-
-    if isinstance(attributes, list):
-        return [
-            str(attribute).strip()
-            for attribute in attributes
-            if str(attribute).strip()
-        ]
-
-    if isinstance(attributes, str):
-        return [
-            attribute.strip()
-            for attribute in attributes.replace(";", ",").split(",")
-            if attribute.strip()
-        ]
-
-    return []
-
-
-def extract_card_data_from_cardsight(response_json):
-    """Parse CardSight response JSON into CardDesk staging fields.
-
-    Expected CardSight shape:
-    {
-      "success": true,
-      "detections": [
-        {
-          "confidence": "High",
-          "card": {
-            "year": "1989",
-            "manufacturer": "Topps",
-            "releaseName": "Topps",
-            "setName": "Base Set",
-            "name": "Randy Johnson",
-            "number": "647",
-            "attributes": ["RC"]
-          }
-        }
-      ]
-    }
-    """
-    payload = response_json or {}
-    detections = payload.get("detections") or []
-
-    if not detections:
-        raise RuntimeError("CardSight returned no card detections.")
-
-    detection = detections[0] or {}
-    card = detection.get("card") or {}
-
-    attributes = normalize_card_attributes(card.get("attributes"))
-    attributes_upper = {attribute.upper() for attribute in attributes}
-
-    release_name = clean_value(card.get("releaseName"))
-    set_name_value = clean_value(card.get("setName"))
-
-    if release_name and set_name_value:
-        # Avoid duplicate names like "Topps Topps".
-        if release_name.lower() == set_name_value.lower():
-            set_name = release_name
-        else:
-            set_name = f"{release_name} {set_name_value}"
-    else:
-        set_name = release_name or set_name_value
-
-    return {
-        "player_name": clean_value(card.get("name")),
-        "year": normalize_year(card.get("year")),
-        "sport": None,
-        "brand": clean_value(card.get("manufacturer")),
-        "set_name": set_name,
-        "card_number": clean_value(card.get("number")),
-        "variation": ", ".join(attributes) if attributes else None,
-        "is_rookie": "RC" in attributes_upper or "ROOKIE" in attributes_upper,
-        "grading_company": None,
-        "actual_grade": None,
-        "cert_number": None,
-        "card_type": "Raw",
-        "ai_confidence": confidence_to_score(detection.get("confidence")),
-    }
-
-
-def call_cardsight_for_image(image_filename):
-    """Send one saved image to CardSight and return the raw JSON response."""
-    if not CARDSIGHT_API_KEY:
-        raise RuntimeError("Missing CARDSIGHT_API_KEY environment variable.")
-
-    image_path = os.path.join(app.config["UPLOAD_FOLDER"], image_filename)
-
-    if not os.path.exists(image_path):
-        raise RuntimeError(f"Image file not found: {image_filename}")
-
-    extension = image_filename.rsplit(".", 1)[-1].lower() if "." in image_filename else "jpg"
-    content_type_by_extension = {
-        "jpg": "image/jpeg",
-        "jpeg": "image/jpeg",
-        "png": "image/png",
-        "gif": "image/gif",
-        "webp": "image/webp",
-    }
-    image_content_type = content_type_by_extension.get(extension, "application/octet-stream")
-    boundary = f"----CardDeskBoundary{uuid4().hex}"
-
-    with open(image_path, "rb") as image_file:
-        image_bytes = image_file.read()
-
-    body = b"".join([
-        f"--{boundary}\r\n".encode("utf-8"),
-        f'Content-Disposition: form-data; name="image"; filename="{image_filename}"\r\n'.encode("utf-8"),
-        f"Content-Type: {image_content_type}\r\n\r\n".encode("utf-8"),
-        image_bytes,
-        b"\r\n",
-        f"--{boundary}--\r\n".encode("utf-8"),
-    ])
-
-    api_request = urllib.request.Request(
-        CARDSIGHT_IDENTIFY_ENDPOINT,
-        data=body,
-        headers={
-            "X-API-Key": CARDSIGHT_API_KEY,
-            "Content-Type": f"multipart/form-data; boundary={boundary}",
-            "User-Agent": "CardDesk/1.0 (+https://carddesk.app)",
-            "Accept": "application/json",
-        },
-        method="POST",
-    )
-
-    try:
-        with urllib.request.urlopen(api_request, timeout=45) as response:
-            response_body = response.read().decode("utf-8")
-            return json.loads(response_body)
-    except urllib.error.HTTPError as error:
-        error_body = error.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"CardSight HTTP {error.code}: {error_body}") from error
-    except urllib.error.URLError as error:
-        raise RuntimeError(f"CardSight connection error: {error.reason}") from error
-
 
 def recognize_card_image(image_filename):
     """Recognize a card image and return (provider_name, raw_response, extracted_fields).
@@ -836,8 +666,11 @@ def recognize_card_image(image_filename):
     CardSight is preferred when CARDSIGHT_API_KEY is configured.
     Ximilar remains as a fallback while testing.
     """
-    if CARDSIGHT_API_KEY:
-        raw_response = call_cardsight_for_image(image_filename)
+    if cardsight_api_key():
+        raw_response = call_cardsight_for_image(
+            image_filename,
+            app.config["UPLOAD_FOLDER"]
+        )
         return "CardSight", raw_response, extract_card_data_from_cardsight(raw_response)
 
     raw_response = call_ximilar_for_image(image_filename)
@@ -2764,7 +2597,7 @@ def ai_import_upload():
         "ai_import_upload.html",
         pending_count=pending_count,
         imported_count=imported_count,
-        token_configured=bool(CARDSIGHT_API_KEY or XIMILAR_API_TOKEN),
+        token_configured=bool(cardsight_api_key() or XIMILAR_API_TOKEN),
     )
 
 
