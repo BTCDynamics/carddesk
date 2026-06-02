@@ -1,0 +1,691 @@
+from datetime import date, timedelta
+
+from flask import render_template, request, redirect, url_for, flash
+
+from models import db, Card
+from helpers.acquisition_helpers import (
+    clean_value,
+    acquisition_value,
+    acquisition_date_value,
+    purchase_date_value,
+)
+from helpers.storage_helpers import get_storage_locations
+from helpers.deal_cart_helpers import (
+    get_deal_cart_ids,
+    get_deal_cart_quantity,
+)
+
+
+def register_inventory_routes(app, generate_card_code, save_uploaded_image, delete_image_file):
+    @app.route("/cards")
+    def cards():
+        sold_range = request.args.get("sold_range")
+        search_query = request.args.get("q", "")
+        sport_filter = request.args.get("sport", "")
+        status_filter = request.args.get("status", "")
+        collection_type_filter = request.args.get("collection_type", "")
+        rookie_filter = request.args.get("rookie", "")
+        hof_filter = request.args.get("hof", "")
+        card_type_filter = request.args.get("card_type", "")
+        grade_estimate_filter = request.args.get("grade_estimate", "")
+        actual_grade_filter = request.args.get("actual_grade", "")
+        year_filter = request.args.get("year", "")
+        brand_filter = request.args.get("brand", "")
+        storage_filter = request.args.get("storage", "")
+        variation_filter = request.args.get("variation", "")
+        acquisition_source_filter = request.args.get("acquisition_source", "")
+        acquisition_event_filter = request.args.get("acquisition_event", "")
+        min_price = request.args.get("min_price", "")
+        max_price = request.args.get("max_price", "")
+        scope = request.args.get("scope", "inventory")
+
+        query = Card.query
+
+        # Default inventory view should show cards that are actually available to sell.
+        # If the user chooses filters, those filters take control.
+        has_manual_scope_filter = any([
+            sold_range,
+            status_filter,
+            collection_type_filter,
+        ])
+
+        if scope == "inventory" and not has_manual_scope_filter:
+            query = query.filter(Card.status == "Active")
+            query = query.filter(Card.collection_type == "Inventory")
+
+        # Do not apply LIMIT until after all filters have been added.
+        # SQLAlchemy raises an InvalidRequestError if .filter() is called after .limit().
+
+        if search_query:
+            query = query.filter(
+                db.or_(
+                    Card.card_code.ilike(f"%{search_query}%"),
+                    Card.player_name.ilike(f"%{search_query}%"),
+                    Card.sport.ilike(f"%{search_query}%"),
+                    Card.brand.ilike(f"%{search_query}%"),
+                    Card.set_name.ilike(f"%{search_query}%"),
+                    Card.card_number.ilike(f"%{search_query}%"),
+                    Card.variation.ilike(f"%{search_query}%"),
+                    Card.grade_estimate.ilike(f"%{search_query}%"),
+                    Card.actual_grade.ilike(f"%{search_query}%"),
+                    Card.grading_company.ilike(f"%{search_query}%"),
+                    Card.cert_number.ilike(f"%{search_query}%"),
+                    Card.status.ilike(f"%{search_query}%"),
+                    Card.collection_type.ilike(f"%{search_query}%"),
+                    Card.storage_location.ilike(f"%{search_query}%"),
+                    Card.acquisition_source.ilike(f"%{search_query}%"),
+                    Card.acquisition_event.ilike(f"%{search_query}%")
+                )
+            )
+
+        if rookie_filter == "yes":
+            query = query.filter(Card.is_rookie == True)
+
+        if rookie_filter == "no":
+            query = query.filter(Card.is_rookie == False)
+
+        if hof_filter == "yes":
+            query = query.filter(Card.is_hof == True)
+
+        if hof_filter == "no":
+            query = query.filter(Card.is_hof == False)
+
+        if card_type_filter:
+            query = query.filter(Card.card_type == card_type_filter)
+
+        if sport_filter:
+            query = query.filter(Card.sport == sport_filter)
+
+        if status_filter:
+            query = query.filter(Card.status == status_filter)
+
+        if collection_type_filter:
+            query = query.filter(Card.collection_type == collection_type_filter)
+
+        if acquisition_source_filter:
+            query = query.filter(Card.acquisition_source == acquisition_source_filter)
+
+        if acquisition_event_filter:
+            query = query.filter(Card.acquisition_event.ilike(f"%{acquisition_event_filter}%"))
+
+        if grade_estimate_filter:
+            query = query.filter(Card.grade_estimate.ilike(f"%{grade_estimate_filter}%"))
+
+        if actual_grade_filter:
+            query = query.filter(Card.actual_grade.ilike(f"%{actual_grade_filter}%"))
+
+        if year_filter:
+            try:
+                query = query.filter(Card.year == int(year_filter))
+            except ValueError:
+                year_filter = ""
+
+        if brand_filter:
+            query = query.filter(Card.brand.ilike(f"%{brand_filter}%"))
+
+        if storage_filter == "__missing__":
+            query = query.filter(db.or_(Card.storage_location.is_(None), Card.storage_location == ""))
+        elif storage_filter:
+            query = query.filter(Card.storage_location.ilike(f"%{storage_filter}%"))
+
+        if variation_filter:
+            query = query.filter(Card.variation.ilike(f"%{variation_filter}%"))
+
+        if min_price:
+            try:
+                query = query.filter(Card.purchase_price >= float(min_price))
+            except ValueError:
+                min_price = ""
+
+        if max_price:
+            try:
+                query = query.filter(Card.purchase_price <= float(max_price))
+            except ValueError:
+                max_price = ""
+
+
+        if sold_range:
+            today_value = date.today()
+
+            if sold_range == "today":
+                start_date = today_value
+            elif sold_range == "3d":
+                start_date = today_value - timedelta(days=3)
+            elif sold_range == "7d":
+                start_date = today_value - timedelta(days=6)
+            elif sold_range == "30d":
+                start_date = today_value - timedelta(days=29)
+            else:
+                start_date = None
+
+            if start_date:
+                query = query.filter(Card.sold_date >= start_date.isoformat())
+
+        has_active_filter = any([
+            sold_range,
+            search_query,
+            sport_filter,
+            status_filter,
+            collection_type_filter,
+            rookie_filter,
+            hof_filter,
+            card_type_filter,
+            grade_estimate_filter,
+            actual_grade_filter,
+            year_filter,
+            brand_filter,
+            storage_filter,
+            variation_filter,
+            acquisition_source_filter,
+            acquisition_event_filter,
+            min_price,
+            max_price,
+        ])
+
+        query = query.order_by(Card.id.desc())
+
+        # Keep the unfiltered All Records view from loading the entire database,
+        # but allow searches/filters inside All Records to search the full dataset.
+        if scope == "all" and not has_active_filter:
+            query = query.limit(250)
+
+        all_cards = query.all()
+
+        # Results should summarize the cards currently displayed on the inventory page.
+        summary_cards = all_cards
+
+        filtered_card_count = sum(
+            (card.quantity or 1)
+            for card in summary_cards
+        )
+
+        filtered_total_cost = sum(
+            (card.purchase_price or 0) * (card.quantity or 1)
+            for card in summary_cards
+        )
+
+        filtered_total_asking = sum(
+            (card.asking_price or 0) * (card.quantity or 1)
+            for card in summary_cards
+        )
+
+        filtered_total_sold = sum(
+            (card.sold_price or 0) * (card.quantity or 1)
+            for card in summary_cards
+        )
+
+        filtered_total_profit = sum(
+            ((card.sold_price or 0) - (card.purchase_price or 0)) * (card.quantity or 1)
+            for card in summary_cards
+        )
+        active_inventory_count = sum(
+            (card.quantity or 1)
+            for card in Card.query
+            .filter(Card.status == "Active")
+            .filter(Card.collection_type == "Inventory")
+            .all()
+        )
+
+        missing_storage_count = sum(
+            (card.quantity or 1)
+            for card in Card.query
+            .filter(Card.status == "Active")
+            .filter(Card.collection_type == "Inventory")
+            .filter(db.or_(Card.storage_location.is_(None), Card.storage_location == ""))
+            .all()
+        )
+
+        storage_locations = get_storage_locations()
+
+        acquisition_sources = [
+            "Existing Inventory",
+            "Cash Purchase",
+            "Trade-In",
+            "Bulk Collection",
+            "Pack Pull",
+            "Personal Collection",
+            "Other",
+        ]
+
+        acquisition_events = [
+            row[0]
+            for row in db.session.query(Card.acquisition_event)
+            .filter(Card.acquisition_event.isnot(None))
+            .filter(Card.acquisition_event != "")
+            .distinct()
+            .order_by(Card.acquisition_event.asc())
+            .all()
+        ]
+
+        deal_cart_ids = get_deal_cart_ids()
+        deal_cart_count = get_deal_cart_quantity()
+
+        return render_template(
+            "card_list.html",
+            cards=all_cards,
+            filtered_card_count=filtered_card_count,
+            filtered_total_cost=filtered_total_cost,
+            filtered_total_asking=filtered_total_asking,
+            filtered_total_sold=filtered_total_sold,
+            filtered_total_profit=filtered_total_profit,
+            search_query=search_query,
+            sport_filter=sport_filter,
+            status_filter=status_filter,
+            collection_type_filter=collection_type_filter,
+            rookie_filter=rookie_filter,
+            hof_filter=hof_filter,
+            card_type_filter=card_type_filter,
+            grade_estimate_filter=grade_estimate_filter,
+            actual_grade_filter=actual_grade_filter,
+            year_filter=year_filter,
+            brand_filter=brand_filter,
+            storage_filter=storage_filter,
+            variation_filter=variation_filter,
+            acquisition_source_filter=acquisition_source_filter,
+            acquisition_event_filter=acquisition_event_filter,
+            min_price=min_price,
+            max_price=max_price,
+            storage_locations=storage_locations,
+            acquisition_sources=acquisition_sources,
+            acquisition_events=acquisition_events,
+            deal_cart_ids=deal_cart_ids,
+            deal_cart_count=deal_cart_count,
+            active_inventory_count=active_inventory_count,
+            missing_storage_count=missing_storage_count,
+            scope=scope
+        )
+
+
+    @app.route("/cards/<int:card_id>")
+    def card_detail(card_id):
+        card = Card.query.get_or_404(card_id)
+
+        return render_template(
+            "card_detail.html",
+            card=card
+        )
+
+
+    @app.route("/cards/<int:card_id>/edit", methods=["GET", "POST"])
+    def edit_card(card_id):
+        card = Card.query.get_or_404(card_id)
+
+        if request.method == "POST":
+            uploaded_image = save_uploaded_image(request.files.get("card_image"))
+
+            if uploaded_image:
+                delete_image_file(card.image_filename)
+                card.image_filename = uploaded_image
+
+            if request.form.get("remove_image"):
+                delete_image_file(card.image_filename)
+                delete_image_file(getattr(card, "image_back_filename", None))
+                card.image_filename = None
+                card.image_back_filename = None
+
+            card.card_code = request.form["card_code"]
+            card.sport = request.form.get("sport")
+            card.player_name = clean_value(request.form["player_name"])
+            card.year = request.form.get("year") or None
+            card.brand = clean_value(request.form.get("brand"))
+            card.set_name = clean_value(request.form.get("set_name"))
+            card.card_number = clean_value(request.form.get("card_number"))
+            card.variation = clean_value(request.form.get("variation"))
+            card.is_rookie = True if request.form.get("is_rookie") else False
+            card.is_hof = True if request.form.get("is_hof") else False
+            card.card_type = request.form.get("card_type") or "Raw"
+            card.grading_company = clean_value(request.form.get("grading_company"))
+            card.actual_grade = clean_value(request.form.get("actual_grade"))
+            card.cert_number = clean_value(request.form.get("cert_number"))
+            card.grade_estimate = clean_value(request.form.get("grade_estimate"))
+            card.quantity = int(request.form.get("quantity") or 1)
+            card.purchase_price = request.form.get("purchase_price") or None
+            card.estimated_value = request.form.get("estimated_value") or None
+            card.asking_price = request.form.get("asking_price") or None
+            card.sold_price = request.form.get("sold_price") or None
+            card.sold_date = request.form.get("sold_date")
+            card.sales_platform = clean_value(request.form.get("sales_platform"))
+            card.purchase_date = purchase_date_value(request.form)
+            card.acquisition_source = acquisition_value(request.form.get("acquisition_source"))
+            card.acquisition_date = acquisition_date_value(request.form)
+            card.acquisition_event = clean_value(request.form.get("acquisition_event"))
+            card.storage_location = clean_value(request.form.get("storage_location"))
+            card.collection_type = request.form.get("collection_type") or "Inventory"
+            card.status = request.form.get("status")
+            card.notes = request.form.get("notes")
+
+            db.session.commit()
+
+            flash("Card updated successfully.")
+
+            return redirect(url_for("card_detail", card_id=card.id))
+
+        return render_template(
+            "edit_card.html",
+            card=card
+        )
+
+
+    @app.route("/cards/<int:card_id>/delete", methods=["POST"])
+    def delete_card(card_id):
+        card = Card.query.get_or_404(card_id)
+
+        delete_image_file(card.image_filename)
+        delete_image_file(getattr(card, "image_back_filename", None))
+
+        db.session.delete(card)
+        db.session.commit()
+
+        flash("Card deleted successfully.")
+
+        return redirect(url_for("cards"))
+
+
+    @app.route("/cards/<int:card_id>/update-storage", methods=["POST"])
+    def update_card_storage(card_id):
+        card = Card.query.get_or_404(card_id)
+
+        card.storage_location = clean_value(request.form.get("storage_location"))
+
+        db.session.commit()
+
+        flash(f"{card.card_code} storage location updated.")
+
+        return redirect(request.referrer or url_for("cards"))
+
+
+
+
+    @app.route("/cards/<int:card_id>/update-status", methods=["POST"])
+    def update_card_status(card_id):
+        card = Card.query.get_or_404(card_id)
+
+        new_status = request.form.get("status") or card.status
+        card.status = new_status
+
+        db.session.commit()
+
+        flash(f"{card.card_code} status updated to {card.status}.")
+
+        return redirect(request.referrer or url_for("cards"))
+
+
+    @app.route("/cards/<int:card_id>/add-duplicate", methods=["POST"])
+    def add_duplicate(card_id):
+        card = Card.query.get_or_404(card_id)
+
+        old_quantity = card.quantity or 1
+
+        card.quantity = old_quantity + 1
+
+        db.session.commit()
+
+        flash(
+            f"Quantity updated from {old_quantity} to {card.quantity}."
+        )
+
+        return redirect(url_for("cards"))
+
+
+    @app.route("/cards/<int:card_id>/clone")
+    def clone_card(card_id):
+        source_card = Card.query.get_or_404(card_id)
+
+        flash(
+            f"Cloning {source_card.card_code}. Review the details, adjust what changed, then save as a new card."
+        )
+
+        return render_template(
+            "add_card.html",
+            clone_source=source_card
+        )
+
+
+    @app.route("/rapid-entry", methods=["GET", "POST"])
+    def rapid_entry():
+        if request.method == "POST":
+            quantity_to_add = int(request.form.get("quantity") or 1)
+            card_type = request.form.get("card_type") or "Raw"
+            collection_type = request.form.get("collection_type") or "Inventory"
+
+            player_name = clean_value(request.form["player_name"])
+            sport = request.form.get("sport")
+            year_value = request.form.get("year")
+            brand = clean_value(request.form.get("brand"))
+            set_name = clean_value(request.form.get("set_name"))
+            card_number = clean_value(request.form.get("card_number"))
+            variation = clean_value(request.form.get("variation"))
+            force_new_card = request.form.get("force_new") == "1"
+
+            existing_query = Card.query.filter(
+                Card.player_name.ilike(player_name),
+                Card.sport == sport,
+                Card.card_type == card_type
+            )
+
+            if year_value:
+                existing_query = existing_query.filter(Card.year == int(year_value))
+
+            if brand:
+                existing_query = existing_query.filter(Card.brand.ilike(brand))
+
+            if card_number:
+                existing_query = existing_query.filter(Card.card_number.ilike(card_number))
+
+            if variation:
+                existing_query = existing_query.filter(Card.variation.ilike(variation))
+            else:
+                existing_query = existing_query.filter(
+                    db.or_(Card.variation.is_(None), Card.variation == "")
+                )
+
+            existing_card = existing_query.first()
+
+            if existing_card and not force_new_card:
+                old_quantity = existing_card.quantity or 1
+                existing_card.quantity = old_quantity + quantity_to_add
+                existing_card.collection_type = collection_type
+                existing_card.acquisition_source = existing_card.acquisition_source or acquisition_value(request.form.get("acquisition_source"))
+                existing_card.acquisition_date = existing_card.acquisition_date or acquisition_date_value(request.form)
+                existing_card.acquisition_event = existing_card.acquisition_event or clean_value(request.form.get("acquisition_event"))
+                db.session.commit()
+                flash(f"Duplicate found. Quantity updated from {old_quantity} to {existing_card.quantity}.")
+                saved_card_id = existing_card.id
+            else:
+                new_card = Card(
+                    card_code=generate_card_code(),
+                    sport=sport,
+                    player_name=player_name,
+                    year=year_value or None,
+                    brand=brand,
+                    set_name=set_name,
+                    card_number=card_number,
+                    variation=variation,
+                    is_rookie=True if request.form.get("is_rookie") else False,
+                    is_hof=True if request.form.get("is_hof") else False,
+                    card_type=card_type,
+                    grading_company=clean_value(request.form.get("grading_company")),
+                    actual_grade=clean_value(request.form.get("actual_grade")),
+                    cert_number=clean_value(request.form.get("cert_number")),
+                    grade_estimate=clean_value(request.form.get("grade_estimate")),
+                    quantity=quantity_to_add,
+                    purchase_price=request.form.get("purchase_price") or None,
+                    estimated_value=request.form.get("estimated_value") or None,
+                    asking_price=request.form.get("asking_price") or None,
+                    sold_price=request.form.get("sold_price") or None,
+                    sold_date=request.form.get("sold_date"),
+                    sales_platform=clean_value(request.form.get("sales_platform")),
+                    purchase_date=purchase_date_value(request.form),
+                    acquisition_source=acquisition_value(request.form.get("acquisition_source")),
+                    acquisition_date=acquisition_date_value(request.form),
+                    acquisition_event=clean_value(request.form.get("acquisition_event")),
+                    storage_location=clean_value(request.form.get("storage_location")),
+                    collection_type=collection_type,
+                    notes=request.form.get("notes"),
+                    status=request.form.get("status") or "Active"
+                )
+
+                db.session.add(new_card)
+                db.session.commit()
+                flash("Rapid entry card saved.")
+                saved_card_id = new_card.id
+
+            submit_action = request.form.get("submit_action")
+
+            if submit_action == "save_view":
+                return redirect(url_for("card_detail", card_id=saved_card_id))
+
+            keep_values = {
+                "sport": sport or "",
+                "year": year_value or "",
+                "brand": brand or "",
+                "set_name": set_name or "",
+                "card_type": card_type or "Raw",
+                "storage_location": request.form.get("storage_location") or "",
+                "collection_type": collection_type or "Inventory",
+                "status": request.form.get("status") or "Active",
+                "purchase_date": purchase_date_value(request.form) or "",
+                "acquisition_source": request.form.get("acquisition_source") or "Existing Inventory",
+                "acquisition_date": acquisition_date_value(request.form) or "",
+                "acquisition_event": request.form.get("acquisition_event") or ""
+            }
+
+            return redirect(url_for("rapid_entry", **keep_values))
+
+        return render_template("rapid_entry.html")
+
+
+    @app.route("/add-card", methods=["GET", "POST"])
+    def add_card():
+        if request.method == "POST":
+            quantity_to_add = int(request.form.get("quantity") or 1)
+
+            card_type = request.form.get("card_type") or "Raw"
+            collection_type = request.form.get("collection_type") or "Inventory"
+            card_status = "Holding" if collection_type == "Personal Collection" else "Active"
+
+            player_name = clean_value(request.form["player_name"])
+            sport = request.form.get("sport")
+            year_value = request.form.get("year")
+            brand = clean_value(request.form.get("brand"))
+            card_number = clean_value(request.form.get("card_number"))
+            variation = clean_value(request.form.get("variation"))
+            uploaded_image = save_uploaded_image(request.files.get("card_image"))
+            force_new_card = request.form.get("force_new") == "1"
+
+            existing_query = Card.query.filter(
+                Card.player_name.ilike(player_name),
+                Card.sport == sport,
+                Card.card_type == card_type
+            )
+
+            if year_value:
+                existing_query = existing_query.filter(
+                    Card.year == int(year_value)
+                )
+
+            if brand:
+                existing_query = existing_query.filter(
+                    Card.brand.ilike(brand)
+                )
+
+            if card_number:
+                existing_query = existing_query.filter(
+                    Card.card_number.ilike(card_number)
+                )
+
+            if variation:
+                existing_query = existing_query.filter(
+                    Card.variation.ilike(variation)
+                )
+            else:
+                existing_query = existing_query.filter(
+                    db.or_(
+                        Card.variation.is_(None),
+                        Card.variation == ""
+                    )
+                )
+
+            existing_card = existing_query.first()
+
+            if existing_card and not force_new_card:
+                old_quantity = existing_card.quantity or 1
+
+                existing_card.quantity = old_quantity + quantity_to_add
+                existing_card.collection_type = collection_type
+                existing_card.status = card_status
+
+                if uploaded_image:
+                    if existing_card.image_filename:
+                        delete_image_file(existing_card.image_filename)
+
+                    existing_card.image_filename = uploaded_image
+
+                db.session.commit()
+
+                flash(
+                    f"Duplicate card found. Quantity updated from {old_quantity} to {existing_card.quantity}."
+                )
+
+                return redirect(
+                    url_for(
+                        "card_detail",
+                        card_id=existing_card.id
+                    )
+                )
+
+            new_card = Card(
+                card_code=generate_card_code(),
+                sport=sport,
+                player_name=player_name,
+                year=year_value or None,
+                brand=brand,
+                set_name=clean_value(request.form.get("set_name")),
+                card_number=card_number,
+                variation=variation,
+                is_rookie=True if request.form.get("is_rookie") else False,
+                is_hof=True if request.form.get("is_hof") else False,
+                card_type=card_type,
+                grading_company=clean_value(
+                    request.form.get("grading_company")
+                ),
+                actual_grade=clean_value(
+                    request.form.get("actual_grade")
+                ),
+                cert_number=clean_value(
+                    request.form.get("cert_number")
+                ),
+                grade_estimate=clean_value(
+                    request.form.get("grade_estimate")
+                ),
+                quantity=quantity_to_add,
+                purchase_price=request.form.get("purchase_price") or None,
+                estimated_value=request.form.get("estimated_value") or None,
+                asking_price=request.form.get("asking_price") or None,
+                sold_price=request.form.get("sold_price") or None,
+                sold_date=request.form.get("sold_date"),
+                sales_platform=clean_value(request.form.get("sales_platform")),
+                purchase_date=purchase_date_value(request.form),
+                acquisition_source=acquisition_value(request.form.get("acquisition_source")),
+                acquisition_date=acquisition_date_value(request.form),
+                acquisition_event=clean_value(request.form.get("acquisition_event")),
+                storage_location=clean_value(
+                    request.form.get("storage_location")
+                ),
+                collection_type=collection_type,
+                image_filename=uploaded_image,
+                notes=request.form.get("notes"),
+                status=card_status
+            )
+
+            db.session.add(new_card)
+            db.session.commit()
+
+            if force_new_card:
+                flash("Cloned card saved as a new inventory record.")
+            else:
+                flash("New card added successfully.")
+
+            return redirect(url_for("card_detail", card_id=new_card.id))
+
+        return render_template("add_card.html", clone_source=None)
