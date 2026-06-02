@@ -51,27 +51,14 @@
     </div>
     <div class="d-flex flex-wrap gap-2 align-items-center">
         
-        <div class="mobile-capture-mini">
-<div class="mobile-capture-mini-text">
-                <div class="mobile-capture-mini-title">Mobile Card Capture</div>
-                <button class="mobile-capture-mini-copy" type="button" onclick="copyMobileCaptureUrl()">Copy URL</button>
-            </div>
-
-            <a class="mobile-capture-mini-qr-link"
-               href="{{ url_for('mobile_capture') }}"
-               title="Open Mobile Card Capture">
-                <img class="mobile-capture-mini-qr"
-                     src="{{ mobile_capture_qr_url }}"
-                     alt="QR code for Mobile Card Capture">
-            </a>
-
-            <span id="mobileCaptureUrlText" class="visually-hidden">
-                {{ mobile_capture_url }}
-            </span>
-        </div>
-
-        <a class="btn btn-outline-light" href="{{ url_for('rapid_entry') }}">Rapid Entry</a>
-        <a class="btn btn-primary position-relative" href="{{ url_for('add_card') }}">Add Card</a>
+        <a class="btn btn-primary position-relative" href="{{ url_for('intake_tools') }}">
+            Intake Tools
+            {% if ai_action_needed_cards and ai_action_needed_cards > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ ai_action_needed_cards }}
+                </span>
+            {% endif %}
+        </a>
         <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">View Inventory</a>
     </div>
 </div>
