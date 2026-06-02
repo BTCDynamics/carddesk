@@ -6,8 +6,13 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
         <h1 class="h2 mb-1">Intake Tools</h1>
-        <p class="text-muted mb-0">Capture, upload, scan, or manually enter cards before they become inventory.</p>
+        <p class="text-muted mb-0">Choose the best way to capture, scan, or stage cards before they become inventory.</p>
     </div>
+</div>
+
+<div class="mb-3">
+    <div class="cw-section-label mb-2">Primary Intake</div>
+    <p class="text-muted small mb-0">Use these tools when you are bringing cards into CardDesk for AI Review and Inventory Import.</p>
 </div>
 
 <div class="row g-3 mb-4">
@@ -15,9 +20,11 @@
         <a class="dashboard-card-link" href="{{ url_for('mobile_capture') }}">
             <div class="card page-card dashboard-click-card h-100">
                 <div class="card-body">
-                    <span class="btn btn-sm btn-primary mb-3">Recommended</span>
+                    <span class="btn btn-sm btn-primary mb-3">Desktop Camera</span>
                     <h3 class="h5">Capture Card</h3>
-                    <p class="text-muted mb-0">Use the phone camera to create the image and send it to AI review.</p>
+                    <p class="text-muted mb-0">
+                        Use a webcam or camera connected to this device to capture card images and save them for AI Review and Inventory Import.
+                    </p>
                 </div>
             </div>
         </a>
@@ -26,12 +33,20 @@
     <div class="col-md-6 col-xl-4">
         <div class="card page-card h-100">
             <div class="card-body">
-                <div class="cw-section-label mb-2">Mobile Capture QR Code</div>
-                <p class="text-muted small">Scan this from your phone to open Mobile Capture.</p>
-                <a href="{{ url_for('mobile_capture') }}">
-                    <img class="mobile-capture-mini-qr" src="{{ mobile_capture_qr_url }}" alt="QR code for Mobile Card Capture">
-                </a>
-                <div class="mt-3">
+                <span class="btn btn-sm btn-success mb-3">Phone Capture</span>
+                <h3 class="h5 mb-2">Mobile Capture</h3>
+
+                <p class="text-muted small">
+                    Scan this QR code with your phone to open Mobile Capture and save images for AI Review and Inventory Import.
+                </p>
+
+                <div class="text-center my-3">
+                    <img class="mobile-capture-mini-qr"
+                         src="{{ mobile_capture_qr_url }}"
+                         alt="QR code for Mobile Card Capture">
+                </div>
+
+                <div class="d-flex justify-content-end mt-3">
                     <button class="btn btn-outline-light btn-sm" type="button" onclick="copyMobileCaptureUrl()">Copy URL</button>
                     <span id="mobileCaptureUrlText" class="visually-hidden">{{ mobile_capture_url }}</span>
                 </div>
@@ -40,41 +55,33 @@
     </div>
 
     <div class="col-md-6 col-xl-4">
-        <a class="dashboard-card-link" href="{{ url_for('ai_import_upload') }}">
-            <div class="card page-card dashboard-click-card h-100">
-                <div class="card-body">
-                    <span class="btn btn-sm btn-info mb-3">Batch Intake</span>
-                    <h3 class="h5">Upload Images</h3>
-                    <p class="text-muted mb-0">Upload saved scans or image files from your computer.</p>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-md-6 col-xl-4">
-        <a class="dashboard-card-link" href="{{ url_for('ai_import_review') }}">
-            <div class="card page-card dashboard-click-card h-100">
-                <div class="card-body">
-                    <span class="btn btn-sm btn-warning mb-3">Review Queue</span>
-                    <h3 class="h5">AI Review</h3>
-                    <p class="text-muted mb-0">Review captured or uploaded cards before importing them into inventory.</p>
-                    {% if ai_action_needed_cards and ai_action_needed_cards > 0 %}
-                        <div class="mt-3">
-                            <span class="badge text-bg-danger">{{ ai_action_needed_cards }} waiting</span>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-md-6 col-xl-4">
         <a class="dashboard-card-link" href="{{ url_for('psa_lookup') }}">
             <div class="card page-card dashboard-click-card h-100">
                 <div class="card-body">
                     <span class="btn btn-sm btn-secondary mb-3">Graded Cards</span>
                     <h3 class="h5">PSA Lookup</h3>
-                    <p class="text-muted mb-0">Look up PSA cert data and stage graded cards for review.</p>
+                    <p class="text-muted mb-0">
+                        Look up PSA certification data and stage graded cards for AI Review and Inventory Import.
+                    </p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="mb-3 mt-4">
+    <div class="cw-section-label mb-2">Other Intake Tools</div>
+    <p class="text-muted small mb-0">Use these when you already have images, need fast no-photo entry, or need a manual fallback.</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-xl-4">
+        <a class="dashboard-card-link" href="{{ url_for('ai_import_upload') }}">
+            <div class="card page-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-info mb-3">Existing Images</span>
+                    <h3 class="h5">Upload Images</h3>
+                    <p class="text-muted mb-0">Upload saved scans or image files from your computer and send them to AI Review.</p>
                 </div>
             </div>
         </a>
@@ -98,7 +105,7 @@
                 <div class="card-body">
                     <span class="btn btn-sm btn-outline-light mb-3">Fallback</span>
                     <h3 class="h5">Manual Entry</h3>
-                    <p class="text-muted mb-0">Use only when capture or AI intake is not available.</p>
+                    <p class="text-muted mb-0">Use only when capture, upload, or AI intake is not available.</p>
                 </div>
             </div>
         </a>
