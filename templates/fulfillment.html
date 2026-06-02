@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}Fulfillment Queue{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const selectLocationButtons = document.querySelectorAll(".select-location-pull");
+    const clearSelectionButton = document.getElementById("clearPullSelection");
+    const pullCheckboxes = document.querySelectorAll(".pull-card-checkbox");
+
+    selectLocationButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            const locationKey = button.dataset.pullLocation;
+
+            pullCheckboxes.forEach(function (checkbox) {
+                if (checkbox.dataset.pullLocation === locationKey) {
+                    checkbox.checked = true;
+                }
+            });
+        });
+    });
+
+    if (clearSelectionButton) {
+        clearSelectionButton.addEventListener("click", function () {
+            pullCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+        });
+    }
+
+    const shippingModal = document.getElementById("shippingModal");
+
+    if (shippingModal) {
+        shippingModal.addEventListener("show.bs.modal", function (event) {
+            const button = event.relatedTarget;
+
+            if (!button) {
+                return;
+            }
+
+            const cardId = button.dataset.cardId;
+            const cardCode = button.dataset.cardCode || "";
+            const playerName = button.dataset.playerName || "";
+
+            const modalCardLabel = document.getElementById("shippingModalCardLabel");
+            const shippingForm = document.getElementById("shippingForm");
+
+            if (modalCardLabel) {
+                modalCardLabel.textContent = cardCode + " · " + playerName;
+            }
+
+            if (shippingForm && cardId) {
+                shippingForm.action = "{{ url_for('update_fulfillment_status', card_id=0) }}".replace("/0/", "/" + cardId + "/");
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+
+{% block content %}
+<style>
+/* Fix unreadable Needs Pulling stat card text */
+.fulfillment-stat-card .detail-label,
+.fulfillment-stat-card .detail-value {
+    color: #ffffff !important;
+}
+
+.fulfillment-stat-card {
+    background: linear-gradient(145deg, #1e3a8a, #172554);
+    border-color: #3b82f6;
+}
+
+
+/* Fix invisible Pulled / dark outline buttons on dark theme */
+.fulfillment-filter-dark,
+.fulfillment-filter-dark:visited {
+    color: #ffffff !important;
+    background-color: #111827 !important;
+    border-color: #475569 !important;
+}
+
+.fulfillment-filter-dark:hover,
+.fulfillment-filter-dark:focus {
+    color: #ffffff !important;
+    background-color: #000000 !important;
+    border-color: #64748b !important;
+}
+
+.fulfillment-filter-outline-dark,
+.fulfillment-filter-outline-dark:visited {
+    color: #e5e7eb !important;
+    background-color: rgba(17, 24, 39, 0.35) !important;
+    border-color: #64748b !important;
+}
+
+.fulfillment-filter-outline-dark:hover,
+.fulfillment-filter-outline-dark:focus {
+    color: #ffffff !important;
+    background-color: #111827 !important;
+    border-color: #94a3b8 !important;
+}
+
+
+/* Pull grouping panel */
+.pull-group-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    overflow: hidden;
+}
+
+.pull-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    padding: .85rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.pull-group-location {
+    color: #111827;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.pull-group-count {
+    color: #1e3a8a;
+    background: #dbeafe;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: .25rem .6rem;
+    font-size: .78rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.pull-group-body {
+    padding: .85rem 1rem 1rem;
+}
+
+.pull-card-list {
+    display: grid;
+    gap: .45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pull-card-item {
+    color: #334155;
+    font-size: .86rem;
+    line-height: 1.25;
+}
+
+.pull-card-item strong {
+    color: #111827;
+}
+
+.pull-actions-bar {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: .95rem;
+    padding: .85rem 1rem;
+}
+
+
+/* Shipping modal */
+.shipping-modal-card {
+    background: linear-gradient(145deg, #f8fafc, #eef2ff);
+    border: 1px solid #cbd5e1;
+    border-radius: .95rem;
+    padding: .85rem 1rem;
+}
+
+.shipping-modal-card-label {
+    color: #111827;
+    font-weight: 900;
+}
+
+.shipping-modal-help {
+    color: #475569;
+    font-size: .86rem;
+}
+
+
+/* Dark shipping modal */
+.shipping-dark-modal .modal-content {
+    background: #374151;
+    border: 1px solid #4b5563;
+    color: #ffffff;
+}
+
+.shipping-dark-modal .modal-header,
+.shipping-dark-modal .modal-footer {
+    border-color: #4b5563;
+}
+
+.shipping-dark-modal .modal-title,
+.shipping-dark-modal .form-label,
+.shipping-dark-modal .shipping-modal-help,
+.shipping-dark-modal .shipping-modal-card-label {
+    color: #ffffff !important;
+}
+
+.shipping-dark-modal .shipping-modal-card {
+    background: #1f2937;
+    border: 1px solid #4b5563;
+}
+
+.shipping-dark-modal .form-control,
+.shipping-dark-modal .form-select {
+    background: #ffffff;
+    color: #000000;
+    border: 1px solid #d1d5db;
+}
+
+.shipping-dark-modal .form-control:focus,
+.shipping-dark-modal .form-select:focus {
+    background: #ffffff;
+    color: #000000;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 .2rem rgba(96,165,250,.25);
+}
+
+.shipping-dark-modal .text-muted {
+    color: #d1d5db !important;
+}
+
+.shipping-dark-modal .btn-close {
+    filter: invert(1);
+}
+
+</style>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+    <div>
+        <h1 class="h2 mb-1">Fulfillment Queue</h1>
+        <p class="text-muted mb-0">Sold cards that still need pulled, shipped, delivered, or completed.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-warning" href="{{ url_for('pull_sheet', status='Sold', fulfillment_status='Needs Pulling') }}">Print Pull Sheet</a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a class="btn btn-primary" href="{{ url_for('cards') }}">Back to Inventory</a>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-5 g-3 mb-4">
+    <div class="col">
+        <a class="text-decoration-none" href="{{ url_for('fulfillment_queue', status='Needs Pulling') }}">
+            <div class="card page-card fulfillment-stat-card h-100">
+                <div class="card-body">
+                    <div class="detail-label">Needs Pulling</div>
+                    <div class="detail-value">{{ counts.needs_pulling or 0 }}</div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col">
+        <a class="text-decoration-none" href="{{ url_for('fulfillment_queue', status='Pulled') }}">
+            <div class="card page-card h-100">
+                <div class="card-body">
+                    <div class="detail-label">Pulled</div>
+                    <div class="detail-value">{{ counts.pulled or 0 }}</div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col">
+        <a class="text-decoration-none" href="{{ url_for('fulfillment_queue', status='Ready to Ship') }}">
+            <div class="card page-card h-100">
+                <div class="card-body">
+                    <div class="detail-label">Ready to Ship</div>
+                    <div class="detail-value">{{ counts.ready_to_ship or 0 }}</div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col">
+        <a class="text-decoration-none" href="{{ url_for('fulfillment_queue', status='Shipped') }}">
+            <div class="card page-card h-100">
+                <div class="card-body">
+                    <div class="detail-label">Shipped</div>
+                    <div class="detail-value">{{ counts.shipped or 0 }}</div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col">
+        <a class="text-decoration-none" href="{{ url_for('fulfillment_queue', status='Delivered') }}">
+            <div class="card page-card h-100">
+                <div class="card-body">
+                    <div class="detail-label">Delivered</div>
+                    <div class="detail-value">{{ counts.delivered or 0 }}</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="card page-card mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <div class="cw-section-label mb-1">Current View</div>
+                <span class="badge text-bg-warning">{{ status_filter or "All Fulfillment" }}</span>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                {% if status_filter %}
+                    <a class="btn btn-sm btn-warning" href="{{ url_for('pull_sheet', status='Sold', fulfillment_status=status_filter) }}">Print This View</a>
+                {% else %}
+                    <a class="btn btn-sm btn-warning" href="{{ url_for('pull_sheet', status='Sold', fulfillment_status='Needs Pulling') }}">Print Needs Pulling</a>
+                {% endif %}
+                <a class="btn btn-sm {% if status_filter == 'Needs Pulling' %}btn-warning{% else %}btn-outline-warning{% endif %}" href="{{ url_for('fulfillment_queue', status='Needs Pulling') }}">Needs Pulling</a>
+                <a class="btn btn-sm {% if status_filter == 'Pulled' %}fulfillment-filter-dark{% else %}fulfillment-filter-outline-dark{% endif %}" href="{{ url_for('fulfillment_queue', status='Pulled') }}">Pulled</a>
+                <a class="btn btn-sm {% if status_filter == 'Ready to Ship' %}btn-info{% else %}btn-outline-info{% endif %}" href="{{ url_for('fulfillment_queue', status='Ready to Ship') }}">Ready to Ship</a>
+                <a class="btn btn-sm {% if status_filter == 'Shipped' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{{ url_for('fulfillment_queue', status='Shipped') }}">Shipped</a>
+                <a class="btn btn-sm {% if status_filter == 'Delivered' %}btn-success{% else %}btn-outline-success{% endif %}" href="{{ url_for('fulfillment_queue', status='Delivered') }}">Delivered</a>
+                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('fulfillment_queue', status='') }}">All</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if cards %}
+    {% if status_filter == 'Needs Pulling' %}
+        <form id="bulkPulledForm" method="POST" action="{{ url_for('mark_selected_fulfillment_pulled') }}"></form>
+
+        <div class="pull-actions-bar d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <div class="fw-bold"><span style="color: #000000 !important; font-weight: 800;">Pull by Storage Location</span></div>
+                <div class="small text-muted">Use the location groups below to select every card from one box, binder, case, or storage area.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-outline-secondary" type="button" id="clearPullSelection">Clear Selection</button>
+                <button class="btn btn-warning" type="submit" form="bulkPulledForm">Mark Selected Pulled</button>
+            </div>
+        </div>
+
+        <div class="card page-card mb-4">
+            <div class="card-header fw-bold d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <span>Grouped Pull List</span>
+                <span class="badge text-bg-warning">{{ cards|length }} card(s) need pulling</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for location, location_cards in cards|groupby("storage_location", default="No Location") %}
+                        {% set location_key = location or '__NO_LOCATION__' %}
+                        <div class="col-12 col-lg-6 col-xl-4">
+                            <div class="pull-group-card h-100">
+                                <div class="pull-group-header">
+                                    <div>
+                                        <div class="pull-group-location">
+                                            {% if location %}
+                                                {{ location }}
+                                            {% else %}
+                                                No Location
+                                            {% endif %}
+                                        </div>
+                                        <div class="small text-muted">Pull these together from the same location.</div>
+                                    </div>
+                                    <span class="pull-group-count">{{ location_cards|length }} card(s)</span>
+                                </div>
+                                <div class="pull-group-body">
+                                    <ul class="pull-card-list mb-3">
+                                        {% for card in location_cards %}
+                                            <li class="pull-card-item">
+                                                <strong>{{ card.player_name }}</strong><br>
+                                                <span>{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }}{% if card.card_number %} #{{ card.card_number }}{% endif %}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                    <button
+                                        class="btn btn-sm btn-outline-primary select-location-pull"
+                                        type="button"
+                                        data-pull-location="{{ location_key }}"
+                                    >
+                                        Select This Location
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="card page-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Select</th>
+                        <th>Card</th>
+                        <th>Sold Date</th>
+                        <th>Sold Price</th>
+                        <th>Customer</th>
+                        <th>Platform</th>
+                        <th>Carrier</th>
+                        <th>Tracking</th>
+                        <th>Storage Location</th>
+                        <th>Fulfillment</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for card in cards %}
+                        <tr class="inventory-row">
+                            <td>
+                                {% if card.fulfillment_status == "Needs Pulling" %}
+                                    <input class="form-check-input pull-card-checkbox" type="checkbox" name="card_ids" value="{{ card.id }}" form="bulkPulledForm" data-pull-location="{{ card.storage_location or '__NO_LOCATION__' }}">
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <div class="fw-bold">
+                                    <a href="{{ url_for('card_detail', card_id=card.id) }}" class="text-decoration-none">{{ card.player_name }}</a>
+                                </div>
+                                <div class="small text-muted">
+                                    {{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}
+                                </div>
+                                {% if card.variation %}<span class="badge text-bg-light border">{{ card.variation }}</span>{% endif %}
+                                {% if card.is_rookie %}<span class="badge badge-rc">RC</span>{% endif %}
+                                {% if card.is_hof %}<span class="badge badge-hof">HOF</span>{% endif %}
+                            </td>
+
+                            <td>{{ card.sold_date or '—' }}</td>
+                            <td>${{ "%.2f"|format((card.sold_price or 0) * (card.quantity or 1)) }}</td>
+                            <td>{{ card.customer_name or '—' }}</td>
+                            <td>{{ card.sales_platform or '—' }}</td>
+                            <td>{{ card.shipping_carrier|default('—', true) }}</td>
+                            <td>
+                                {% if card.tracking_number|default('', true) %}
+                                    <span class="fw-bold">{{ card.tracking_number }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if card.storage_location %}
+                                    <a class="storage-pill storage-pill-sm" href="{{ url_for('cards', storage=card.storage_location) }}">{{ card.storage_location }}</a>
+                                {% else %}
+                                    <span class="text-muted">No Location</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if card.fulfillment_status == "Needs Pulling" %}
+                                    <span class="badge text-bg-warning">Needs Pulling</span>
+                                {% elif card.fulfillment_status == "Pulled" %}
+                                    <span class="badge text-bg-dark">Pulled</span>
+                                {% elif card.fulfillment_status == "Ready to Ship" %}
+                                    <span class="badge text-bg-info">Ready to Ship</span>
+                                {% elif card.fulfillment_status == "Shipped" %}
+                                    <span class="badge text-bg-primary">Shipped</span>
+                                {% elif card.fulfillment_status == "Delivered" %}
+                                    <span class="badge text-bg-success">Delivered</span>
+                                {% elif card.fulfillment_status == "Completed" %}
+                                    <span class="badge text-bg-success">Completed</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">{{ card.fulfillment_status or '—' }}</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-end">
+                                <div class="d-flex flex-wrap justify-content-end gap-1">
+                                    {% if card.fulfillment_status == "Needs Pulling" or not card.fulfillment_status %}
+                                        <form method="POST" action="{{ url_for('update_fulfillment_status', card_id=card.id) }}" class="d-inline">
+                                            <input type="hidden" name="fulfillment_status" value="Pulled">
+                                            <button class="btn btn-sm btn-warning" type="submit">Mark Pulled</button>
+                                        </form>
+
+                                    {% elif card.fulfillment_status == "Pulled" %}
+                                        <button
+                                            class="btn btn-sm btn-info"
+                                            type="button"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#shippingModal"
+                                            data-card-id="{{ card.id }}"
+                                            data-card-code="{{ card.card_code }}"
+                                            data-player-name="{{ card.player_name }}"
+                                        >
+                                            Prepare Shipment
+                                        </button>
+
+                                    {% elif card.fulfillment_status == "Ready to Ship" %}
+                                        <form method="POST" action="{{ url_for('update_fulfillment_status', card_id=card.id) }}" class="d-inline">
+                                            <input type="hidden" name="fulfillment_status" value="Shipped">
+                                            <button class="btn btn-sm btn-primary" type="submit">Mark Shipped</button>
+                                        </form>
+
+                                    {% elif card.fulfillment_status == "Shipped" %}
+                                        <form method="POST" action="{{ url_for('update_fulfillment_status', card_id=card.id) }}" class="d-inline">
+                                            <input type="hidden" name="fulfillment_status" value="Delivered">
+                                            <button class="btn btn-sm btn-outline-success" type="submit">Mark Delivered</button>
+                                        </form>
+
+                                    {% elif card.fulfillment_status == "Delivered" %}
+                                        <form method="POST" action="{{ url_for('update_fulfillment_status', card_id=card.id) }}" class="d-inline">
+                                            <input type="hidden" name="fulfillment_status" value="Completed">
+                                            <button class="btn btn-sm fulfillment-filter-outline-dark" type="submit">Complete</button>
+                                        </form>
+
+                                    {% elif card.fulfillment_status == "Completed" %}
+                                        <span class="badge text-bg-success">Workflow Complete</span>
+
+                                    {% else %}
+                                        <form method="POST" action="{{ url_for('update_fulfillment_status', card_id=card.id) }}" class="d-inline">
+                                            <input type="hidden" name="fulfillment_status" value="Pulled">
+                                            <button class="btn btn-sm btn-warning" type="submit">Mark Pulled</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% else %}
+    <div class="card page-card">
+        <div class="card-body text-center py-5">
+            <h4 class="mb-2">No fulfillment items found.</h4>
+            <p class="text-muted mb-4">Sold cards will appear here when they need pulling, shipping, or delivery updates.</p>
+            <a class="btn btn-primary" href="{{ url_for('cards') }}">Go to Inventory</a>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Shipping Info Modal -->
+<div class="modal fade" id="shippingModal" tabindex="-1" aria-labelledby="shippingModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered shipping-dark-modal">
+        <div class="modal-content">
+            <form method="POST" id="shippingForm">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="shippingModalTitle">Prepare Shipment</h5>
+                        <div class="shipping-modal-help">Saving this will mark the card as <strong>Ready to Ship</strong>.</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="shipping-modal-card mb-3">
+                        <div class="small text-muted">Card</div>
+                        <div class="shipping-modal-card-label" id="shippingModalCardLabel">—</div>
+                    </div>
+
+                    <input type="hidden" name="fulfillment_status" value="Ready to Ship">
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Carrier</label>
+                            <select class="form-select" name="shipping_carrier">
+                                <option value="">Select Carrier</option>
+                                <option value="USPS">USPS</option>
+                                <option value="UPS">UPS</option>
+                                <option value="FedEx">FedEx</option>
+                                <option value="DHL">DHL</option>
+                                <option value="eBay Standard Envelope">eBay Standard Envelope</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold">Tracking Number</label>
+                            <input class="form-control" type="text" name="tracking_number" placeholder="Enter tracking number">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Shipping Cost</label>
+                            <input class="form-control" type="number" step="0.01" min="0" name="shipping_cost" placeholder="0.00">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Shipped Date</label>
+                            <input class="form-control" type="date" name="shipped_date" value="{{ today }}">
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Shipping Notes</label>
+                            <input class="form-control" type="text" name="shipping_notes" placeholder="Optional notes">
+                        </div>
+                    </div>
+
+                    <div class="alert alert-secondary mt-3 mb-0 small">
+                        This version is safe with your current app.py. It will mark the card Shipped now. The shipping details will start saving after we update app.py and models.py next.
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Prep & Mark Ready to Ship</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

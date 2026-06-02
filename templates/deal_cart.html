@@ -1,0 +1,1317 @@
+{% extends "base.html" %}
+
+{% block title %}Deal Cart{% endblock %}
+
+{% block content %}
+<style>
+/* Fix Deal Cart top stat boxes */
+.deal-cart-stat-card {
+    background: linear-gradient(145deg, #253246, #2c3a50) !important;
+    border: 1px solid rgba(96, 165, 250, 0.28) !important;
+    box-shadow: 0 0 18px rgba(37, 99, 235, 0.12);
+}
+
+.deal-cart-stat-card .detail-label {
+    color: #cbd5e1 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.deal-cart-stat-card .detail-value {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+}
+
+.deal-cart-stat-card .text-success {
+    color: #4ade80 !important;
+}
+
+.deal-cart-stat-card .text-danger {
+    color: #f87171 !important;
+}
+
+/* Separate major deal workflow sections */
+.deal-workflow-card {
+    background: linear-gradient(145deg, #e5e7eb, #d1d5db) !important;
+    border: 2px solid rgba(107, 114, 128, 0.35) !important;
+    box-shadow: 0 0 28px rgba(15, 23, 42, 0.18);
+}
+
+.deal-workflow-card .cw-section-label {
+    color: #111827 !important;
+    font-size: 1rem;
+    font-weight: 800 !important;
+    letter-spacing: 0.05em;
+}
+
+.deal-workflow-card .form-label {
+    color: #111827 !important;
+    font-weight: 700 !important;
+}
+
+.deal-workflow-card .text-muted,
+.deal-workflow-card .form-text,
+.deal-workflow-card p {
+    color: #374151 !important;
+}
+
+.deal-workflow-card .form-control,
+.deal-workflow-card .form-select,
+.deal-workflow-card textarea {
+    background-color: #ffffff !important;
+    border: 1px solid #9ca3af !important;
+    color: #111827 !important;
+    font-weight: 600 !important;
+}
+
+.deal-workflow-card .form-control:focus,
+.deal-workflow-card .form-select:focus,
+.deal-workflow-card textarea:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 0.15rem rgba(37, 99, 235, 0.18) !important;
+}
+
+/* Make Full Ask button visible without hover */
+.discount-btn[data-discount="0"] {
+    color: #ffffff !important;
+    background-color: #111827 !important;
+    border-color: #64748b !important;
+    font-weight: 800 !important;
+}
+
+.discount-btn[data-discount="0"]:hover,
+.discount-btn[data-discount="0"]:focus {
+    background-color: #000000 !important;
+    border-color: #94a3b8 !important;
+}
+
+.deal-workflow-card .alert-info {
+    background: #dbeafe !important;
+    border-color: #93c5fd !important;
+    color: #1e3a8a !important;
+}
+
+.deal-workflow-card .alert-warning {
+    background: #fef3c7 !important;
+    border: 1px solid #f59e0b !important;
+    color: #111827 !important;
+    font-weight: 600 !important;
+}
+
+/* Negotiation value controls */
+.negotiation-input {
+    min-width: 105px;
+    font-weight: 800 !important;
+}
+
+.negotiation-source-input {
+    min-width: 150px;
+}
+
+.negotiation-original-ask {
+    color: #cbd5e1;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.negotiation-working-cell {
+    min-width: 130px;
+}
+
+.negotiation-card-note {
+    color: #94a3b8;
+    font-size: .76rem;
+    line-height: 1.2;
+}
+
+.negotiation-table th,
+.negotiation-table td {
+    vertical-align: middle;
+}
+
+.lowest-acceptable-main-value {
+    white-space: nowrap;
+}
+
+
+
+/* Deal Cart workflow redesign */
+.deal-flow-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: #111827;
+    color: #ffffff;
+    font-weight: 900;
+    margin-right: .55rem;
+}
+
+.deal-flow-heading {
+    display: flex;
+    align-items: center;
+    color: #111827 !important;
+    font-size: 1.12rem;
+    font-weight: 900;
+    letter-spacing: .02em;
+    text-shadow: none !important;
+}
+
+.deal-flow-subtext {
+    color: #374151 !important;
+    font-size: .92rem;
+    font-weight: 700;
+    margin-top: .25rem;
+}
+
+.deal-final-card {
+    background: linear-gradient(145deg, #111827, #1f2937) !important;
+    border: 1px solid rgba(96,165,250,.35) !important;
+    color: #ffffff;
+}
+
+.deal-final-card .form-check-label,
+.deal-final-card .form-text {
+    color: #ffffff !important;
+}
+
+.deal-final-card .alert-warning {
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    color: #111827 !important;
+}
+
+.deal-final-number {
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.deal-final-label {
+    color: #cbd5e1;
+    font-size: .78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.deal-final-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: .85rem;
+}
+
+@media (max-width: 991.98px) {
+    .deal-final-grid {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .deal-final-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Comp Assist modal */
+.comp-assist-card {
+    background: linear-gradient(145deg, #111827, #1f2937);
+    border: 1px solid rgba(96, 165, 250, .35);
+    color: #ffffff;
+}
+
+.comp-assist-card .modal-header,
+.comp-assist-card .modal-footer {
+    border-color: rgba(148, 163, 184, .25);
+}
+
+.comp-assist-card .btn-close {
+    filter: invert(1);
+}
+
+.comp-assist-title {
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.comp-assist-subtitle {
+    color: #cbd5e1;
+    font-size: .86rem;
+}
+
+.comp-assist-box {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #111827;
+    border-radius: .85rem;
+    padding: .85rem;
+}
+
+.comp-assist-label {
+    color: #cbd5e1;
+    font-size: .74rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .35rem;
+}
+
+.comp-assist-search-term {
+    font-weight: 900;
+    color: #111827;
+    word-break: break-word;
+}
+
+.comp-assist-card .form-control,
+.comp-assist-card .form-select {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 700;
+}
+
+.comp-source-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(170px, 1fr));
+    gap: .65rem;
+}
+
+@media (max-width: 575.98px) {
+    .comp-source-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Main negotiation focus boxes */
+.negotiation-focus-input {
+    background: linear-gradient(145deg, #fbbf24, #f59e0b) !important;
+    border: 2px solid #b45309 !important;
+    color: #111827 !important;
+    font-weight: 900 !important;
+    font-size: 1.15rem !important;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.28);
+}
+
+.negotiation-focus-input:focus {
+    background: linear-gradient(145deg, #fcd34d, #fbbf24) !important;
+    border-color: #92400e !important;
+    box-shadow: 0 0 0 0.2rem rgba(245, 158, 11, 0.30) !important;
+    color: #111827 !important;
+}
+
+
+
+/* Force Full Ask button to stay visible */
+.full-ask-btn,
+button.full-ask-btn,
+.deal-workflow-card .full-ask-btn {
+    color: #ffffff !important;
+    background-color: #111827 !important;
+    border-color: #64748b !important;
+    font-weight: 800 !important;
+    box-shadow: 0 .25rem .65rem rgba(17, 24, 39, .22);
+}
+
+.full-ask-btn:hover,
+.full-ask-btn:focus,
+.deal-workflow-card .full-ask-btn:hover,
+.deal-workflow-card .full-ask-btn:focus {
+    color: #ffffff !important;
+    background-color: #000000 !important;
+    border-color: #94a3b8 !important;
+}
+
+
+/* Experimental negotiation command center */
+.negotiation-command-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 1.05fr) minmax(320px, .95fr);
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.negotiation-command-panel {
+    border-radius: 1rem;
+    padding: 1rem;
+    border: 1px solid rgba(15, 23, 42, .14);
+    background: #f8fafc;
+}
+
+.negotiation-command-panel.primary {
+    background: linear-gradient(145deg, #111827, #1f2937);
+    border-color: rgba(96, 165, 250, .38);
+    color: #ffffff;
+    box-shadow: 0 .75rem 1.8rem rgba(15, 23, 42, .22);
+}
+
+.negotiation-command-panel.primary .form-label,
+.negotiation-command-panel.primary .negotiation-panel-title {
+    color: #ffffff !important;
+}
+
+.negotiation-command-panel.primary .negotiation-panel-help {
+    color: #cbd5e1 !important;
+}
+
+.negotiation-panel-title {
+    font-size: .95rem;
+    font-weight: 900;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: #111827;
+}
+
+.negotiation-panel-help {
+    color: #475569;
+    font-size: .86rem;
+    font-weight: 650;
+    margin-top: .2rem;
+}
+
+.negotiation-main-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    gap: .85rem;
+    margin-top: 1rem;
+}
+
+.negotiation-support-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+    gap: .85rem;
+    margin-top: .85rem;
+}
+
+.negotiation-discount-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,.14);
+}
+
+.card-by-card-guide {
+    display: grid;
+    gap: .75rem;
+    margin-top: 1rem;
+}
+
+.card-by-card-guide-row {
+    display: grid;
+    grid-template-columns: 2.3rem 1fr;
+    gap: .7rem;
+    align-items: start;
+    padding: .75rem;
+    border-radius: .85rem;
+    background: #ffffff;
+    border: 1px solid #dbe3ef;
+}
+
+.card-by-card-guide-number {
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    background: #111827;
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.card-by-card-guide-title {
+    color: #111827;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+.card-by-card-guide-text {
+    color: #475569;
+    font-size: .84rem;
+    font-weight: 650;
+    margin-top: .2rem;
+}
+
+.negotiation-mode-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: .32rem .7rem;
+    background: #dbeafe;
+    color: #1e3a8a;
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+@media (max-width: 991.98px) {
+    .negotiation-command-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .negotiation-main-fields,
+    .negotiation-support-fields {
+        grid-template-columns: 1fr;
+    }
+}
+
+</style>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+    <div>
+        <h1 class="h2 mb-1">Deal Cart</h1>
+        <p class="text-muted mb-0">Build a group of cards across multiple searches, then sell them as one lot.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Back to Inventory</a>
+        {% if selected_cards %}
+            <form method="POST" action="{{ url_for('clear_deal_cart') }}" class="d-inline">
+                <button class="btn btn-outline-danger" type="submit">Clear Cart</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+{% if selected_cards %}
+    <form method="POST" action="{{ url_for('bulk_sell') }}" id="completeDealForm" class="d-none">
+        {% for card in selected_cards %}
+            <input type="hidden" name="card_ids" value="{{ card.id }}">
+        {% endfor %}
+
+        <input type="hidden" name="complete_deal" value="1">
+        <input type="hidden" name="total_sale_price" id="finalDealPriceInput" value="{{ "%.2f"|format(total_asking or 0) }}">
+        <input type="hidden" name="trade_credit" id="finalTradeCreditInput" value="0.00">
+        <input type="hidden" name="discount_percent" id="finalDiscountPercentInput" value="0.00">
+        <input type="hidden" name="split_method" value="asking">
+        <input type="hidden" name="negotiated_working_total" id="finalWorkingAskTotalInput" value="{{ "%.2f"|format(total_asking or 0) }}">
+    </form>
+
+    <div class="mb-3" style="color:#f8fafc;">
+        <div class="deal-flow-heading" style="color:#f8fafc !important;"><span class="deal-flow-step">1</span>Review Deal Totals</div>
+        <div class="deal-flow-subtext" style="color:#e2e8f0 !important;">Start here. These numbers update as you adjust comps, working asks, discounts, and trade credit.</div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-4">
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Selected Cards</div><div class="detail-value">{{ selected_card_count or selected_cards|length }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Cost Basis</div><div class="detail-value">${{ "%.2f"|format(total_cost or 0) }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Working Ask Total</div><div class="detail-value" id="topWorkingAskTotal">${{ "%.2f"|format(total_asking or 0) }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Est. Value</div><div class="detail-value">${{ "%.2f"|format(total_estimated_value or 0) }}</div></div></div></div>
+        <div class="col"><div class="card page-card deal-cart-stat-card h-100"><div class="card-body"><div class="detail-label">Total Est. Profit / Loss</div><div class="detail-value {% if total_estimated_profit_loss >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.2f"|format(total_estimated_profit_loss or 0) }}</div></div></div></div>
+    </div>
+
+    <div class="card page-card deal-workflow-card mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <div class="deal-flow-heading" style="color:#111827 !important;"><span class="deal-flow-step">2</span>Negotiate the Deal</div>
+                    <p class="text-muted mb-0 small" style="color:#374151 !important;">Start with the lot total. If the buyer breaks it down card-by-card, adjust individual Working Ask values below and the totals update here.</p>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" type="button" id="resetTradeCalculator">Reset</button>
+            </div>
+
+            <div class="negotiation-command-grid">
+                <div class="negotiation-command-panel primary">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="negotiation-panel-title">Lot Negotiation</div>
+                            <div class="negotiation-panel-help">Use these two numbers when the buyer asks, “What can you do on all of them?”</div>
+                        </div>
+                        <span class="negotiation-mode-badge">Group Price</span>
+                    </div>
+
+                    <div class="negotiation-main-fields">
+                        <div>
+                            <label class="form-label fw-bold">Working Card Total</label>
+                            <input class="form-control negotiation-focus-input" id="cartAskingPrice" type="number" step="0.01" value="{{ "%.2f"|format(total_asking or 0) }}" readonly>
+                            <div class="small mt-2" style="color:#cbd5e1;">Auto-updates from card-level Working Ask values.</div>
+                        </div>
+                        <div>
+                            <label class="form-label fw-bold">Final Deal Price</label>
+                            <input class="form-control fw-bold negotiation-focus-input" id="workingDealPrice" type="number" step="0.01" min="0" value="{{ "%.2f"|format(total_asking or 0) }}">
+                            <div class="small mt-2" style="color:#cbd5e1;">The actual number you are offering or accepting.</div>
+                        </div>
+                    </div>
+
+                    <div class="negotiation-support-fields">
+                        <div>
+                            <label class="form-label fw-bold">Trade-In Credit</label>
+                            <input class="form-control" id="tradeCredit" type="number" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="form-label fw-bold">Cash Needed</label>
+                            <input class="form-control fw-bold" id="cashNeeded" type="text" value="${{ "%.2f"|format(total_asking or 0) }}" readonly>
+                        </div>
+                        <div>
+                            <label class="form-label fw-bold">Discount Amount</label>
+                            <input class="form-control fw-bold text-danger" id="discountAmount" type="text" value="$0.00" readonly>
+                        </div>
+                        <div>
+                            <label class="form-label fw-bold">Profit / Loss After Trade</label>
+                            <input class="form-control fw-bold" id="profitAfterTrade" type="text" value="${{ "%.2f"|format((total_asking or 0) - (total_cost or 0)) }}" readonly>
+                            <div class="dashboard-percent mt-1" id="profitAfterTradePercent">{{ "%.1f"|format((((total_asking or 0) - (total_cost or 0)) / (total_cost or 1)) * 100 if total_cost else 0) }}% markup</div>
+                        </div>
+                    </div>
+
+                    <div class="negotiation-discount-strip">
+                        <button class="btn btn-dark btn-sm discount-btn full-ask-btn" type="button" data-discount="0">Full Ask</button>
+                        <button class="btn btn-outline-light btn-sm discount-btn" type="button" data-discount="10">10% Off</button>
+                        <button class="btn btn-outline-light btn-sm discount-btn" type="button" data-discount="15">15% Off</button>
+                        <button class="btn btn-outline-light btn-sm discount-btn" type="button" data-discount="20">20% Off</button>
+                    </div>
+                </div>
+
+                <div class="negotiation-command-panel">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="negotiation-panel-title">Card-by-Card Negotiation</div>
+                            <div class="negotiation-panel-help">Use this when the buyer starts asking, “What are you at on that one?”</div>
+                        </div>
+                        <span class="negotiation-mode-badge">Individual Cards</span>
+                    </div>
+
+                    <div class="card-by-card-guide">
+                        <div class="card-by-card-guide-row">
+                            <div class="card-by-card-guide-number">1</div>
+                            <div>
+                                <div class="card-by-card-guide-title">Check the card row below</div>
+                                <div class="card-by-card-guide-text">Find the card the buyer is asking about and review Original Ask, Comp, Working Ask, and floor.</div>
+                            </div>
+                        </div>
+                        <div class="card-by-card-guide-row">
+                            <div class="card-by-card-guide-number">2</div>
+                            <div>
+                                <div class="card-by-card-guide-title">Adjust that card’s Working Ask</div>
+                                <div class="card-by-card-guide-text">Changing one card updates the Working Card Total automatically.</div>
+                            </div>
+                        </div>
+                        <div class="card-by-card-guide-row">
+                            <div class="card-by-card-guide-number">3</div>
+                            <div>
+                                <div class="card-by-card-guide-title">Close with the Final Deal Price</div>
+                                <div class="card-by-card-guide-text">Use Final Deal Price for the actual agreed number after individual adjustments.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info small mt-3 mb-0">
+                        Tip: Use <strong>Comp Assist</strong>, <strong>Working Ask</strong>, and <strong>Lowest Acceptable</strong> to handle card-by-card negotiation without changing saved inventory pricing.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+<div class="card page-card deal-workflow-card mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <div class="deal-flow-heading" style="color:#111827 !important;"><span class="deal-flow-step">3</span>Enter Deal Details</div>
+                    <p class="text-muted mb-0 small" style="color:#374151 !important;">Buyer, platform, payment, and notes. These submit with the final deal.</p>
+                </div>
+                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('cards') }}">Add More Cards</a>
+            </div>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Sold Date</label>
+                    <input class="form-control" type="date" name="sold_date" value="{{ today }}" form="completeDealForm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Platform / Location</label>
+                    <input class="form-control" type="text" name="sales_platform" placeholder="Card Show, eBay, Direct Sale" form="completeDealForm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Customer Name</label>
+                    <input class="form-control" type="text" name="customer_name" placeholder="Optional" form="completeDealForm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Payment Type</label>
+                    <select class="form-select" name="payment_type" form="completeDealForm">
+                        <option value="Cash">Cash</option>
+                        <option value="Trade">Trade</option>
+                        <option value="Cash + Trade">Cash + Trade</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">Deal Notes</label>
+                    <textarea class="form-control" name="deal_notes" rows="2" placeholder="Optional notes about this deal" form="completeDealForm"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3" style="color:#f8fafc;">
+        <div class="deal-flow-heading" style="color:#f8fafc !important;"><span class="deal-flow-step">4</span>Adjust Card-Level Pricing</div>
+        <div class="deal-flow-subtext" style="color:#e2e8f0 !important;">Fine tune comps, comp sources, working asks, and floors for each card.</div>
+    </div>
+
+    <div class="card page-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle negotiation-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Card</th>
+                        <th>Comp Assist</th>
+                        <th>Type</th>
+                        <th>Qty</th>
+                        <th>Cost</th>
+                        <th>Est. Value</th>
+                        <th>Est. Profit / Loss</th>
+                        <th>Original Ask</th>
+                        <th>Comp</th>
+                        <th>Comp Source</th>
+                        <th>Working Ask</th>
+                        <th>Lowest Acceptable (80%)</th>
+                        <th>Storage</th>
+                        <th>Fulfillment</th>
+                        <th class="text-end">Remove</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for card in selected_cards %}
+                        <tr class="inventory-row">
+                            <td>
+                                <div class="fw-bold">
+                                    <a href="{{ url_for('card_detail', card_id=card.id) }}" class="text-decoration-none">{{ card.player_name }}</a>
+                                </div>
+                                <div class="small text-muted">
+                                    {{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}
+                                </div>
+                                {% if card.variation %}<span class="badge text-bg-light border">{{ card.variation }}</span>{% endif %}
+                                {% if card.is_rookie %}<span class="badge badge-rc">RC</span>{% endif %}
+                                {% if card.is_hof %}<span class="badge badge-hof">HOF</span>{% endif %}
+                            </td>
+                            <td>
+                                {% set comp_search_term = (card.year|string ~ ' ' ~ (card.player_name or '') ~ ' ' ~ (card.brand or '') ~ ' ' ~ (card.set_name or '') ~ ' ' ~ ('#' ~ card.card_number if card.card_number else '') ~ ' ' ~ (card.variation or '') ~ ' ' ~ (card.grading_company or '') ~ ' ' ~ (card.actual_grade or ''))|trim %}
+                                <button
+                                    class="btn btn-sm btn-primary comp-assist-btn"
+                                    type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#compAssistModal"
+                                    data-card-id="{{ card.id }}"
+                                    data-card-code="{{ card.card_code }}"
+                                    data-player-name="{{ card.player_name }}"
+                                    data-search-term="{{ comp_search_term }}"
+                                >
+                                    Comp Assist
+                                </button>
+                            </td>
+                            <td><span class="badge {% if card.card_type == 'Graded' %}text-bg-success{% else %}text-bg-dark{% endif %}">{{ card.card_type }}</span></td>
+                            <td>{{ card.quantity or 1 }}</td>
+                            <td>${{ "%.2f"|format((card.purchase_price or 0) * (card.quantity or 1)) }}</td>
+                            <td>${{ "%.2f"|format((card.estimated_value or 0) * (card.quantity or 1)) }}</td>
+                            <td>
+                                {% set card_est_profit = ((card.estimated_value or 0) - (card.purchase_price or 0)) * (card.quantity or 1) %}
+                                <span class="{% if card_est_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    ${{ "%.2f"|format(card_est_profit) }}
+                                </span>
+                            </td>
+                            {% set original_ask_total = (card.asking_price or 0) * (card.quantity or 1) %}
+                            <td class="card-ask-value" data-ask="{{ "%.2f"|format(original_ask_total) }}">
+                                <div class="negotiation-original-ask">${{ "%.2f"|format(original_ask_total) }}</div>
+                                <div class="negotiation-card-note">Inventory ask</div>
+                            </td>
+                            <td>
+                                <input
+                                    class="form-control form-control-sm negotiation-input comp-value-input"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="Comp"
+                                    data-card-id="{{ card.id }}"
+                                    form="completeDealForm"
+                                    name="comp_value_{{ card.id }}"
+                                >
+                            </td>
+                            <td>
+                                <input
+                                    class="form-control form-control-sm negotiation-source-input comp-source-input"
+                                    type="text"
+                                    placeholder="eBay sold, 130Point..."
+                                    data-card-id="{{ card.id }}"
+                                    form="completeDealForm"
+                                    name="comp_source_{{ card.id }}"
+                                >
+                            </td>
+                            <td class="negotiation-working-cell">
+                                <input
+                                    class="form-control form-control-sm negotiation-input working-ask-input"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value="{{ "%.2f"|format(original_ask_total) }}"
+                                    data-original-ask="{{ "%.2f"|format(original_ask_total) }}"
+                                    data-card-id="{{ card.id }}"
+                                    form="completeDealForm"
+                                    name="working_ask_{{ card.id }}"
+                                >
+                                <div class="negotiation-card-note">Negotiation value</div>
+                            </td>
+                            <td class="lowest-acceptable-main-value fw-bold" data-card-id="{{ card.id }}">—</td>
+                            <td>{{ card.storage_location or '—' }}</td>
+                            <td>
+                                {% if card.storage_location %}
+                                    <span class="badge text-bg-warning">Needs Pulling</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">No Location</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="POST" action="{{ url_for('remove_from_deal_cart', card_id=card.id) }}">
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <div class="card page-card deal-final-card mt-4 mb-3">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <div class="deal-flow-heading" style="color:#ffffff;"><span class="deal-flow-step" style="background:#2563eb;">5</span>Final Review & Complete Deal</div>
+                    <p class="mb-0 small" style="color:#cbd5e1;">Review final numbers, choose the fulfillment starting point, then complete the sale.</p>
+                </div>
+            </div>
+
+            <div class="deal-final-grid mb-3">
+                <div><div class="deal-final-label">Working Total</div><div class="deal-final-number" id="finalReviewWorkingTotal">${{ "%.2f"|format(total_asking or 0) }}</div></div>
+                <div><div class="deal-final-label">Final Deal Price</div><div class="deal-final-number" id="finalReviewDealPrice">${{ "%.2f"|format(total_asking or 0) }}</div></div>
+                <div><div class="deal-final-label">Cash Needed</div><div class="deal-final-number" id="finalReviewCashNeeded">${{ "%.2f"|format(total_asking or 0) }}</div></div>
+                <div><div class="deal-final-label">Projected Profit</div><div class="deal-final-number" id="finalReviewProfit">${{ "%.2f"|format((total_asking or 0) - (total_cost or 0)) }}</div></div>
+            </div>
+
+            <div class="alert alert-warning small">
+                Completing the deal will mark all selected cards as Sold. Storage locations will be kept so the cards can still be pulled after the sale.
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="mark_pulled_now" value="1" id="markPulledNow" form="completeDealForm">
+                <label class="form-check-label fw-bold" for="markPulledNow">I already pulled these cards from storage</label>
+                <div class="form-text">Leave unchecked to mark sold cards as <strong>Needs Pulling</strong>. Check this to start them as <strong>Pulled</strong>.</div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-danger btn-lg" type="submit" form="completeDealForm" id="completeDealButtonBottom">Complete Deal</button>
+                <a class="btn btn-outline-light" href="{{ url_for('cards') }}">Add More Cards</a>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="card page-card">
+        <div class="card-body text-center py-5">
+            <h4 class="mb-2">Your deal cart is empty.</h4>
+            <p class="text-muted mb-4">Go to inventory, search for cards, select them, and click Add Selected to Deal Cart.</p>
+            <a class="btn btn-primary" href="{{ url_for('cards') }}">Go to Inventory</a>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Comp Assist Modal -->
+<div class="modal fade" id="compAssistModal" tabindex="-1" aria-labelledby="compAssistModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content comp-assist-card">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title comp-assist-title" id="compAssistModalTitle">Comp Assist</h5>
+                    <div class="comp-assist-subtitle" id="compAssistCardLabel">—</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="comp-assist-label">Generated Search Term</div>
+                <div class="comp-assist-box mb-3">
+                    <div class="comp-assist-search-term" id="compAssistSearchTerm">—</div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <button class="btn btn-outline-light btn-sm" type="button" id="copyCompSearchButton">Copy Search Term</button>
+                    <button class="btn btn-outline-info btn-sm" type="button" id="openAllCompSourcesButton">Open Main Searches</button>
+                </div>
+
+                <div class="comp-assist-label">Quick Search Sources</div>
+                <div class="comp-source-grid mb-4">
+                    <a class="btn btn-light fw-bold" id="compEbaySoldLink" href="#" target="_blank" rel="noopener">eBay Search</a>
+                    <a class="btn btn-light fw-bold" id="comp130PointLink" href="#" target="_blank" rel="noopener">130Point</a>
+                    <a class="btn btn-light fw-bold" id="compSportsCardsProLink" href="#" target="_blank" rel="noopener">SportsCardsPro</a>
+                    <a class="btn btn-light fw-bold" id="compCardHedgeLink" href="#" target="_blank" rel="noopener">Card Hedge</a>
+                    <a class="btn btn-light fw-bold" id="compCardLadderLink" href="#" target="_blank" rel="noopener">Card Ladder</a>
+                    <a class="btn btn-light fw-bold" id="compMarketMoversLink" href="#" target="_blank" rel="noopener">Market Movers</a>
+                </div>
+
+                <div class="alert alert-info small">
+                    Use these searches to quickly verify comps, then enter the number below to push it back into the selected card row.
+                </div>
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-white">Comp Value Found</label>
+                        <input class="form-control" type="number" step="0.01" min="0" id="compAssistValue" placeholder="0.00">
+                    </div>
+
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold text-white">Comp Source</label>
+                        <select class="form-select" id="compAssistSource">
+                            <option value="eBay sold">eBay sold</option>
+                            <option value="130Point">130Point</option>
+                            <option value="SportsCardsPro">SportsCardsPro</option>
+                            <option value="Card Hedge">Card Hedge</option>
+                            <option value="Card Ladder">Card Ladder</option>
+                            <option value="Market Movers">Market Movers</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <button class="btn btn-success w-100 fw-bold" type="button" id="applyCompAssistButton">Apply Comp</button>
+                    </div>
+                </div>
+
+                <div class="small mt-3" style="color:#cbd5e1;">
+                    Applying a comp fills the card's Comp field, Comp Source field, Working Ask, and 80% Lowest Acceptable floor.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+function formatCurrency(value) {
+    const numericValue = Number(value) || 0;
+    return numericValue.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD"
+    });
+}
+
+function numericFieldValue(id) {
+    const field = document.getElementById(id);
+    return field ? Number(field.value) || 0 : 0;
+}
+
+function getWorkingAskTotal() {
+    let total = 0;
+
+    document.querySelectorAll(".working-ask-input").forEach(function (input) {
+        total += Number(input.value) || 0;
+    });
+
+    return total;
+}
+
+function refreshWorkingAskTotal(syncFinalDealPrice) {
+    const workingAskTotal = getWorkingAskTotal();
+    const cartAskingField = document.getElementById("cartAskingPrice");
+    const topWorkingAskTotal = document.getElementById("topWorkingAskTotal");
+    const finalWorkingAskTotalInput = document.getElementById("finalWorkingAskTotalInput");
+
+    if (cartAskingField) {
+        cartAskingField.value = workingAskTotal.toFixed(2);
+    }
+
+    if (topWorkingAskTotal) {
+        topWorkingAskTotal.textContent = formatCurrency(workingAskTotal);
+    }
+
+    if (finalWorkingAskTotalInput) {
+        finalWorkingAskTotalInput.value = workingAskTotal.toFixed(2);
+    }
+
+    if (syncFinalDealPrice) {
+        const workingDealPriceField = document.getElementById("workingDealPrice");
+        if (workingDealPriceField) {
+            workingDealPriceField.value = workingAskTotal.toFixed(2);
+        }
+    }
+}
+
+function updateTradeCalculator() {
+    refreshWorkingAskTotal(false);
+
+    const askingPrice = numericFieldValue("cartAskingPrice");
+    const workingDealPrice = numericFieldValue("workingDealPrice");
+    const tradeCredit = numericFieldValue("tradeCredit");
+    const totalCost = {{ "%.2f"|format(total_cost or 0) }};
+
+    const discountAmount = askingPrice - workingDealPrice;
+    const discountPercent = askingPrice > 0 ? (discountAmount / askingPrice) * 100 : 0;
+    const cashNeeded = workingDealPrice - tradeCredit;
+    const profitAfterTrade = cashNeeded - totalCost;
+    const profitPercent = totalCost > 0 ? (profitAfterTrade / totalCost) * 100 : 0;
+
+    document.getElementById("discountAmount").value = formatCurrency(discountAmount);
+    document.getElementById("cashNeeded").value = formatCurrency(cashNeeded);
+    document.getElementById("profitAfterTrade").value = formatCurrency(profitAfterTrade);
+
+    const profitPercentField = document.getElementById("profitAfterTradePercent");
+    if (profitPercentField) {
+        profitPercentField.textContent = profitPercent.toFixed(1) + "% markup";
+        profitPercentField.classList.remove("text-success", "text-danger");
+        profitPercentField.classList.add(profitAfterTrade >= 0 ? "text-success" : "text-danger");
+    }
+
+    const finalDealPriceInput = document.getElementById("finalDealPriceInput");
+    const finalTradeCreditInput = document.getElementById("finalTradeCreditInput");
+    const finalDiscountPercentInput = document.getElementById("finalDiscountPercentInput");
+
+    if (finalTradeCreditInput) {
+        finalTradeCreditInput.value = tradeCredit.toFixed(2);
+    }
+
+    if (finalDiscountPercentInput) {
+        finalDiscountPercentInput.value = discountPercent.toFixed(2);
+    }
+
+    if (completeDealButton) {
+        completeDealButton.textContent = "Complete Deal at " + formatCurrency(workingDealPrice);
+    }
+
+    const completeDealButtonBottom = document.getElementById("completeDealButtonBottom");
+    if (completeDealButtonBottom) {
+        completeDealButtonBottom.textContent = "Complete Deal at " + formatCurrency(workingDealPrice);
+    }
+
+    const finalReviewWorkingTotal = document.getElementById("finalReviewWorkingTotal");
+    const finalReviewDealPrice = document.getElementById("finalReviewDealPrice");
+    const finalReviewCashNeeded = document.getElementById("finalReviewCashNeeded");
+    const finalReviewProfit = document.getElementById("finalReviewProfit");
+
+    if (finalReviewWorkingTotal) {
+        finalReviewWorkingTotal.textContent = formatCurrency(askingPrice);
+    }
+
+    if (finalReviewDealPrice) {
+        finalReviewDealPrice.textContent = formatCurrency(workingDealPrice);
+    }
+
+    if (finalReviewCashNeeded) {
+        finalReviewCashNeeded.textContent = formatCurrency(cashNeeded);
+    }
+
+    if (finalReviewProfit) {
+        finalReviewProfit.textContent = formatCurrency(profitAfterTrade);
+        finalReviewProfit.classList.remove("text-success", "text-danger");
+        finalReviewProfit.classList.add(profitAfterTrade >= 0 ? "text-success" : "text-danger");
+    }
+
+
+    const profitField = document.getElementById("profitAfterTrade");
+    profitField.classList.remove("text-success", "text-danger");
+    profitField.classList.add(profitAfterTrade >= 0 ? "text-success" : "text-danger");
+
+    const cashField = document.getElementById("cashNeeded");
+    cashField.classList.remove("text-success", "text-danger");
+    cashField.classList.add(cashNeeded >= 0 ? "text-success" : "text-danger");
+
+    const discountField = document.getElementById("discountAmount");
+    discountField.classList.remove("text-success", "text-danger");
+    discountField.classList.add(discountAmount > 0 ? "text-danger" : "text-success");
+}
+
+function refreshDealerBreakdowns() {
+    document.querySelectorAll(".working-ask-input").forEach(function (workingInput) {
+        const cardId = workingInput.dataset.cardId;
+        const workingAsk = Number(workingInput.value) || 0;
+        const lowestInput = document.querySelector('.lowest-acceptable-input[data-card-id="' + cardId + '"]');
+        const lowestMainReadout = document.querySelector('.lowest-acceptable-main-value[data-card-id="' + cardId + '"]');
+
+        if (lowestInput) {
+            const lowest = Number(lowestInput.value) || 0;
+
+            if (lowestMainReadout) {
+                lowestMainReadout.textContent = lowest > 0 ? formatCurrency(lowest) : "—";
+                lowestMainReadout.classList.remove("text-success", "text-danger");
+
+                if (lowest > 0) {
+                    lowestMainReadout.classList.add(workingAsk >= lowest ? "text-success" : "text-danger");
+                }
+            }
+        }
+    });
+}
+
+function applyDiscount(percent) {
+    refreshWorkingAskTotal(false);
+
+    const askingPrice = numericFieldValue("cartAskingPrice");
+    const discountRate = Number(percent) / 100;
+    const newDealPrice = askingPrice * (1 - discountRate);
+
+    document.getElementById("workingDealPrice").value = newDealPrice.toFixed(2);
+    updateTradeCalculator();
+}
+
+const tradeCreditField = document.getElementById("tradeCredit");
+if (tradeCreditField) {
+    tradeCreditField.addEventListener("input", updateTradeCalculator);
+}
+
+const workingDealPriceField = document.getElementById("workingDealPrice");
+if (workingDealPriceField) {
+    workingDealPriceField.addEventListener("input", updateTradeCalculator);
+}
+
+document.querySelectorAll(".working-ask-input").forEach(function (input) {
+    input.addEventListener("input", function () {
+        refreshWorkingAskTotal(true);
+        updateTradeCalculator();
+        refreshDealerBreakdowns();
+    });
+});
+
+document.querySelectorAll(".comp-value-input").forEach(function (input) {
+    input.addEventListener("input", function () {
+        const row = input.closest("tr");
+        const workingAskInput = row ? row.querySelector(".working-ask-input") : null;
+        const cardId = input.dataset.cardId;
+        const lowestInput = document.querySelector('.lowest-acceptable-input[data-card-id="' + cardId + '"]');
+        const compValue = Number(input.value) || 0;
+
+        if (input.value !== "") {
+            if (workingAskInput) {
+                workingAskInput.value = compValue.toFixed(2);
+            }
+
+            if (lowestInput) {
+                lowestInput.value = (compValue * 0.80).toFixed(2);
+            }
+
+            refreshWorkingAskTotal(true);
+            updateTradeCalculator();
+            refreshDealerBreakdowns();
+        } else {
+            if (lowestInput) {
+                lowestInput.value = "";
+            }
+            refreshDealerBreakdowns();
+        }
+    });
+});
+
+document.querySelectorAll(".comp-source-input, .lowest-acceptable-input").forEach(function (input) {
+    input.addEventListener("input", refreshDealerBreakdowns);
+});
+
+document.querySelectorAll(".discount-btn").forEach(function (button) {
+    button.addEventListener("click", function () {
+        applyDiscount(button.dataset.discount);
+    });
+});
+
+const resetButton = document.getElementById("resetTradeCalculator");
+if (resetButton) {
+    resetButton.addEventListener("click", function () {
+        document.querySelectorAll(".working-ask-input").forEach(function (input) {
+            input.value = (Number(input.dataset.originalAsk) || 0).toFixed(2);
+        });
+
+        document.querySelectorAll(".comp-value-input, .comp-source-input, .lowest-acceptable-input").forEach(function (input) {
+            input.value = "";
+        });
+
+        refreshWorkingAskTotal(true);
+        document.getElementById("tradeCredit").value = "";
+        updateTradeCalculator();
+        refreshDealerBreakdowns();
+    });
+}
+
+const completeDealForm = document.getElementById("completeDealForm");
+if (completeDealForm) {
+    completeDealForm.addEventListener("submit", function (event) {
+        updateTradeCalculator();
+
+        const dealPrice = document.getElementById("finalDealPriceInput").value;
+        const tradeCredit = document.getElementById("finalTradeCreditInput").value;
+        const discountPercent = document.getElementById("finalDiscountPercentInput").value;
+        const workingAskTotal = document.getElementById("finalWorkingAskTotalInput").value;
+
+        const confirmed = confirm(
+            "Complete this deal?\n\n" +
+            "Working Card Total: $" + workingAskTotal + "\n" +
+            "Final Deal Price: $" + dealPrice + "\n" +
+            "Trade-In Credit: $" + tradeCredit + "\n" +
+            "Discount: " + discountPercent + "%\n\n" +
+            "All selected cards will be marked Sold.\n" +
+            "Note: comp values, working asks, and lowest acceptable floors are submitted with the form for future backend use."
+        );
+
+        if (!confirmed) {
+            event.preventDefault();
+        }
+    });
+}
+
+
+const compAssistModal = document.getElementById("compAssistModal");
+let activeCompAssistCardId = null;
+let activeCompAssistSearchTerm = "";
+
+function buildCompSearchUrls(searchTerm) {
+    const encoded = encodeURIComponent(searchTerm);
+
+    return {
+        ebay: "https://www.ebay.com/sch/i.html?_nkw=" + encoded + "&LH_Sold=1&LH_Complete=1",
+        point130: "https://130point.com/sales/?search=" + encoded,
+        sportsCardsPro: "https://www.sportscardspro.com/search-products?q=" + encoded,
+        cardHedge: "https://ai.cardhedger.com/price-guide?search=" + encoded,
+        cardLadder: "https://www.cardladder.com/search?q=" + encoded,
+        marketMovers: "https://www.sportscardinvestor.com/cards/search?search=" + encoded
+    };
+}
+
+function setCompAssistLinks(searchTerm) {
+    const urls = buildCompSearchUrls(searchTerm);
+
+    const ebay = document.getElementById("compEbaySoldLink");
+    const point130 = document.getElementById("comp130PointLink");
+    const sportsCardsPro = document.getElementById("compSportsCardsProLink");
+    const cardHedge = document.getElementById("compCardHedgeLink");
+    const cardLadder = document.getElementById("compCardLadderLink");
+    const marketMovers = document.getElementById("compMarketMoversLink");
+
+    if (ebay) ebay.href = urls.ebay;
+    if (point130) point130.href = urls.point130;
+    if (sportsCardsPro) sportsCardsPro.href = urls.sportsCardsPro;
+    if (cardHedge) cardHedge.href = urls.cardHedge;
+    if (cardLadder) cardLadder.href = urls.cardLadder;
+    if (marketMovers) marketMovers.href = urls.marketMovers;
+}
+
+if (compAssistModal) {
+    compAssistModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget;
+
+        if (!button) {
+            return;
+        }
+
+        activeCompAssistCardId = button.dataset.cardId;
+        activeCompAssistSearchTerm = button.dataset.searchTerm || "";
+
+        const cardLabel = document.getElementById("compAssistCardLabel");
+        const searchTermBox = document.getElementById("compAssistSearchTerm");
+        const compValue = document.getElementById("compAssistValue");
+        const compSource = document.getElementById("compAssistSource");
+
+        if (cardLabel) {
+            cardLabel.textContent = (button.dataset.cardCode || "") + " · " + (button.dataset.playerName || "");
+        }
+
+        if (searchTermBox) {
+            searchTermBox.textContent = activeCompAssistSearchTerm || "No search term available";
+        }
+
+        if (compValue) {
+            compValue.value = "";
+        }
+
+        if (compSource) {
+            compSource.value = "eBay sold";
+        }
+
+        setCompAssistLinks(activeCompAssistSearchTerm);
+    });
+}
+
+const copyCompSearchButton = document.getElementById("copyCompSearchButton");
+if (copyCompSearchButton) {
+    copyCompSearchButton.addEventListener("click", function () {
+        if (!activeCompAssistSearchTerm) {
+            return;
+        }
+
+        navigator.clipboard.writeText(activeCompAssistSearchTerm).then(function () {
+            copyCompSearchButton.textContent = "Copied!";
+            setTimeout(function () {
+                copyCompSearchButton.textContent = "Copy Search Term";
+            }, 1200);
+        });
+    });
+}
+
+const openAllCompSourcesButton = document.getElementById("openAllCompSourcesButton");
+if (openAllCompSourcesButton) {
+    openAllCompSourcesButton.addEventListener("click", function () {
+        if (!activeCompAssistSearchTerm) {
+            return;
+        }
+
+        const urls = buildCompSearchUrls(activeCompAssistSearchTerm);
+        window.open(urls.ebay, "_blank", "noopener");
+        window.open(urls.point130, "_blank", "noopener");
+        window.open(urls.sportsCardsPro, "_blank", "noopener");
+        window.open(urls.cardHedge, "_blank", "noopener");
+    });
+}
+
+const applyCompAssistButton = document.getElementById("applyCompAssistButton");
+if (applyCompAssistButton) {
+    applyCompAssistButton.addEventListener("click", function () {
+        if (!activeCompAssistCardId) {
+            return;
+        }
+
+        const valueField = document.getElementById("compAssistValue");
+        const sourceField = document.getElementById("compAssistSource");
+        const compValue = Number(valueField ? valueField.value : 0) || 0;
+        const sourceValue = sourceField ? sourceField.value : "";
+
+        if (compValue <= 0) {
+            alert("Enter a comp value first.");
+            return;
+        }
+
+        const rowCompInput = document.querySelector('.comp-value-input[data-card-id="' + activeCompAssistCardId + '"]');
+        const rowSourceInput = document.querySelector('.comp-source-input[data-card-id="' + activeCompAssistCardId + '"]');
+        const workingAskInput = document.querySelector('.working-ask-input[data-card-id="' + activeCompAssistCardId + '"]');
+        const lowestInput = document.querySelector('.lowest-acceptable-input[data-card-id="' + activeCompAssistCardId + '"]');
+
+        if (rowCompInput) {
+            rowCompInput.value = compValue.toFixed(2);
+        }
+
+        if (rowSourceInput) {
+            rowSourceInput.value = sourceValue;
+        }
+
+        if (workingAskInput) {
+            workingAskInput.value = compValue.toFixed(2);
+        }
+
+        if (lowestInput) {
+            lowestInput.value = (compValue * 0.80).toFixed(2);
+        }
+
+        refreshWorkingAskTotal(true);
+        updateTradeCalculator();
+        refreshDealerBreakdowns();
+
+        const modalInstance = bootstrap.Modal.getInstance(compAssistModal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+}
+
+
+refreshWorkingAskTotal(false);
+updateTradeCalculator();
+refreshDealerBreakdowns();
+</script>
+{% endblock %}

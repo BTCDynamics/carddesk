@@ -1,0 +1,799 @@
+{% extends "base.html" %}
+
+{% block title %}Card Inventory{% endblock %}
+
+{% block content %}
+<style>
+/* Card Inventory page: make Clone buttons visible on dark theme */
+.clone-btn {
+    color: #ffffff !important;
+    background-color: #4f46e5 !important;
+    border-color: #818cf8 !important;
+    font-weight: 700 !important;
+}
+
+.clone-btn:hover,
+.clone-btn:focus {
+    color: #ffffff !important;
+    background-color: #111827 !important;
+    border-color: #a5b4fc !important;
+}
+
+/* Fix Table / Gallery view toggle visibility */
+.btn-outline-dark {
+    color: #e5e7eb !important;
+    border-color: #6b7280 !important;
+}
+
+.btn-outline-dark:hover,
+.btn-outline-dark:focus {
+    color: #ffffff !important;
+    background-color: #111827 !important;
+    border-color: #a5b4fc !important;
+}
+
+.btn-dark {
+    color: #ffffff !important;
+    background-color: #111827 !important;
+    border-color: #374151 !important;
+}
+
+/* Light gray inventory column headers */
+.table thead th,
+.table-light th {
+    background: #e5e7eb !important;
+    color: #111827 !important;
+    border-bottom: 1px solid rgba(15,23,42,.12) !important;
+    font-size: .72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+
+/* Compact inventory search/filter redesign */
+.inventory-search-card {
+    background: linear-gradient(145deg, #f8fafc, #e5e7eb);
+    border: 1px solid rgba(15, 23, 42, .14);
+}
+
+.inventory-search-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.inventory-mode-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: 1rem;
+}
+
+.inventory-mode-pill {
+    border-radius: 999px !important;
+    font-weight: 800 !important;
+    padding: .42rem .78rem !important;
+}
+
+.inventory-search-main {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) auto auto auto;
+    gap: .65rem;
+    align-items: center;
+}
+
+.inventory-search-main .form-control {
+    min-height: 46px;
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+.inventory-search-help {
+    color: #475569;
+    font-size: .84rem;
+    font-weight: 650;
+    margin-top: .5rem;
+}
+
+.inventory-filter-collapse {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(15, 23, 42, .12);
+}
+
+.inventory-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(140px, 1fr));
+    gap: .65rem;
+}
+
+.inventory-filter-group {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(140px, 1fr));
+    gap: .65rem;
+    padding: .85rem;
+    border-radius: .95rem;
+    background: rgba(17, 24, 39, .18);
+    border: 1px solid rgba(148, 163, 184, .25);
+}
+
+.inventory-filter-group-title {
+    grid-column: 1 / -1;
+    color: #ffffff;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding-bottom: .35rem;
+    margin-bottom: .1rem;
+    border-bottom: 1px solid rgba(229, 231, 235, .22);
+}
+
+.inventory-filter-locked-note {
+    color: #cbd5e1;
+    font-size: .72rem;
+    font-weight: 400;
+    margin-top: .25rem;
+}
+
+.inventory-filter-grid .form-select:disabled,
+.inventory-filter-grid .form-control:disabled {
+    background-color: #d1d5db !important;
+    color: #111827 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+
+.inventory-filter-grid .filter-active-field {
+    background: #fef3c7 !important;
+    border: 2px solid #f59e0b !important;
+    color: #111827 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 0 .14rem rgba(245, 158, 11, .18) !important;
+}
+
+.inventory-filter-grid .filter-active-field:focus {
+    background: #fff7ed !important;
+    border-color: #d97706 !important;
+    box-shadow: 0 0 0 .2rem rgba(245, 158, 11, .25) !important;
+}
+
+.inventory-filter-grid .form-label {
+    color: #e5e7eb !important;
+    font-size: .72rem;
+    font-weight: 400 !important;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: .25rem;
+}
+
+.inventory-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem;
+    margin-top: .85rem;
+}
+
+.inventory-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border-radius: 999px;
+    padding: .32rem .65rem;
+    background: #111827;
+    color: #ffffff;
+    font-size: .78rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.inventory-filter-chip-muted {
+    background: #475569;
+}
+
+.inventory-filter-chip strong {
+    color: #fbbf24;
+}
+
+.inventory-result-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 1199.98px) {
+    .inventory-filter-grid,
+    .inventory-filter-group {
+        grid-template-columns: repeat(3, minmax(160px, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .inventory-search-main {
+        grid-template-columns: 1fr;
+    }
+
+    .inventory-filter-grid,
+    .inventory-filter-group {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+.scope-btn-active{
+    background:#16a34a !important;
+    border-color:#16a34a !important;
+    color:#fff !important;
+    font-weight:700;
+}
+.scope-btn-inactive{
+    background:#374151 !important;
+    border-color:#4b5563 !important;
+    color:#d1d5db !important;
+}
+.scope-btn-inactive:hover{
+    background:#111827 !important;
+    color:#fff !important;
+}
+
+</style>
+{% set current_view = request.args.get('view', 'table') %}
+{% set pull_sheet_status_filter = status_filter if status_filter else ('Active' if scope != 'all' else '') %}
+{% set pull_sheet_collection_type_filter = collection_type_filter if collection_type_filter else ('Inventory' if scope != 'all' else '') %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+    <div>
+        <h1 class="h2 mb-1">Card Inventory</h1>
+        <p class="text-muted mb-0">Search, filter, and manage your collection.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-info position-relative" href="{{ url_for('ai_import_upload') }}">
+            AI Import
+            {% if pending_import_count %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">{{ pending_import_count }}</span>{% endif %}
+        </a>
+        {% if storage_filter %}
+            <a class="btn btn-warning"
+               href="{{ url_for('pull_sheet', storage=storage_filter, status=pull_sheet_status_filter, collection_type=pull_sheet_collection_type_filter) }}"
+               target="_blank">
+                Print Pull Sheet
+            </a>
+        {% endif %}
+        <a class="btn btn-outline-light" href="{{ url_for('rapid_entry') }}">Rapid Entry</a>
+        <a class="btn btn-primary" href="{{ url_for('add_card') }}">Add Card</a>
+    </div>
+</div>
+
+
+{% set search_count = 1 if search_query else 0 %}
+{% set filter_count = 0 %}
+{% if sport_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if status_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if collection_type_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if card_type_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if rookie_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if hof_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if actual_grade_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if grade_estimate_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if year_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if brand_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if storage_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if variation_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if acquisition_source_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if acquisition_event_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if min_price %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if max_price %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% set total_filter_count = search_count + filter_count %}
+
+<div class="card page-card inventory-search-card mb-4">
+    <div class="card-body">
+        <div class="inventory-search-header">
+            <div>
+                <h5 class="mb-0 fw-bold">Find Cards</h5>
+                <div class="small text-muted">Start with the big search box. Use the pills for common views, then open Advanced Filters only when needed.</div>
+            </div>
+
+            <div class="btn-group btn-group-sm" role="group" aria-label="Inventory view toggle">
+                <a class="btn {% if current_view != 'gallery' %}btn-dark{% else %}btn-outline-dark{% endif %}"
+                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, min_price=min_price, max_price=max_price, view='table') }}">
+                    Table
+                </a>
+                <a class="btn {% if current_view == 'gallery' %}btn-dark{% else %}btn-outline-dark{% endif %}"
+                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, min_price=min_price, max_price=max_price, view='gallery') }}">
+                    Gallery
+                </a>
+            </div>
+        </div>
+
+        <div class="inventory-mode-pills" aria-label="Common inventory views">
+            <a class="btn btn-sm inventory-mode-pill {% if scope != 'all' and status_filter == '' and collection_type_filter == '' and storage_filter == '' %}scope-btn-active{% else %}scope-btn-inactive{% endif %}"
+               href="{{ url_for('cards', q=search_query, view=current_view) }}">For Sale</a>
+            <a class="btn btn-sm inventory-mode-pill {% if scope == 'all' and status_filter == '' and collection_type_filter == '' and storage_filter == '' %}scope-btn-active{% else %}scope-btn-inactive{% endif %}"
+               href="{{ url_for('cards', scope='all', q=search_query, view=current_view) }}">All Records</a>
+            <a class="btn btn-sm inventory-mode-pill {% if status_filter == 'Sold' %}scope-btn-active{% else %}scope-btn-inactive{% endif %}"
+               href="{{ url_for('cards', scope='all', q=search_query, status='Sold', view=current_view) }}">Sold</a>
+            <a class="btn btn-sm inventory-mode-pill {% if status_filter == 'Holding' %}scope-btn-active{% else %}scope-btn-inactive{% endif %}"
+               href="{{ url_for('cards', scope='all', q=search_query, status='Holding', view=current_view) }}">Holding</a>
+            <a class="btn btn-sm inventory-mode-pill {% if storage_filter == '__missing__' %}scope-btn-active{% else %}scope-btn-inactive{% endif %}"
+               href="{{ url_for('cards', q=search_query, status='Active', collection_type='Inventory', storage='__missing__', view=current_view) }}">Missing Storage</a>
+        </div>
+
+        <form method="GET" action="{{ url_for('cards') }}" id="inventoryFilterForm">
+            <input type="hidden" name="view" value="{{ current_view }}">
+            {% if scope == 'all' %}<input type="hidden" name="scope" value="all">{% endif %}
+
+            <div class="inventory-search-main">
+                <input class="form-control" type="text" name="q" placeholder="Search player, card code, brand, set, card #, variation, storage, event..." value="{{ search_query or '' }}" autofocus>
+                <button class="btn btn-dark" type="submit">Search</button>
+                <button class="btn btn-outline-dark" type="button" data-bs-toggle="collapse" data-bs-target="#advancedInventoryFilters">
+                    Advanced Filters {% if filter_count %}<span class="badge text-bg-warning ms-1">{{ filter_count }}</span>{% endif %}
+                </button>
+                <a class="btn btn-outline-secondary" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', view=current_view) }}{% else %}{{ url_for('cards', view=current_view) }}{% endif %}">Reset Search</a>
+            </div>
+            <div class="inventory-search-help">
+                Current view:
+                {% if storage_filter == '__missing__' %}<strong>Missing Storage</strong>
+                {% elif status_filter %}<strong>{{ status_filter }}</strong>
+                {% elif scope == 'all' %}<strong>All Records</strong>
+                {% else %}<strong>For Sale</strong>{% endif %}
+                · {{ filtered_card_count or 0 }} card(s) shown
+                {% if filter_count %}
+                    · <strong>{{ filter_count }}</strong> advanced filter(s) active — open Advanced Filters to edit them.
+                {% endif %}
+            </div>
+
+            <div class="collapse inventory-filter-collapse" id="advancedInventoryFilters">
+                <div class="inventory-filter-grid">
+
+                    <div class="inventory-filter-group">
+                        <div class="inventory-filter-group-title">Card Info</div>
+
+                        <div>
+                            <label class="form-label">Year</label>
+                            <input class="form-control {% if year_filter %}filter-active-field{% endif %}" type="number" name="year" placeholder="2018" value="{{ year_filter or '' }}">
+                        </div>
+                        <div>
+                            <label class="form-label">Brand</label>
+                            <input class="form-control {% if brand_filter %}filter-active-field{% endif %}" type="text" name="brand" placeholder="Topps, Panini..." value="{{ brand_filter or '' }}">
+                        </div>
+                        <div>
+                            <label class="form-label">Sport</label>
+                            <select class="form-select {% if sport_filter %}filter-active-field{% endif %}" name="sport">
+                                <option value="">All Sports</option>
+                                {% for sport in ["Baseball", "Football", "Basketball", "Hockey", "Soccer", "Golf", "Racing", "Wrestling", "Boxing", "Other"] %}
+                                    <option value="{{ sport }}" {% if sport_filter == sport %}selected{% endif %}>{{ sport }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Variation</label>
+                            <input class="form-control {% if variation_filter %}filter-active-field{% endif %}" type="text" name="variation" placeholder="Refractor, Silver..." value="{{ variation_filter or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="inventory-filter-group">
+                        <div class="inventory-filter-group-title">Inventory</div>
+
+                        <div>
+                            <label class="form-label">Status</label>
+                            {% if scope != 'all' and not status_filter %}
+                                <select class="form-select" disabled>
+                                    <option selected>Active</option>
+                                </select>
+                                <div class="inventory-filter-locked-note">Locked by For Sale view</div>
+                            {% else %}
+                                <select class="form-select {% if status_filter %}filter-active-field{% endif %}" name="status">
+                                    <option value="">All Statuses</option>
+                                    {% for status in ["Holding", "Active", "Sold"] %}
+                                        <option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="form-label">Collection</label>
+                            {% if scope != 'all' and not collection_type_filter %}
+                                <select class="form-select" disabled>
+                                    <option selected>Inventory</option>
+                                </select>
+                                <div class="inventory-filter-locked-note">Locked by For Sale view</div>
+                            {% else %}
+                                <select class="form-select {% if collection_type_filter %}filter-active-field{% endif %}" name="collection_type">
+                                    <option value="">All Collections</option>
+                                    {% for collection_type in ["Inventory", "Personal Collection", "Trade Bait", "Grading Queue"] %}
+                                        <option value="{{ collection_type }}" {% if collection_type_filter == collection_type %}selected{% endif %}>{{ collection_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="form-label">Storage</label>
+                            <select class="form-select {% if storage_filter %}filter-active-field{% endif %}" name="storage">
+                                <option value="">All Storage</option>
+                                <option value="__missing__" {% if storage_filter == "__missing__" %}selected{% endif %}>Missing Location</option>
+                                {% for location in storage_locations %}
+                                    <option value="{{ location }}" {% if storage_filter == location %}selected{% endif %}>{{ location }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="inventory-filter-group">
+                        <div class="inventory-filter-group-title">Card Attributes</div>
+
+                        <div>
+                            <label class="form-label">Card Type</label>
+                            <select class="form-select {% if card_type_filter %}filter-active-field{% endif %}" name="card_type">
+                                <option value="">All Types</option>
+                                <option value="Raw" {% if card_type_filter == "Raw" %}selected{% endif %}>Raw</option>
+                                <option value="Graded" {% if card_type_filter == "Graded" %}selected{% endif %}>Graded</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Rookie</label>
+                            <select class="form-select {% if rookie_filter %}filter-active-field{% endif %}" name="rookie">
+                                <option value="">All</option>
+                                <option value="yes" {% if rookie_filter == "yes" %}selected{% endif %}>Rookies Only</option>
+                                <option value="no" {% if rookie_filter == "no" %}selected{% endif %}>Non-Rookies</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Hall of Fame</label>
+                            <select class="form-select {% if hof_filter %}filter-active-field{% endif %}" name="hof">
+                                <option value="">All</option>
+                                <option value="yes" {% if hof_filter == "yes" %}selected{% endif %}>Hall of Fame Only</option>
+                                <option value="no" {% if hof_filter == "no" %}selected{% endif %}>Non-Hall of Fame</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Graded Score</label>
+                            <input class="form-control {% if actual_grade_filter %}filter-active-field{% endif %}" type="text" name="actual_grade" placeholder="PSA 10" value="{{ actual_grade_filter or '' }}">
+                        </div>
+                        <div>
+                            <label class="form-label">Grade Estimate</label>
+                            <input class="form-control {% if grade_estimate_filter %}filter-active-field{% endif %}" type="text" name="grade_estimate" placeholder="PSA 8" value="{{ grade_estimate_filter or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="inventory-filter-group">
+                        <div class="inventory-filter-group-title">Acquisition</div>
+
+                        <div>
+                            <label class="form-label">Acquisition Source</label>
+                            <select class="form-select {% if acquisition_source_filter %}filter-active-field{% endif %}" name="acquisition_source">
+                                <option value="">All Sources</option>
+                                {% for source in acquisition_sources|default(["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"]) %}
+                                    <option value="{{ source }}" {% if acquisition_source_filter == source %}selected{% endif %}>{{ source }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Acquisition Event</label>
+                            <input class="form-control {% if acquisition_event_filter %}filter-active-field{% endif %}" type="text" list="acquisitionEventList" name="acquisition_event" placeholder="Macon Card Show..." value="{{ acquisition_event_filter or '' }}">
+                            <datalist id="acquisitionEventList">
+                                {% for event_name in acquisition_events|default([]) %}
+                                    <option value="{{ event_name }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div class="inventory-filter-group">
+                        <div class="inventory-filter-group-title">Financial</div>
+
+                        <div>
+                            <label class="form-label">Min Cost</label>
+                            <input class="form-control {% if min_price %}filter-active-field{% endif %}" type="number" step="0.01" name="min_price" placeholder="0.00" value="{{ min_price or '' }}">
+                        </div>
+                        <div>
+                            <label class="form-label">Max Cost</label>
+                            <input class="form-control {% if max_price %}filter-active-field{% endif %}" type="number" step="0.01" name="max_price" placeholder="0.00" value="{{ max_price or '' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button class="btn btn-dark" type="submit">Apply Advanced Filters</button>
+                    <a class="btn btn-outline-secondary" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', q=search_query, view=current_view) }}{% else %}{{ url_for('cards', q=search_query, view=current_view) }}{% endif %}">Clear Advanced Filters</a>
+                </div>
+            </div>
+        </form>
+
+        {% if total_filter_count %}
+            <div class="inventory-active-filters">
+                <span class="small text-muted fw-bold me-1">Active Search:</span>
+                {% if search_query %}<span class="inventory-filter-chip"><strong>Keyword</strong> {{ search_query }}</span>{% endif %}
+                {% if year_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Year: {{ year_filter }}</span>{% endif %}
+                {% if brand_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Brand: {{ brand_filter }}</span>{% endif %}
+                {% if sport_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Sport: {{ sport_filter }}</span>{% endif %}
+                {% if status_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Status: {{ status_filter }}</span>{% endif %}
+                {% if collection_type_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Collection: {{ collection_type_filter }}</span>{% endif %}
+                {% if card_type_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Type: {{ card_type_filter }}</span>{% endif %}
+                {% if rookie_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Rookie: {{ rookie_filter }}</span>{% endif %}
+                {% if hof_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">HOF: {{ hof_filter }}</span>{% endif %}
+                {% if storage_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Storage: {% if storage_filter == '__missing__' %}Missing{% else %}{{ storage_filter }}{% endif %}</span>{% endif %}
+                {% if variation_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Variation: {{ variation_filter }}</span>{% endif %}
+                {% if acquisition_source_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Source: {{ acquisition_source_filter }}</span>{% endif %}
+                {% if acquisition_event_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Event: {{ acquisition_event_filter }}</span>{% endif %}
+                {% if min_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Min Cost: {{ min_price }}</span>{% endif %}
+                {% if max_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Max Cost: {{ max_price }}</span>{% endif %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', view=current_view) }}{% else %}{{ url_for('cards', view=current_view) }}{% endif %}">Clear Search</a>
+            </div>
+        {% endif %}
+
+        <div class="inventory-result-bar">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <div><strong>Results:</strong> <span class="badge text-bg-dark">{{ filtered_card_count or 0 }}</span> <span class="text-muted small">card(s)</span></div>
+                <div><strong>For Sale:</strong> <span class="badge text-bg-success">{{ active_inventory_count or 0 }}</span> <span class="text-muted small">available</span></div>
+                <div><strong>Missing Location:</strong> <a class="badge text-bg-warning text-decoration-none" href="{{ url_for('cards', status='Active', collection_type='Inventory', storage='__missing__', view=current_view) }}">{{ missing_storage_count or 0 }}</a></div>
+                <div><strong>Deal Cart:</strong> <span class="badge text-bg-dark">{{ deal_cart_count or 0 }}</span></div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                {% if storage_filter %}
+                    <a class="btn btn-sm btn-warning"
+                       href="{{ url_for('pull_sheet', storage=storage_filter, status=pull_sheet_status_filter, collection_type=pull_sheet_collection_type_filter) }}"
+                       target="_blank">
+                        Print Pull Sheet
+                    </a>
+                {% endif %}
+                <a class="btn btn-sm btn-outline-dark" href="{{ url_for('deal_cart') }}">View Deal Cart</a>
+                {% if deal_cart_count %}
+                    <form method="POST" action="{{ url_for('clear_deal_cart') }}" class="d-inline">
+                        <button class="btn btn-sm btn-outline-secondary" type="submit">Clear Cart</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_view == 'gallery' %}
+    <div class="row g-4">
+        {% for card in cards %}
+            <div class="col-sm-6 col-md-4 col-xl-3">
+                <div class="card page-card gallery-card h-100 {% if card.status == 'Sold' %}sold-gallery-card{% endif %}">
+                    <a href="{{ url_for('card_detail', card_id=card.id) }}" class="gallery-image-link">
+                        {% if card.image_filename %}
+                            <img class="gallery-card-img" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name }} card image">
+                        {% else %}
+                            <div class="gallery-placeholder">No Image</div>
+                        {% endif %}
+                    </a>
+
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <div class="fw-bold gallery-player d-flex align-items-center gap-2">
+                                    <a href="{{ url_for('card_detail', card_id=card.id) }}" class="text-decoration-none">{{ card.player_name }}</a>
+                                    {% if card.id in (deal_cart_ids|default([])) %}<span class="badge text-bg-warning">IN DEAL CART</span>{% endif %}
+                                    {% if card.status == "Sold" %}<span class="badge text-bg-danger">SOLD</span>{% endif %}
+                                </div>
+                                <div class="small text-muted">
+                                    {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}
+                                </div>
+                            </div>
+                            <span class="badge {% if card.card_type == 'Graded' %}text-bg-success{% else %}text-bg-dark{% endif %}">{{ card.card_type }}</span>
+                        </div>
+
+                        <div class="mb-2">
+                            {% if card.variation %}<span class="badge text-bg-light border">{{ card.variation }}</span>{% endif %}
+                            {% if card.is_rookie %}<span class="badge badge-rc">RC</span>{% endif %}
+                            {% if card.is_hof %}<span class="badge badge-hof">HOF</span>{% endif %}
+                        </div>
+
+                        <div class="gallery-meta small mb-3">
+                            <div><strong>Code:</strong> {{ card.card_code }}</div>
+                            <div><strong>Grade:</strong>
+                                {% if card.card_type == "Graded" %}
+                                    {{ card.grading_company }} {{ card.actual_grade }}
+                                {% elif card.card_type == "Raw" %}
+                                    Estimate {{ card.grade_estimate or '—' }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </div>
+                            <div><strong>Qty:</strong> {{ card.quantity or 1 }}</div>
+                            <div><strong>Cost:</strong> ${{ "%.2f"|format(card.purchase_price or 0) }}</div>
+                            <div><strong>Comp Value:</strong> ${{ "%.2f"|format(card.estimated_value or 0) }}</div>
+                            <div><strong>Ask:</strong> ${{ "%.2f"|format(card.asking_price or 0) }}</div>
+                            <div><strong>Sold:</strong> {% if card.sold_price %}${{ "%.2f"|format(card.sold_price or 0) }}{% else %}—{% endif %}</div>
+                            <div><strong>Profit:</strong>
+                                {% if card.sold_price %}
+                                    <span class="{% if (card.sold_price or 0) - (card.purchase_price or 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ "%.2f"|format((card.sold_price or 0) - (card.purchase_price or 0)) }}
+                                    </span>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </div>
+                            <div><strong>Sold Date:</strong> {{ card.sold_date or '—' }}</div>
+                            <div><strong>Platform:</strong> {{ card.sales_platform or '—' }}</div>
+                            <div><strong>Status:</strong> {% if card.status %}<span class="status-badge status-{{ card.status|replace(' ', '-') }}">{{ card.status }}</span>{% else %}—{% endif %}</div>
+                            <div><strong>Storage:</strong>
+                                {% if card.storage_location %}
+                                    <a class="storage-pill storage-pill-sm" href="{{ url_for('cards', storage=card.storage_location, view=current_view) }}">{{ card.storage_location }}</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-auto d-flex flex-wrap gap-2">
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('card_detail', card_id=card.id) }}">View</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('edit_card', card_id=card.id) }}">Edit</a>
+                            {% if card.status == "Active" %}
+                                <a class="btn btn-sm btn-danger" href="{{ url_for('quick_sell', card_id=card.id) }}">Quick Sell</a>
+                            {% endif %}
+                            <a class="btn btn-sm clone-btn" href="{{ url_for('clone_card', card_id=card.id) }}">Clone</a>
+                            <form method="POST" action="{{ url_for('add_duplicate', card_id=card.id) }}" class="d-inline">
+                                <button class="btn btn-sm btn-outline-success" type="submit">+1</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12">
+                <div class="card page-card">
+                    <div class="card-body text-center text-muted py-5">No cards found.</div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <form id="deal-cart-add-form" method="POST" action="{{ url_for('add_to_deal_cart') }}"></form>
+    <div class="d-flex flex-wrap justify-content-end gap-2 mb-2">
+        <button class="btn btn-dark" type="submit" form="deal-cart-add-form">Add Selected to Deal Cart</button>
+        <a class="btn btn-danger" href="{{ url_for('deal_cart') }}">Sell Deal Cart as Lot</a>
+    </div>
+
+    <div class="card page-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Select</th>
+                        <th>Image</th>
+                        <th>Card</th>
+                        <th>Type</th>
+                        <th>Official Grade</th>
+                        <th>Raw Estimate</th>
+                        <th>Qty</th>
+                        <th>Cost</th>
+                        <th>Comp Value</th>
+                        <th>Ask</th>
+                        <th>Sold</th>
+                        <th>Profit</th>
+                        <th>Platform</th>
+                        <th>Status</th>
+                        <th>Collection</th>
+                        <th>Storage</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for card in cards %}
+                        <tr class="inventory-row {% if card.status == 'Sold' %}sold-inventory-row{% endif %}">
+                            <td>
+                                {% if card.status == "Active" %}
+                                    <input class="form-check-input" type="checkbox" name="card_ids" value="{{ card.id }}" form="deal-cart-add-form">
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if card.image_filename %}
+                                    <img class="card-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name }} card image">
+                                {% else %}
+                                    <div class="placeholder-thumb">No Image</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-bold d-flex align-items-center gap-2">
+                                    <a href="{{ url_for('card_detail', card_id=card.id) }}" class="text-decoration-none">{{ card.player_name }}</a>
+                                    {% if card.id in (deal_cart_ids|default([])) %}<span class="badge text-bg-warning">IN DEAL CART</span>{% endif %}
+                                    {% if card.status == "Sold" %}<span class="badge text-bg-danger">SOLD</span>{% endif %}
+                                </div>
+                                <div class="small text-muted">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}</div>
+                                {% if card.variation %}<span class="badge text-bg-light border">{{ card.variation }}</span>{% endif %}
+                                {% if card.is_rookie %}<span class="badge badge-rc">RC</span>{% endif %}
+                                {% if card.is_hof %}<span class="badge badge-hof">HOF</span>{% endif %}
+                            </td>
+                            <td><span class="badge {% if card.card_type == 'Graded' %}text-bg-success{% else %}text-bg-dark{% endif %}">{{ card.card_type }}</span></td>
+                            <td>
+                                {% if card.card_type == "Graded" %}
+                                    {{ card.grading_company }} {{ card.actual_grade }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if card.card_type == "Raw" %}
+                                    {{ card.grade_estimate or '—' }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ card.quantity or 1 }}</td>
+                            <td>${{ "%.2f"|format(card.purchase_price or 0) }}</td>
+                            <td>${{ "%.2f"|format(card.estimated_value or 0) }}</td>
+                            <td>${{ "%.2f"|format(card.asking_price or 0) }}</td>
+                            <td>{% if card.sold_price %}${{ "%.2f"|format(card.sold_price or 0) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            <td>
+                                {% if card.sold_price %}
+                                    <span class="{% if (card.sold_price or 0) - (card.purchase_price or 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ "%.2f"|format((card.sold_price or 0) - (card.purchase_price or 0)) }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ card.sales_platform or '—' }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('update_card_status', card_id=card.id) }}">
+                                    <select class="form-select form-select-sm" name="status" onchange="this.form.submit()">
+                                        {% for status in ["Holding", "Active", "Sold"] %}
+                                            <option value="{{ status }}" {% if card.status == status %}selected{% endif %}>{{ status }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </td>
+                            <td>
+                                {% if card.collection_type == "Personal Collection" %}
+                                    <span class="badge bg-primary">PC</span>
+                                {% elif card.collection_type == "Inventory" %}
+                                    <span class="badge bg-success">Inventory</span>
+                                {% elif card.collection_type == "Trade Bait" %}
+                                    <span class="badge bg-warning text-dark">Trade</span>
+                                {% elif card.collection_type == "Grading Queue" %}
+                                    <span class="badge bg-info text-dark">Grade</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">—</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <form method="POST" action="{{ url_for('update_card_storage', card_id=card.id) }}" class="quick-storage-form">
+                                    <div class="input-group input-group-sm quick-storage-group">
+                                        <input class="form-control quick-storage-input" type="text" name="storage_location" value="{{ card.storage_location or '' }}" placeholder="Add location">
+                                        <button class="btn btn-outline-secondary" type="submit">Save</button>
+                                    </div>
+                                    {% if card.storage_location %}
+                                        <a class="storage-pill storage-pill-sm mt-1" href="{{ url_for('cards', storage=card.storage_location, view=current_view) }}">{{ card.storage_location }}</a>
+                                    {% else %}
+                                        <span class="badge text-bg-warning mt-1">Missing Location</span>
+                                    {% endif %}
+                                </form>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a class="btn btn-outline-primary" href="{{ url_for('card_detail', card_id=card.id) }}">View</a>
+                                    <a class="btn btn-outline-secondary" href="{{ url_for('edit_card', card_id=card.id) }}">Edit</a>
+                                    {% if card.status == "Active" %}
+                                        <a class="btn btn-danger" href="{{ url_for('quick_sell', card_id=card.id) }}">Quick Sell</a>
+                                    {% endif %}
+                                    <a class="btn clone-btn" href="{{ url_for('clone_card', card_id=card.id) }}">Clone</a>
+                                </div>
+                                <form method="POST" action="{{ url_for('add_duplicate', card_id=card.id) }}" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-success" type="submit">+1</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="17" class="text-center text-muted py-5">No cards found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

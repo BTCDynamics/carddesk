@@ -1,0 +1,744 @@
+{% extends "base.html" %}
+
+{% block title %}Mobile Capture | CardDesk{% endblock %}
+
+{% block content %}
+<div class="capture-save-success-overlay" id="saveSuccessOverlay" aria-live="polite" aria-hidden="true">
+    <div class="capture-save-success-box">
+        <div class="capture-save-success-check">✓</div>
+        <div class="capture-save-success-title">Card Saved</div>
+        <div class="capture-save-success-detail" id="saveSuccessDetail">Added to AI Review Queue</div>
+        <div class="capture-save-success-hint">Ready to capture the next card</div>
+    </div>
+</div>
+
+<style>
+.mobile-capture-page {
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.capture-shell {
+    background: linear-gradient(145deg, #111827, #1f2937);
+    border: 1px solid rgba(148, 163, 184, .25);
+    border-radius: 1.2rem;
+    overflow: hidden;
+    box-shadow: 0 1rem 2.5rem rgba(0,0,0,.35);
+}
+
+.capture-video-wrap {
+    position: relative;
+    background: #020617;
+    min-height: 420px;
+    display: grid;
+    place-items: center;
+}
+
+.capture-video-wrap {
+    cursor: pointer;
+}
+
+.capture-video-wrap::after {
+    content: "Tap anywhere to capture";
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, .82);
+    color: #f8fafc;
+    padding: .35rem .75rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    border: 1px solid rgba(255,255,255,.15);
+}
+
+.capture-flash {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, .72);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease;
+    z-index: 8;
+}
+
+.capture-flash.active {
+    opacity: 1;
+}
+
+.capture-toast {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(.92);
+    padding: .85rem 1.25rem;
+    border-radius: 999px;
+    color: #111827;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border: 1px solid rgba(255,255,255,.35);
+    box-shadow: 0 1rem 2.2rem rgba(0,0,0,.35);
+    font-size: 1rem;
+    font-weight: 900;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 9;
+    white-space: nowrap;
+}
+
+.capture-toast.active {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+#captureVideo {
+    width: 100%;
+    max-height: 72vh;
+    object-fit: contain;
+    background: #020617;
+}
+
+.capture-card-guide {
+    position: absolute;
+    width: min(68vw, 360px);
+    aspect-ratio: 2.5 / 3.5;
+    border: 3px solid rgba(251, 191, 36, .95);
+    border-radius: 16px;
+    box-shadow:
+        0 0 0 9999px rgba(0,0,0,.24),
+        0 0 22px rgba(251, 191, 36, .35);
+    pointer-events: none;
+}
+
+.capture-card-guide::before {
+    content: "Place card here";
+    position: absolute;
+    top: -2.1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fbbf24;
+    background: rgba(15, 23, 42, .88);
+    border: 1px solid rgba(251, 191, 36, .35);
+    padding: .28rem .65rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.capture-corners span {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    border-color: #ffffff;
+    border-style: solid;
+}
+
+.capture-corners span:nth-child(1) { top: 10px; left: 10px; border-width: 3px 0 0 3px; border-radius: 10px 0 0 0; }
+.capture-corners span:nth-child(2) { top: 10px; right: 10px; border-width: 3px 3px 0 0; border-radius: 0 10px 0 0; }
+.capture-corners span:nth-child(3) { bottom: 10px; left: 10px; border-width: 0 0 3px 3px; border-radius: 0 0 0 10px; }
+.capture-corners span:nth-child(4) { bottom: 10px; right: 10px; border-width: 0 3px 3px 0; border-radius: 0 0 10px 0; }
+
+.capture-controls {
+    padding: 1rem;
+    background: linear-gradient(145deg, #1f2937, #263244);
+}
+
+.capture-status {
+    min-height: 1.4rem;
+    color: #cbd5e1;
+    font-size: .9rem;
+}
+
+.capture-preview-img {
+    width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    border-radius: .9rem;
+    background: #020617;
+    border: 1px solid rgba(148, 163, 184, .25);
+}
+
+.capture-tip-card {
+    background: linear-gradient(145deg, #202b3a, #263244);
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 1rem;
+    padding: 1rem;
+}
+
+.capture-tip-card li {
+    margin-bottom: .45rem;
+}
+
+
+.capture-autosave-top-panel {
+    padding: 1rem;
+    border-radius: 1.1rem;
+    background: linear-gradient(145deg, rgba(14, 165, 233, .18), rgba(15, 23, 42, .86));
+    border: 1px solid rgba(125, 211, 252, .38);
+    box-shadow: 0 .75rem 1.75rem rgba(0,0,0,.22);
+}
+
+.capture-autosave-top-panel.auto-save-on {
+    background: linear-gradient(145deg, rgba(22, 163, 74, .28), rgba(15, 23, 42, .88));
+    border-color: rgba(74, 222, 128, .64);
+    box-shadow: 0 0 28px rgba(34, 197, 94, .24);
+}
+
+.capture-autosave-title {
+    color: #f8fafc;
+    font-size: 1.05rem;
+    font-weight: 1000;
+}
+
+.capture-autosave-help {
+    color: #cbd5e1;
+    font-size: .9rem;
+    margin-top: .2rem;
+}
+
+.capture-autosave-switch {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    color: #f8fafc;
+    font-weight: 1000;
+    font-size: 1.05rem;
+}
+
+.capture-autosave-switch .form-check-input {
+    width: 3.4rem;
+    height: 1.75rem;
+    margin-left: 0;
+}
+
+.capture-save-success-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(2, 6, 23, .72);
+    backdrop-filter: blur(4px);
+}
+
+.capture-save-success-overlay.active {
+    display: flex;
+}
+
+.capture-save-success-box {
+    width: min(92vw, 440px);
+    padding: 1.4rem;
+    border-radius: 1.35rem;
+    text-align: center;
+    color: #ffffff;
+    background: linear-gradient(145deg, #16a34a, #15803d);
+    border: 2px solid rgba(187, 247, 208, .75);
+    box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, .42), 0 0 36px rgba(34, 197, 94, .4);
+}
+
+.capture-save-success-check {
+    display: grid;
+    place-items: center;
+    width: 74px;
+    height: 74px;
+    margin: 0 auto .85rem;
+    border-radius: 999px;
+    color: #166534;
+    background: #dcfce7;
+    font-size: 2.5rem;
+    font-weight: 1000;
+    line-height: 1;
+}
+
+.capture-save-success-title {
+    font-size: 1.35rem;
+    font-weight: 1000;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.capture-save-success-detail {
+    margin-top: .4rem;
+    font-size: .95rem;
+    font-weight: 750;
+    color: #dcfce7;
+}
+
+.capture-save-success-hint {
+    margin-top: .55rem;
+    color: #bbf7d0;
+    font-size: .9rem;
+    font-weight: 750;
+}
+
+.save-review-attention {
+    animation: save-review-pulse .85s ease-in-out 6;
+    box-shadow: 0 0 28px rgba(34, 197, 94, .86) !important;
+    border-color: #bbf7d0 !important;
+}
+
+@keyframes save-review-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+    50% { transform: scale(1.045); box-shadow: 0 0 34px rgba(34, 197, 94, .95); }
+    100% { transform: scale(1); box-shadow: 0 0 14px rgba(34, 197, 94, .48); }
+}
+
+
+@media (max-width: 768px) {
+    .mobile-capture-page {
+        margin: 0 -.4rem;
+    }
+
+    .capture-video-wrap {
+        min-height: 62vh;
+    }
+
+    .capture-card-guide {
+        width: 72vw;
+    }
+
+    .capture-controls .btn {
+        width: 100%;
+    }
+}
+</style>
+
+<div class="mobile-capture-page">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+        <div>
+            <h1 class="h2 mb-1">Mobile Capture</h1>
+            <p class="text-muted mb-0">Use your phone as a capture-only station. Review and import saved cards from your main CardDesk dashboard.</p>
+        </div>
+    </div>
+
+    <div class="capture-autosave-top-panel mb-4" id="captureModeCard">
+        <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+            <div>
+                <div class="capture-autosave-title">Production Capture Mode</div>
+                <div class="capture-autosave-help" id="autoSaveHelp">
+                    Auto Save is OFF. Capture a card, review the preview, then tap Save to Review Queue.
+                </div>
+            </div>
+            <div class="form-check form-switch capture-autosave-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="autoSaveToggle">
+                <label class="form-check-label" for="autoSaveToggle">Auto Save</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="capture-shell">
+                <div class="capture-video-wrap">
+                    <video id="captureVideo" autoplay playsinline muted></video>
+                    <div class="capture-card-guide" id="captureGuide">
+                        <div class="capture-corners">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+
+                    <div id="captureFlash" class="capture-flash"></div>
+                    <div id="captureToast" class="capture-toast">Image Captured</div>
+                </div>
+
+                <div class="capture-controls">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-4">
+                            <button class="btn btn-primary w-100" id="startCameraBtn" type="button">Start Camera</button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-warning w-100" id="captureBtn" type="button" disabled>Capture Card</button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-success w-100" id="saveBtn" type="button" disabled>Save to Review Queue</button>
+                        </div>
+                    </div>
+                    <div class="capture-status mt-3" id="captureStatus">
+                        Start the camera, center the card, capture, then save it to the Review Queue.
+                    </div>
+                </div>
+            </div>
+
+            <canvas id="captureCanvas" style="display:none;"></canvas>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="capture-tip-card mb-4">
+                <div class="cw-section-label mb-3">Capture Preview</div>
+                <div id="previewEmpty" class="text-muted small">
+                    No card captured yet.
+                </div>
+                <img id="capturePreview" class="capture-preview-img" alt="Captured card preview" style="display:none;">
+            </div>
+
+            <div class="capture-tip-card mb-4">
+                <div class="cw-section-label mb-3">Capture Workflow</div>
+                <p class="text-muted small mb-0">
+                    Saved cards are added to the AI Review Queue. Use the main CardDesk dashboard on your desktop or tablet to review, edit, and import them into inventory.
+                </p>
+            </div>
+
+            <div class="capture-tip-card">
+                <div class="cw-section-label mb-3">Best Results</div>
+                <ul class="mb-0 text-muted small">
+                    <li>Use a phone mount or tripod.</li>
+                    <li>Use soft light from both sides.</li>
+                    <li>Avoid direct flash and glare.</li>
+                    <li>Use a dark matte background.</li>
+                    <li>Keep the card square inside the guide.</li>
+                    <li>For slabs, make sure the label is readable.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const video = document.getElementById("captureVideo");
+const canvas = document.getElementById("captureCanvas");
+const startBtn = document.getElementById("startCameraBtn");
+const captureBtn = document.getElementById("captureBtn");
+const saveBtn = document.getElementById("saveBtn");
+const autoSaveToggle = document.getElementById("autoSaveToggle");
+const captureModeCard = document.getElementById("captureModeCard");
+const autoSaveHelp = document.getElementById("autoSaveHelp");
+const saveSuccessOverlay = document.getElementById("saveSuccessOverlay");
+const saveSuccessDetail = document.getElementById("saveSuccessDetail");
+const statusBox = document.getElementById("captureStatus");
+const preview = document.getElementById("capturePreview");
+const previewEmpty = document.getElementById("previewEmpty");
+
+let stream = null;
+let lastCapturedBlob = null;
+let saveInProgress = false;
+
+function setStatus(message) {
+    statusBox.textContent = message;
+}
+
+function isAutoSaveEnabled() {
+    return !!(autoSaveToggle && autoSaveToggle.checked);
+}
+
+function updateAutoSaveUi() {
+    if (!autoSaveToggle || !captureModeCard || !autoSaveHelp) {
+        return;
+    }
+
+    if (isAutoSaveEnabled()) {
+        captureModeCard.classList.add("auto-save-on");
+        autoSaveHelp.textContent = "Auto Save is ON. Each capture saves directly to the AI Review Queue.";
+        saveBtn.disabled = true;
+    } else {
+        captureModeCard.classList.remove("auto-save-on");
+        autoSaveHelp.textContent = "Auto Save is OFF. Capture a card, review the preview, then tap Save to Review Queue.";
+        saveBtn.disabled = !lastCapturedBlob;
+    }
+}
+
+function showSaveSuccessFeedback(aiStatus) {
+    const statusText = aiStatus || "Pending Review";
+
+    if (saveSuccessDetail) {
+        saveSuccessDetail.textContent = "Added to AI Review Queue: " + statusText;
+    }
+
+    if (navigator.vibrate) {
+        navigator.vibrate([140, 70, 140]);
+    }
+
+    if (saveSuccessOverlay) {
+        saveSuccessOverlay.classList.add("active");
+        saveSuccessOverlay.setAttribute("aria-hidden", "false");
+
+        setTimeout(function () {
+            saveSuccessOverlay.classList.remove("active");
+            saveSuccessOverlay.setAttribute("aria-hidden", "true");
+        }, 1600);
+    }
+}
+
+function guideUserToSaveButton() {
+    if (!saveBtn) {
+        return;
+    }
+
+    setTimeout(function () {
+        saveBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+        saveBtn.classList.remove("save-review-attention");
+        void saveBtn.offsetWidth;
+        saveBtn.classList.add("save-review-attention");
+        setStatus("Image captured. Tap the green Save to Review Queue button.");
+
+        setTimeout(function () {
+            saveBtn.classList.remove("save-review-attention");
+        }, 5200);
+    }, 350);
+}
+
+function playCaptureBeep() {
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContextClass) {
+            return;
+        }
+
+        const audioContext = new AudioContextClass();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.16, audioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.12);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.13);
+    } catch (error) {
+        // Some mobile browsers may block generated audio. Visual feedback still works.
+    }
+}
+
+function showCaptureFeedback() {
+    if (captureFlash) {
+        captureFlash.classList.add("active");
+        setTimeout(() => captureFlash.classList.remove("active"), 130);
+    }
+
+    if (captureToast) {
+        captureToast.classList.add("active");
+        setTimeout(() => captureToast.classList.remove("active"), 850);
+    }
+
+    if (navigator.vibrate) {
+        navigator.vibrate(60);
+    }
+
+    playCaptureBeep();
+}
+
+async function startCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            },
+            audio: false
+        });
+
+        video.srcObject = stream;
+        captureBtn.disabled = false;
+        setStatus(isAutoSaveEnabled() ? "Auto Save ON. Center the card and tap Capture Card or tap the camera area." : "Camera ready. Center the card inside the guide and tap Capture Card.");
+    } catch (error) {
+        setStatus("Camera could not start. On iPhone, this page may need HTTPS or local network permissions.");
+        console.error(error);
+    }
+}
+
+function captureFrame() {
+    if (!video.videoWidth || !video.videoHeight) {
+        setStatus("Camera is not ready yet.");
+        return;
+    }
+
+    const guide = document.getElementById("captureGuide");
+    const videoRect = video.getBoundingClientRect();
+    const guideRect = guide.getBoundingClientRect();
+
+    // The video uses object-fit: contain, so the visible camera image may have
+    // letterboxing. Calculate the actual displayed video image area first.
+    const videoAspect = video.videoWidth / video.videoHeight;
+    const elementAspect = videoRect.width / videoRect.height;
+
+    let displayedWidth;
+    let displayedHeight;
+    let displayedLeft;
+    let displayedTop;
+
+    if (elementAspect > videoAspect) {
+        displayedHeight = videoRect.height;
+        displayedWidth = displayedHeight * videoAspect;
+        displayedLeft = videoRect.left + (videoRect.width - displayedWidth) / 2;
+        displayedTop = videoRect.top;
+    } else {
+        displayedWidth = videoRect.width;
+        displayedHeight = displayedWidth / videoAspect;
+        displayedLeft = videoRect.left;
+        displayedTop = videoRect.top + (videoRect.height - displayedHeight) / 2;
+    }
+
+    // Intersect the guide box with the actual displayed camera image.
+    const cropLeftCss = Math.max(guideRect.left, displayedLeft);
+    const cropTopCss = Math.max(guideRect.top, displayedTop);
+    const cropRightCss = Math.min(guideRect.right, displayedLeft + displayedWidth);
+    const cropBottomCss = Math.min(guideRect.bottom, displayedTop + displayedHeight);
+
+    const cropWidthCss = cropRightCss - cropLeftCss;
+    const cropHeightCss = cropBottomCss - cropTopCss;
+
+    if (cropWidthCss <= 0 || cropHeightCss <= 0) {
+        setStatus("Could not match the guide box to the camera image. Try rotating the phone or restarting the camera.");
+        return;
+    }
+
+    // Convert CSS pixel crop area back to real camera pixels.
+    const scaleX = video.videoWidth / displayedWidth;
+    const scaleY = video.videoHeight / displayedHeight;
+
+    const sourceX = (cropLeftCss - displayedLeft) * scaleX;
+    const sourceY = (cropTopCss - displayedTop) * scaleY;
+    const sourceWidth = cropWidthCss * scaleX;
+    const sourceHeight = cropHeightCss * scaleY;
+
+    canvas.width = Math.round(sourceWidth);
+    canvas.height = Math.round(sourceHeight);
+
+    const context = canvas.getContext("2d");
+    context.drawImage(
+        video,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    canvas.toBlob(function(blob) {
+        if (!blob) {
+            setStatus("Could not capture image.");
+            return;
+        }
+
+        lastCapturedBlob = blob;
+        showCaptureFeedback();
+        const objectUrl = URL.createObjectURL(blob);
+        preview.src = objectUrl;
+        preview.style.display = "block";
+        previewEmpty.style.display = "none";
+
+        if (isAutoSaveEnabled()) {
+            saveBtn.disabled = true;
+            setStatus("Image captured. Auto Save is ON — saving to AI Review Queue...");
+            saveCapture({ fromAutoSave: true });
+            return;
+        }
+
+        saveBtn.disabled = false;
+        setStatus("Image captured. Review the preview, then Save to Review Queue or tap the camera area to retake.");
+        guideUserToSaveButton();
+    }, "image/jpeg", 0.94);
+}
+
+async function saveCapture(options = {}) {
+    const fromAutoSave = options.fromAutoSave === true;
+
+    if (saveInProgress) {
+        return;
+    }
+
+    if (!lastCapturedBlob) {
+        setStatus("No captured image to save.");
+        return;
+    }
+
+    const formData = new FormData();
+    const filename = `mobile-capture-${Date.now()}.jpg`;
+    formData.append("card_image", lastCapturedBlob, filename);
+
+    saveInProgress = true;
+    saveBtn.disabled = true;
+    captureBtn.disabled = true;
+    saveBtn.textContent = fromAutoSave ? "Auto Saving..." : "Saving...";
+    setStatus(fromAutoSave ? "Auto Save ON — saving image to CardDesk..." : "Saving image to CardDesk...");
+
+    try {
+        const response = await fetch("{{ url_for('mobile_capture_upload') }}", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.ok) {
+            throw new Error(result.error || "Upload failed.");
+        }
+
+        const savedStatus = result.ai_status || "Pending Review";
+
+        setStatus(`✅ Saved to AI Review Queue: ${savedStatus}. Capture another card when ready.`);
+        showSaveSuccessFeedback(savedStatus);
+
+        lastCapturedBlob = null;
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Save to Review Queue";
+
+        if (stream) {
+            captureBtn.disabled = false;
+        }
+    } catch (error) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save to Review Queue";
+
+        if (stream) {
+            captureBtn.disabled = false;
+        }
+
+        setStatus("Save failed: " + error.message);
+        console.error(error);
+    } finally {
+        saveInProgress = false;
+        updateAutoSaveUi();
+    }
+}
+
+updateAutoSaveUi();
+
+if (autoSaveToggle) {
+    autoSaveToggle.addEventListener("change", function () {
+        updateAutoSaveUi();
+
+        if (isAutoSaveEnabled()) {
+            setStatus("Auto Save ON. Each capture will save directly to the AI Review Queue.");
+        } else {
+            setStatus("Auto Save OFF. Capture a card, review the preview, then tap Save to Review Queue.");
+        }
+    });
+}
+
+startBtn.addEventListener("click", startCamera);
+captureBtn.addEventListener("click", captureFrame);
+saveBtn.addEventListener("click", function () { saveCapture({ fromAutoSave: false }); });
+
+// Tap anywhere on the camera preview area to capture.
+const videoWrap = document.querySelector(".capture-video-wrap");
+
+videoWrap.addEventListener("click", function(event) {
+    // Prevent accidental captures before camera starts.
+    if (captureBtn.disabled || saveInProgress) {
+        return;
+    }
+
+    // Ignore taps on buttons.
+    if (event.target.tagName === "BUTTON") {
+        return;
+    }
+
+    captureFrame();
+});
+</script>
+{% endblock %}

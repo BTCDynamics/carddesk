@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ card.card_code }}{% endblock %}
+
+{% block content %}
+<style>
+/* Edit Card page: keep Raw/Graded boxes dark on page load, not white */
+.cw-form-compact #raw-fields,
+.cw-form-compact #graded-fields {
+    background: linear-gradient(145deg, #202b3a, #253246) !important;
+    border-color: rgba(148, 163, 184, .24) !important;
+}
+
+.cw-form-compact #raw-fields:hover,
+.cw-form-compact #graded-fields:hover {
+    background: linear-gradient(145deg, #253246, #2c3a50) !important;
+    border-color: rgba(96, 165, 250, .45) !important;
+}
+
+.acquisition-note {
+    margin-top: .5rem;
+    padding: .65rem .8rem;
+    border-radius: .75rem;
+    font-size: .84rem;
+    font-weight: 650;
+}
+
+.acquisition-note.existing {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+}
+
+.acquisition-note.new {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #166534;
+}
+
+.cw-form-compact .form-control:disabled,
+.cw-form-compact .form-select:disabled {
+    background-color: #d1d5db !important;
+    color: #374151 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+</style>
+<div class="d-flex justify-content-between align-items-center mb-4 cw-page-title">
+    <div>
+        <h1 class="h2 mb-1">Edit Card</h1>
+        <p class="text-muted mb-0">{{ card.card_code }} · {{ card.player_name }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('card_detail', card_id=card.id) }}">Back to Detail</a>
+</div>
+
+<form method="POST" enctype="multipart/form-data" class="card page-card cw-form-compact">
+    <div class="card-body">
+        <div class="cw-section-label mb-2">Card Identity</div>
+        <input type="hidden" name="card_code" value="{{ card.card_code }}">
+
+        <div class="row g-3 align-items-end cw-form-row cw-row-a flex-nowrap overflow-auto">
+            <div class="col-md-auto cw-field-player">
+                <label class="form-label">Player Name</label>
+                <input class="form-control" type="text" name="player_name" required value="{{ card.player_name }}">
+            </div>
+
+            <div class="col-md-auto cw-field-select-sm">
+                <label class="form-label">Sport</label>
+                <select class="form-select" name="sport">
+                    {% for sport in ["Baseball", "Football", "Basketball", "Hockey", "Soccer", "Golf", "Racing", "Wrestling", "Boxing", "Other"] %}
+                        <option value="{{ sport }}" {% if card.sport == sport %}selected{% endif %}>{{ sport }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-auto cw-field-select-xs">
+                <label class="form-label">Card Type</label>
+                <select class="form-select" name="card_type">
+                    <option value="Raw" {% if card.card_type == "Raw" %}selected{% endif %}>Raw</option>
+                    <option value="Graded" {% if card.card_type == "Graded" %}selected{% endif %}>Graded</option>
+                </select>
+            </div>
+
+            <div class="col-md-auto cw-field-md">
+                <label class="form-label">Brand</label>
+                <input class="form-control" type="text" name="brand" value="{{ card.brand or '' }}">
+            </div>
+
+            <div class="col-md-auto cw-field-xs">
+                <label class="form-label">Year</label>
+                <input class="form-control cw-input-xs" type="number" name="year" value="{{ card.year or '' }}">
+            </div>
+
+            <div class="col-md-auto cw-field-sm">
+                <label class="form-label">Card #</label>
+                <input class="form-control cw-input-sm" type="text" name="card_number" value="{{ card.card_number or '' }}">
+            </div>
+
+            <div class="col-md-auto">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" name="is_hof" id="is_hof" {% if card.is_hof %}checked{% endif %}>
+                    <label class="form-check-label" for="is_hof">Hall of Famer</label>
+                </div>
+            </div>
+
+            <div class="col-md-auto">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" name="is_rookie" id="is_rookie" {% if card.is_rookie %}checked{% endif %}>
+                    <label class="form-check-label" for="is_rookie">Rookie Card</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end cw-form-row cw-row-b">
+            <div class="col-12 col-md-auto cw-field-lg">
+                <label class="form-label">Set Name</label>
+                <input class="form-control" type="text" name="set_name" value="{{ card.set_name or '' }}">
+            </div>
+
+            <div class="col-7 col-md-auto cw-field-md">
+                <label class="form-label">Variation</label>
+                <input class="form-control" type="text" name="variation" value="{{ card.variation or '' }}">
+            </div>
+
+            <div class="col-12 col-md-auto cw-field-file">
+                <label class="form-label">Replace Card Image</label>
+                <input class="form-control" type="file" name="card_image" accept="image/*">
+                {% if card.image_filename %}
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" name="remove_image" id="remove_image">
+                        <label class="form-check-label" for="remove_image">Remove current image</label>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="raw-heading" class="cw-section-label mb-2">Raw Card Info</div>
+        <div id="raw-fields" class="row g-3 cw-form-row cw-grade-row">
+            <div class="col-6 col-md-auto cw-field-sm">
+                <label class="form-label">Grade Estimate</label>
+                <input class="form-control cw-input-sm" type="text" name="grade_estimate" value="{{ card.grade_estimate or '' }}">
+            </div>
+        </div>
+
+        <div id="graded-heading" class="cw-section-label mt-3 mb-2">Graded Card Info</div>
+        <div id="graded-fields" class="row g-3 cw-form-row cw-grade-row">
+            <div class="col-12 col-md-auto cw-field-md">
+                <label class="form-label">Grading Company</label>
+                <input class="form-control" type="text" name="grading_company" value="{{ card.grading_company or '' }}">
+            </div>
+            <div class="col-6 col-md-auto cw-field-sm">
+                <label class="form-label">Actual Grade</label>
+                <input class="form-control cw-input-sm" type="text" name="actual_grade" value="{{ card.actual_grade or '' }}">
+            </div>
+            <div class="col-12 col-md-auto cw-field-md">
+                <label class="form-label">Cert Number</label>
+                <input class="form-control" type="text" name="cert_number" value="{{ card.cert_number or '' }}">
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="cw-section-label mb-2">Inventory</div>
+        <div class="row g-3 align-items-end cw-form-row cw-row-a">
+
+            <div class="col-6 col-md-auto cw-field-select-md">
+                <label class="form-label">Collection Type</label>
+                <select class="form-select" name="collection_type">
+
+                    <option value="Inventory"
+                        {% if card.collection_type == "Inventory" %}selected{% endif %}>
+                        Inventory
+                    </option>
+
+                    <option value="Personal Collection"
+                        {% if card.collection_type == "Personal Collection" %}selected{% endif %}>
+                        Personal Collection
+                    </option>
+
+                    <option value="Trade Bait"
+                        {% if card.collection_type == "Trade Bait" %}selected{% endif %}>
+                        Trade Bait
+                    </option>
+
+                    <option value="Grading Queue"
+                        {% if card.collection_type == "Grading Queue" %}selected{% endif %}>
+                        Grading Queue
+                    </option>
+
+                </select>
+            </div>
+
+            <div class="col-5 col-md-auto cw-field-xs">
+                <label class="form-label">Quantity</label>
+                <input class="form-control cw-input-xs" type="number" name="quantity" min="1" value="{{ card.quantity or 1 }}">
+            </div>
+            <div class="col-7 col-md-auto cw-field-sm">
+                <label class="form-label">Cost Basis</label>
+                <input class="form-control cw-input-sm" type="number" step="0.01" name="purchase_price" value="{{ card.purchase_price or '' }}">
+            </div>
+            <div class="col-7 col-md-auto cw-field-sm">
+                <label class="form-label">Estimated Value</label>
+                <input class="form-control cw-input-sm" type="number" step="0.01" name="estimated_value" value="{{ card.estimated_value or '' }}">
+            </div>
+            <div class="col-7 col-md-auto cw-field-sm">
+                <label class="form-label">Asking Price</label>
+                <input class="form-control cw-input-sm" type="number" step="0.01" name="asking_price" value="{{ card.asking_price or '' }}">
+            </div>
+            <div class="col-6 col-md-auto cw-field-select-md">
+                <label class="form-label">Acquisition Source</label>
+                <select class="form-select" name="acquisition_source" id="acquisition_source">
+                    {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
+                        <option value="{{ source }}" {% if (card.acquisition_source or "Existing Inventory") == source %}selected{% endif %}>{{ source }}</option>
+                    {% endfor %}
+                </select>
+                <div class="small text-muted mt-1">Existing Inventory will not count as a new dashboard acquisition.</div>
+            </div>
+            <div class="col-6 col-md-auto cw-field-date">
+                <label class="form-label">Acquisition Date</label>
+                <input class="form-control" type="date" name="acquisition_date" id="acquisition_date" value="{{ card.acquisition_date or '' }}">
+                <div class="small text-muted mt-1">Used for Acquired Today / 3D / 7D / 30D.</div>
+            </div>
+            <div class="col-12 col-md-auto cw-field-md">
+                <label class="form-label">Acquisition Event</label>
+                <input class="form-control" type="text" name="acquisition_event" id="acquisition_event" value="{{ card.acquisition_event or '' }}" placeholder="Macon Card Show, Facebook, eBay...">
+            </div>
+            <input type="hidden" name="purchase_date" id="purchase_date" value="{{ card.purchase_date or '' }}">
+            <div class="col-12">
+                <div class="acquisition-note existing" id="existing_inventory_note">
+                    This card is marked as Existing Inventory, so it will not appear in dashboard acquisition counts.
+                </div>
+                <div class="acquisition-note new" id="new_acquisition_note" style="display: none;">
+                    This card will count as a new acquisition when Acquisition Date is inside the selected dashboard range.
+                </div>
+            </div>
+            <div class="col-7 col-md-auto cw-field-sm">
+                <label class="form-label">Sold Price</label>
+                <input class="form-control cw-input-sm" type="number" step="0.01" name="sold_price" value="{{ card.sold_price or '' }}">
+            </div>
+            <div class="col-6 col-md-auto cw-field-date">
+                <label class="form-label">Sold Date</label>
+                <input class="form-control" type="date" name="sold_date" value="{{ card.sold_date or '' }}">
+            </div>
+            <div class="col-6 col-md-auto cw-field-select-md">
+                <label class="form-label">Sales Platform</label>
+                <select class="form-select" name="sales_platform">
+                    {% for platform in ["", "eBay", "Whatnot", "Facebook", "Card Show", "COMC", "Direct Sale", "Trade", "Other"] %}
+                        <option value="{{ platform }}" {% if card.sales_platform == platform %}selected{% endif %}>{{ platform or "Select Platform" }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-auto cw-field-select-md">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status">
+                    {% for status in ["Holding", "Active", "Sold"] %}
+                        <option value="{{ status }}" {% if card.status == status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end cw-form-row cw-row-b">
+            <div class="col-12 col-md-auto cw-field-storage">
+                <label class="form-label">Storage Location</label>
+                <input class="form-control" type="text" name="storage_location" value="{{ card.storage_location or '' }}">
+            </div>
+            <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" name="notes" rows="4">{{ card.notes or '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Save Changes</button>
+            <a class="btn btn-outline-secondary" href="{{ url_for('card_detail', card_id=card.id) }}">Cancel</a>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleCardTypeFields() {
+    const cardType = document.querySelector('[name="card_type"]').value;
+    const showRaw = cardType === "Raw";
+    const showGraded = cardType === "Graded";
+
+    document.getElementById("raw-heading").style.display = showRaw ? "block" : "none";
+    document.getElementById("raw-fields").style.display = showRaw ? "flex" : "none";
+
+    document.getElementById("graded-heading").style.display = showGraded ? "block" : "none";
+    document.getElementById("graded-fields").style.display = showGraded ? "flex" : "none";
+}
+document.querySelector('[name="card_type"]').addEventListener("change", toggleCardTypeFields);
+toggleCardTypeFields();
+
+function syncStatusWithCollectionType() {
+    const collectionTypeField = document.querySelector('[name="collection_type"]');
+    const statusField = document.querySelector('[name="status"]');
+
+    if (!collectionTypeField || !statusField) {
+        return;
+    }
+
+    if (collectionTypeField.value === "Personal Collection") {
+        statusField.value = "Holding";
+    }
+}
+
+const collectionTypeField = document.querySelector('[name="collection_type"]');
+if (collectionTypeField) {
+    collectionTypeField.addEventListener("change", syncStatusWithCollectionType);
+}
+
+function toggleAcquisitionFields() {
+    const sourceField = document.getElementById("acquisition_source");
+    const dateField = document.getElementById("acquisition_date");
+    const eventField = document.getElementById("acquisition_event");
+    const hiddenPurchaseDate = document.getElementById("purchase_date");
+    const existingNote = document.getElementById("existing_inventory_note");
+    const newNote = document.getElementById("new_acquisition_note");
+
+    if (!sourceField || !dateField) {
+        return;
+    }
+
+    const isExisting = sourceField.value === "Existing Inventory";
+
+    dateField.disabled = isExisting;
+    if (eventField) {
+        eventField.disabled = isExisting;
+    }
+
+    if (isExisting) {
+        dateField.value = "";
+        if (hiddenPurchaseDate) {
+            hiddenPurchaseDate.value = "";
+        }
+        if (existingNote) {
+            existingNote.style.display = "block";
+        }
+        if (newNote) {
+            newNote.style.display = "none";
+        }
+    } else {
+        if (hiddenPurchaseDate) {
+            hiddenPurchaseDate.value = dateField.value || "";
+        }
+        if (existingNote) {
+            existingNote.style.display = "none";
+        }
+        if (newNote) {
+            newNote.style.display = "block";
+        }
+    }
+}
+
+const acquisitionSourceField = document.getElementById("acquisition_source");
+const acquisitionDateField = document.getElementById("acquisition_date");
+
+if (acquisitionSourceField) {
+    acquisitionSourceField.addEventListener("change", toggleAcquisitionFields);
+}
+if (acquisitionDateField) {
+    acquisitionDateField.addEventListener("change", toggleAcquisitionFields);
+}
+
+toggleAcquisitionFields();
+</script>
+{% endblock %}
