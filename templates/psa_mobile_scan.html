@@ -424,6 +424,10 @@ function setStatus(message) {
     statusBox.textContent = message;
 }
 
+function isAutoSaveEnabled() {
+    return !!(autoSaveToggle && autoSaveToggle.checked);
+}
+
 function playCaptureBeep() {
     try {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -681,7 +685,7 @@ function captureFrame() {
         preview.src = objectUrl;
         preview.style.display = "block";
         previewEmpty.style.display = "none";
-        if (autoSaveToggle && autoSaveToggle.checked) {
+        if (isAutoSaveEnabled()) {
             saveBtn.disabled = true;
             setStatus("Image captured. Auto Save is ON — saving to AI Review Queue...");
             saveCapture({ fromAutoSave: true });
@@ -693,8 +697,7 @@ function captureFrame() {
     }, "image/jpeg", 0.94);
 }
 
-async function saveCapture(options) {
-    options = options || {};
+async function saveCapture(options = {}) {
     const fromAutoSave = options.fromAutoSave === true;
 
     if (saveInProgress) {
@@ -714,7 +717,7 @@ async function saveCapture(options) {
     saveBtn.disabled = true;
     captureBtn.disabled = true;
     saveBtn.textContent = fromAutoSave ? "Auto Saving..." : "Saving...";
-    setStatus(fromAutoSave ? "Auto saving image to CardDesk..." : "Saving image to CardDesk...");
+    setStatus(fromAutoSave ? "Auto Save ON — saving image to CardDesk..." : "Saving image to CardDesk...");
 
     try {
         const response = await fetch("{{ url_for('mobile_capture_upload') }}", {
@@ -731,7 +734,10 @@ async function saveCapture(options) {
         const savedStatus = result.ai_status || "Pending Review";
 
         setStatus(`✅ Saved to AI Review Queue: ${savedStatus}. Capture another card when ready.`);
-        showSaveSuccessFeedback(savedStatus);
+
+        if (typeof showSaveSuccessFeedback === "function") {
+            showSaveSuccessFeedback(savedStatus);
+        }
 
         lastCapturedBlob = null;
         saveBtn.disabled = true;
@@ -769,7 +775,7 @@ if (autoSaveToggle) {
 
 startBtn.addEventListener("click", startCamera);
 captureBtn.addEventListener("click", captureFrame);
-saveBtn.addEventListener("click", saveCapture);
+saveBtn.addEventListener("click", function () { saveCapture({ fromAutoSave: false }); });
 
 // Tap anywhere on the camera preview area to capture.
 const videoWrap = document.querySelector(".capture-video-wrap");
