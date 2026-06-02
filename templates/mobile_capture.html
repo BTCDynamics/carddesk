@@ -84,6 +84,96 @@
     transform: translate(-50%, -50%) scale(1);
 }
 
+#captureVideo {
+    width: 100%;
+    max-height: 72vh;
+    object-fit: contain;
+    background: #020617;
+}
+
+.capture-card-guide {
+    position: absolute;
+    width: min(68vw, 360px);
+    aspect-ratio: 2.5 / 3.5;
+    border: 3px solid rgba(251, 191, 36, .95);
+    border-radius: 16px;
+    box-shadow:
+        0 0 0 9999px rgba(0,0,0,.24),
+        0 0 22px rgba(251, 191, 36, .35);
+    pointer-events: none;
+}
+
+.capture-card-guide::before {
+    content: "Place card here";
+    position: absolute;
+    top: -2.1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fbbf24;
+    background: rgba(15, 23, 42, .88);
+    border: 1px solid rgba(251, 191, 36, .35);
+    padding: .28rem .65rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.capture-corners span {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    border-color: #ffffff;
+    border-style: solid;
+}
+
+.capture-corners span:nth-child(1) { top: 10px; left: 10px; border-width: 3px 0 0 3px; border-radius: 10px 0 0 0; }
+.capture-corners span:nth-child(2) { top: 10px; right: 10px; border-width: 3px 3px 0 0; border-radius: 0 10px 0 0; }
+.capture-corners span:nth-child(3) { bottom: 10px; left: 10px; border-width: 0 0 3px 3px; border-radius: 0 0 0 10px; }
+.capture-corners span:nth-child(4) { bottom: 10px; right: 10px; border-width: 0 3px 3px 0; border-radius: 0 0 10px 0; }
+
+.capture-controls {
+    padding: 1rem;
+    background: linear-gradient(145deg, #1f2937, #263244);
+}
+
+.capture-status {
+    min-height: 1.4rem;
+    color: #cbd5e1;
+    font-size: .9rem;
+}
+
+.capture-mode-card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: linear-gradient(145deg, rgba(14, 165, 233, .18), rgba(15, 23, 42, .72));
+    border: 1px solid rgba(125, 211, 252, .35);
+}
+
+.capture-mode-card.auto-save-on {
+    background: linear-gradient(145deg, rgba(22, 163, 74, .24), rgba(15, 23, 42, .78));
+    border-color: rgba(74, 222, 128, .58);
+    box-shadow: 0 0 24px rgba(34, 197, 94, .22);
+}
+
+.capture-mode-card .form-check-input {
+    width: 3rem;
+    height: 1.55rem;
+}
+
+.capture-mode-title {
+    color: #f8fafc;
+    font-weight: 1000;
+    font-size: 1rem;
+}
+
+.capture-mode-help {
+    color: #cbd5e1;
+    font-size: .86rem;
+    margin-top: .25rem;
+}
+
 .capture-save-success-overlay {
     position: fixed;
     inset: 0;
@@ -153,6 +243,12 @@
     border-radius: 1rem;
 }
 
+.save-review-attention {
+    animation: save-review-pulse .85s ease-in-out 6;
+    box-shadow: 0 0 28px rgba(34, 197, 94, .86) !important;
+    border-color: #bbf7d0 !important;
+}
+
 @keyframes capture-save-pop {
     from { transform: scale(.9); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
@@ -164,86 +260,10 @@
     100% { transform: scale(1); box-shadow: 0 0 18px rgba(59, 130, 246, .35); }
 }
 
-.save-review-attention {
-    animation: save-review-pulse .85s ease-in-out 6;
-    box-shadow: 0 0 28px rgba(34, 197, 94, .86) !important;
-    border-color: #bbf7d0 !important;
-}
-
 @keyframes save-review-pulse {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 rgba(34, 197, 94, 0);
-    }
-    50% {
-        transform: scale(1.045);
-        box-shadow: 0 0 34px rgba(34, 197, 94, .95);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 14px rgba(34, 197, 94, .48);
-    }
-}
-
-
-
-#captureVideo {
-    width: 100%;
-    max-height: 72vh;
-    object-fit: contain;
-    background: #020617;
-}
-
-.capture-card-guide {
-    position: absolute;
-    width: min(68vw, 360px);
-    aspect-ratio: 2.5 / 3.5;
-    border: 3px solid rgba(251, 191, 36, .95);
-    border-radius: 16px;
-    box-shadow:
-        0 0 0 9999px rgba(0,0,0,.24),
-        0 0 22px rgba(251, 191, 36, .35);
-    pointer-events: none;
-}
-
-.capture-card-guide::before {
-    content: "Place card here";
-    position: absolute;
-    top: -2.1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #fbbf24;
-    background: rgba(15, 23, 42, .88);
-    border: 1px solid rgba(251, 191, 36, .35);
-    padding: .28rem .65rem;
-    border-radius: 999px;
-    font-size: .78rem;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-.capture-corners span {
-    position: absolute;
-    width: 34px;
-    height: 34px;
-    border-color: #ffffff;
-    border-style: solid;
-}
-
-.capture-corners span:nth-child(1) { top: 10px; left: 10px; border-width: 3px 0 0 3px; border-radius: 10px 0 0 0; }
-.capture-corners span:nth-child(2) { top: 10px; right: 10px; border-width: 3px 3px 0 0; border-radius: 0 10px 0 0; }
-.capture-corners span:nth-child(3) { bottom: 10px; left: 10px; border-width: 0 0 3px 3px; border-radius: 0 0 0 10px; }
-.capture-corners span:nth-child(4) { bottom: 10px; right: 10px; border-width: 0 3px 3px 0; border-radius: 0 0 10px 0; }
-
-.capture-controls {
-    padding: 1rem;
-    background: linear-gradient(145deg, #1f2937, #263244);
-}
-
-.capture-status {
-    min-height: 1.4rem;
-    color: #cbd5e1;
-    font-size: .9rem;
+    0% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+    50% { transform: scale(1.045); box-shadow: 0 0 34px rgba(34, 197, 94, .95); }
+    100% { transform: scale(1); box-shadow: 0 0 14px rgba(34, 197, 94, .48); }
 }
 
 .capture-preview-img {
@@ -318,6 +338,15 @@
                 </div>
 
                 <div class="capture-controls" id="captureControls">
+                    <div class="capture-mode-card" id="captureModeCard">
+                        <div class="form-check form-switch mb-1">
+                            <input class="form-check-input" type="checkbox" role="switch" id="autoSaveToggle">
+                            <label class="form-check-label capture-mode-title" for="autoSaveToggle">Auto Save After Capture</label>
+                        </div>
+                        <div class="capture-mode-help" id="autoSaveHelp">
+                            OFF: Capture → Preview → Save. Turn ON for production mode: Capture → Auto Save.
+                        </div>
+                    </div>
                     <div class="row g-2 align-items-center">
                         <div class="col-md-4">
                             <button class="btn btn-primary w-100" id="startCameraBtn" type="button">Start Camera</button>
@@ -375,45 +404,41 @@ const canvas = document.getElementById("captureCanvas");
 const startBtn = document.getElementById("startCameraBtn");
 const captureBtn = document.getElementById("captureBtn");
 const saveBtn = document.getElementById("saveBtn");
-const statusBox = document.getElementById("captureStatus");
-const preview = document.getElementById("capturePreview");
-const previewEmpty = document.getElementById("previewEmpty");
+const autoSaveToggle = document.getElementById("autoSaveToggle");
+const captureModeCard = document.getElementById("captureModeCard");
+const autoSaveHelp = document.getElementById("autoSaveHelp");
 const captureControls = document.getElementById("captureControls");
 const saveSuccessOverlay = document.getElementById("saveSuccessOverlay");
 const saveSuccessDetail = document.getElementById("saveSuccessDetail");
+const statusBox = document.getElementById("captureStatus");
+const preview = document.getElementById("capturePreview");
+const previewEmpty = document.getElementById("previewEmpty");
 
 let stream = null;
 let lastCapturedBlob = null;
+let saveInProgress = false;
 
 function setStatus(message) {
     statusBox.textContent = message;
 }
 
-function playCaptureBeep() {
-    try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+function isAutoSaveEnabled() {
+    return !!(autoSaveToggle && autoSaveToggle.checked);
+}
 
-        if (!AudioContextClass) {
-            return;
-        }
+function updateAutoSaveUi() {
+    if (!autoSaveToggle || !captureModeCard || !autoSaveHelp) {
+        return;
+    }
 
-        const audioContext = new AudioContextClass();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.16, audioContext.currentTime + 0.01);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.12);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.13);
-    } catch (error) {
-        // Some mobile browsers may block generated audio. Visual feedback still works.
+    if (isAutoSaveEnabled()) {
+        captureModeCard.classList.add("auto-save-on");
+        autoSaveHelp.textContent = "ON: Production mode. Each capture saves directly to the AI Review Queue.";
+        saveBtn.disabled = true;
+    } else {
+        captureModeCard.classList.remove("auto-save-on");
+        autoSaveHelp.textContent = "OFF: Capture → Preview → Save. Turn ON for production mode: Capture → Auto Save.";
+        saveBtn.disabled = !lastCapturedBlob;
     }
 }
 
@@ -422,7 +447,6 @@ function focusStartCameraControls() {
         return;
     }
 
-    // Run more than once because mobile browsers sometimes restore scroll position after load.
     const focusControls = function (behaviorMode) {
         captureControls.scrollIntoView({ behavior: behaviorMode || "smooth", block: "center" });
         captureControls.classList.add("capture-control-focus");
@@ -436,32 +460,6 @@ function focusStartCameraControls() {
     setTimeout(function () { focusControls("smooth"); }, 650);
     setTimeout(function () { focusControls("smooth"); }, 1250);
 }
-
-function guideUserToSaveButton() {
-    if (!saveBtn) {
-        return;
-    }
-
-    setTimeout(function () {
-        saveBtn.scrollIntoView({ behavior: "smooth", block: "center" });
-        saveBtn.classList.remove("save-review-attention");
-
-        // Restart animation if button was recently highlighted.
-        void saveBtn.offsetWidth;
-
-        saveBtn.classList.add("save-review-attention");
-        setStatus("Image captured. Tap the green Save to Review Queue button.");
-
-        if (navigator.vibrate) {
-            navigator.vibrate(80);
-        }
-
-        setTimeout(function () {
-            saveBtn.classList.remove("save-review-attention");
-        }, 5200);
-    }, 350);
-}
-
 
 function playSaveSuccessChime() {
     try {
@@ -519,9 +517,61 @@ function showSaveSuccessFeedback(aiStatus) {
             saveSuccessOverlay.classList.remove("active");
             saveSuccessOverlay.setAttribute("aria-hidden", "true");
             focusStartCameraControls();
-        }, 2600);
+        }, 1800);
     } else {
         focusStartCameraControls();
+    }
+}
+
+function guideUserToSaveButton() {
+    if (!saveBtn) {
+        return;
+    }
+
+    setTimeout(function () {
+        saveBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+        saveBtn.classList.remove("save-review-attention");
+
+        void saveBtn.offsetWidth;
+
+        saveBtn.classList.add("save-review-attention");
+        setStatus("Image captured. Tap the green Save to Review Queue button.");
+
+        if (navigator.vibrate) {
+            navigator.vibrate(80);
+        }
+
+        setTimeout(function () {
+            saveBtn.classList.remove("save-review-attention");
+        }, 5200);
+    }, 350);
+}
+
+function playCaptureBeep() {
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContextClass) {
+            return;
+        }
+
+        const audioContext = new AudioContextClass();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.16, audioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.12);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.13);
+    } catch (error) {
+        // Some mobile browsers may block generated audio. Visual feedback still works.
     }
 }
 
@@ -556,7 +606,7 @@ async function startCamera() {
 
         video.srcObject = stream;
         captureBtn.disabled = false;
-        setStatus("Camera ready. Center the card inside the guide and tap Capture Card.");
+        setStatus(isAutoSaveEnabled() ? "Auto Save ON. Center the card and tap Capture Card or tap the camera area." : "Camera ready. Center the card inside the guide and tap Capture Card.");
     } catch (error) {
         setStatus("Camera could not start. On iPhone, this page may need HTTPS or local network permissions.");
         console.error(error);
@@ -646,14 +696,27 @@ function captureFrame() {
         preview.src = objectUrl;
         preview.style.display = "block";
         previewEmpty.style.display = "none";
-        saveBtn.disabled = false;
 
+        if (isAutoSaveEnabled()) {
+            saveBtn.disabled = true;
+            setStatus("Image captured. Auto Save is ON — saving to AI Review Queue...");
+            saveCapture({ fromAutoSave: true });
+            return;
+        }
+
+        saveBtn.disabled = false;
         setStatus("Image captured. Review the preview, then Save to Review Queue or tap the camera area to retake.");
         guideUserToSaveButton();
     }, "image/jpeg", 0.94);
 }
 
-async function saveCapture() {
+async function saveCapture(options = {}) {
+    const fromAutoSave = options.fromAutoSave === true;
+
+    if (saveInProgress) {
+        return;
+    }
+
     if (!lastCapturedBlob) {
         setStatus("No captured image to save.");
         return;
@@ -663,8 +726,11 @@ async function saveCapture() {
     const filename = `mobile-capture-${Date.now()}.jpg`;
     formData.append("card_image", lastCapturedBlob, filename);
 
+    saveInProgress = true;
     saveBtn.disabled = true;
-    setStatus("Saving image to CardDesk...");
+    captureBtn.disabled = true;
+    saveBtn.textContent = fromAutoSave ? "Auto Saving..." : "Saving...";
+    setStatus(fromAutoSave ? "Auto Save ON — saving image to CardDesk..." : "Saving image to CardDesk...");
 
     try {
         const response = await fetch("{{ url_for('mobile_capture_upload') }}", {
@@ -685,23 +751,54 @@ async function saveCapture() {
 
         lastCapturedBlob = null;
         saveBtn.disabled = true;
+        saveBtn.textContent = "Save to Review Queue";
+
+        if (stream) {
+            captureBtn.disabled = false;
+        }
     } catch (error) {
         saveBtn.disabled = false;
+        saveBtn.textContent = "Save to Review Queue";
+
+        if (stream) {
+            captureBtn.disabled = false;
+        }
+
         setStatus("Save failed: " + error.message);
         console.error(error);
+    } finally {
+        saveInProgress = false;
+        updateAutoSaveUi();
     }
+}
+
+updateAutoSaveUi();
+focusStartCameraControls();
+window.addEventListener("load", focusStartCameraControls);
+window.addEventListener("pageshow", focusStartCameraControls);
+
+if (autoSaveToggle) {
+    autoSaveToggle.addEventListener("change", function () {
+        updateAutoSaveUi();
+
+        if (isAutoSaveEnabled()) {
+            setStatus("Auto Save ON. Each capture will save directly to the AI Review Queue.");
+        } else {
+            setStatus("Auto Save OFF. Capture a card, review the preview, then tap Save to Review Queue.");
+        }
+    });
 }
 
 startBtn.addEventListener("click", startCamera);
 captureBtn.addEventListener("click", captureFrame);
-saveBtn.addEventListener("click", saveCapture);
+saveBtn.addEventListener("click", function () { saveCapture({ fromAutoSave: false }); });
 
 // Tap anywhere on the camera preview area to capture.
 const videoWrap = document.querySelector(".capture-video-wrap");
 
 videoWrap.addEventListener("click", function(event) {
     // Prevent accidental captures before camera starts.
-    if (captureBtn.disabled) {
+    if (captureBtn.disabled || saveInProgress) {
         return;
     }
 
