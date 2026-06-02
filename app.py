@@ -272,6 +272,15 @@ with app.app_context():
     ensure_upload_folder()
 
 
+
+@app.route("/intake-tools")
+def intake_tools():
+    return render_template("intake_tools.html")
+
+
+
+
+
 @app.route("/health")
 def health():
     """Render health check endpoint."""
