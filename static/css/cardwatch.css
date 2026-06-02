@@ -1887,8 +1887,8 @@ textarea.form-control {
 }
 
 .mobile-capture-mini-qr {
-    width: 220px;
-    height: 220px;
+    width: 150px;
+    height: 1500px;
     padding: .35rem;
     border-radius: .75rem;
     background: #ffffff;
