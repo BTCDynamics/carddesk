@@ -3,6 +3,15 @@
 {% block title %}Mobile Capture | CardDesk{% endblock %}
 
 {% block content %}
+<div class="capture-save-success-overlay" id="saveSuccessOverlay" aria-live="polite" aria-hidden="true">
+    <div class="capture-save-success-box">
+        <div class="capture-save-success-check">✓</div>
+        <div class="capture-save-success-title">Card Saved</div>
+        <div class="capture-save-success-detail" id="saveSuccessDetail">Added to AI Review Queue</div>
+        <div class="capture-save-success-hint">Ready to capture the next card</div>
+    </div>
+</div>
+
 <style>
 .mobile-capture-page {
     max-width: 980px;
@@ -143,35 +152,66 @@
     font-size: .9rem;
 }
 
-.capture-mode-card {
-    margin-bottom: 1rem;
-    padding: 1rem;
+.capture-preview-img {
+    width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    border-radius: .9rem;
+    background: #020617;
+    border: 1px solid rgba(148, 163, 184, .25);
+}
+
+.capture-tip-card {
+    background: linear-gradient(145deg, #202b3a, #263244);
+    border: 1px solid rgba(148, 163, 184, .22);
     border-radius: 1rem;
-    background: linear-gradient(145deg, rgba(14, 165, 233, .18), rgba(15, 23, 42, .72));
-    border: 1px solid rgba(125, 211, 252, .35);
+    padding: 1rem;
 }
 
-.capture-mode-card.auto-save-on {
-    background: linear-gradient(145deg, rgba(22, 163, 74, .24), rgba(15, 23, 42, .78));
-    border-color: rgba(74, 222, 128, .58);
-    box-shadow: 0 0 24px rgba(34, 197, 94, .22);
+.capture-tip-card li {
+    margin-bottom: .45rem;
 }
 
-.capture-mode-card .form-check-input {
-    width: 3rem;
-    height: 1.55rem;
+
+.capture-autosave-top-panel {
+    padding: 1rem;
+    border-radius: 1.1rem;
+    background: linear-gradient(145deg, rgba(14, 165, 233, .18), rgba(15, 23, 42, .86));
+    border: 1px solid rgba(125, 211, 252, .38);
+    box-shadow: 0 .75rem 1.75rem rgba(0,0,0,.22);
 }
 
-.capture-mode-title {
+.capture-autosave-top-panel.auto-save-on {
+    background: linear-gradient(145deg, rgba(22, 163, 74, .28), rgba(15, 23, 42, .88));
+    border-color: rgba(74, 222, 128, .64);
+    box-shadow: 0 0 28px rgba(34, 197, 94, .24);
+}
+
+.capture-autosave-title {
+    color: #f8fafc;
+    font-size: 1.05rem;
+    font-weight: 1000;
+}
+
+.capture-autosave-help {
+    color: #cbd5e1;
+    font-size: .9rem;
+    margin-top: .2rem;
+}
+
+.capture-autosave-switch {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
     color: #f8fafc;
     font-weight: 1000;
-    font-size: 1rem;
+    font-size: 1.05rem;
 }
 
-.capture-mode-help {
-    color: #cbd5e1;
-    font-size: .86rem;
-    margin-top: .25rem;
+.capture-autosave-switch .form-check-input {
+    width: 3.4rem;
+    height: 1.75rem;
+    margin-left: 0;
 }
 
 .capture-save-success-overlay {
@@ -199,7 +239,6 @@
     background: linear-gradient(145deg, #16a34a, #15803d);
     border: 2px solid rgba(187, 247, 208, .75);
     box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, .42), 0 0 36px rgba(34, 197, 94, .4);
-    animation: capture-save-pop .22s ease-out;
 }
 
 .capture-save-success-check {
@@ -237,27 +276,10 @@
     font-weight: 750;
 }
 
-.capture-control-focus {
-    animation: capture-control-pulse 1.05s ease-in-out 2;
-    box-shadow: 0 0 28px rgba(59, 130, 246, .46);
-    border-radius: 1rem;
-}
-
 .save-review-attention {
     animation: save-review-pulse .85s ease-in-out 6;
     box-shadow: 0 0 28px rgba(34, 197, 94, .86) !important;
     border-color: #bbf7d0 !important;
-}
-
-@keyframes capture-save-pop {
-    from { transform: scale(.9); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-@keyframes capture-control-pulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
-    50% { transform: scale(1.018); box-shadow: 0 0 34px rgba(59, 130, 246, .72); }
-    100% { transform: scale(1); box-shadow: 0 0 18px rgba(59, 130, 246, .35); }
 }
 
 @keyframes save-review-pulse {
@@ -266,25 +288,6 @@
     100% { transform: scale(1); box-shadow: 0 0 14px rgba(34, 197, 94, .48); }
 }
 
-.capture-preview-img {
-    width: 100%;
-    max-height: 280px;
-    object-fit: contain;
-    border-radius: .9rem;
-    background: #020617;
-    border: 1px solid rgba(148, 163, 184, .25);
-}
-
-.capture-tip-card {
-    background: linear-gradient(145deg, #202b3a, #263244);
-    border: 1px solid rgba(148, 163, 184, .22);
-    border-radius: 1rem;
-    padding: 1rem;
-}
-
-.capture-tip-card li {
-    margin-bottom: .45rem;
-}
 
 @media (max-width: 768px) {
     .mobile-capture-page {
@@ -305,20 +308,26 @@
 }
 </style>
 
-<div class="capture-save-success-overlay" id="saveSuccessOverlay" aria-live="polite" aria-hidden="true">
-    <div class="capture-save-success-box">
-        <div class="capture-save-success-check">✓</div>
-        <div class="capture-save-success-title">Card Saved</div>
-        <div class="capture-save-success-detail" id="saveSuccessDetail">Added to AI Review Queue</div>
-        <div class="capture-save-success-hint">Ready to capture the next card</div>
-    </div>
-</div>
-
 <div class="mobile-capture-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
         <div>
             <h1 class="h2 mb-1">Mobile Capture</h1>
             <p class="text-muted mb-0">Use your phone as a capture-only station. Review and import saved cards from your main CardDesk dashboard.</p>
+        </div>
+    </div>
+
+    <div class="capture-autosave-top-panel mb-4" id="captureModeCard">
+        <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+            <div>
+                <div class="capture-autosave-title">Production Capture Mode</div>
+                <div class="capture-autosave-help" id="autoSaveHelp">
+                    Auto Save is OFF. Capture a card, review the preview, then tap Save to Review Queue.
+                </div>
+            </div>
+            <div class="form-check form-switch capture-autosave-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="autoSaveToggle">
+                <label class="form-check-label" for="autoSaveToggle">Auto Save</label>
+            </div>
         </div>
     </div>
 
@@ -337,16 +346,7 @@
                     <div id="captureToast" class="capture-toast">Image Captured</div>
                 </div>
 
-                <div class="capture-controls" id="captureControls">
-                    <div class="capture-mode-card" id="captureModeCard">
-                        <div class="form-check form-switch mb-1">
-                            <input class="form-check-input" type="checkbox" role="switch" id="autoSaveToggle">
-                            <label class="form-check-label capture-mode-title" for="autoSaveToggle">Auto Save After Capture</label>
-                        </div>
-                        <div class="capture-mode-help" id="autoSaveHelp">
-                            OFF: Capture → Preview → Save. Turn ON for production mode: Capture → Auto Save.
-                        </div>
-                    </div>
+                <div class="capture-controls">
                     <div class="row g-2 align-items-center">
                         <div class="col-md-4">
                             <button class="btn btn-primary w-100" id="startCameraBtn" type="button">Start Camera</button>
@@ -407,7 +407,6 @@ const saveBtn = document.getElementById("saveBtn");
 const autoSaveToggle = document.getElementById("autoSaveToggle");
 const captureModeCard = document.getElementById("captureModeCard");
 const autoSaveHelp = document.getElementById("autoSaveHelp");
-const captureControls = document.getElementById("captureControls");
 const saveSuccessOverlay = document.getElementById("saveSuccessOverlay");
 const saveSuccessDetail = document.getElementById("saveSuccessDetail");
 const statusBox = document.getElementById("captureStatus");
@@ -433,66 +432,12 @@ function updateAutoSaveUi() {
 
     if (isAutoSaveEnabled()) {
         captureModeCard.classList.add("auto-save-on");
-        autoSaveHelp.textContent = "ON: Production mode. Each capture saves directly to the AI Review Queue.";
+        autoSaveHelp.textContent = "Auto Save is ON. Each capture saves directly to the AI Review Queue.";
         saveBtn.disabled = true;
     } else {
         captureModeCard.classList.remove("auto-save-on");
-        autoSaveHelp.textContent = "OFF: Capture → Preview → Save. Turn ON for production mode: Capture → Auto Save.";
+        autoSaveHelp.textContent = "Auto Save is OFF. Capture a card, review the preview, then tap Save to Review Queue.";
         saveBtn.disabled = !lastCapturedBlob;
-    }
-}
-
-function focusStartCameraControls() {
-    if (!captureControls) {
-        return;
-    }
-
-    const focusControls = function (behaviorMode) {
-        captureControls.scrollIntoView({ behavior: behaviorMode || "smooth", block: "center" });
-        captureControls.classList.add("capture-control-focus");
-
-        setTimeout(function () {
-            captureControls.classList.remove("capture-control-focus");
-        }, 2200);
-    };
-
-    setTimeout(function () { focusControls("auto"); }, 100);
-    setTimeout(function () { focusControls("smooth"); }, 650);
-    setTimeout(function () { focusControls("smooth"); }, 1250);
-}
-
-function playSaveSuccessChime() {
-    try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-
-        if (!AudioContextClass) {
-            return;
-        }
-
-        const audioContext = new AudioContextClass();
-        const gainNode = audioContext.createGain();
-        gainNode.connect(audioContext.destination);
-
-        const notes = [
-            { frequency: 659, start: 0.00, duration: 0.11 },
-            { frequency: 880, start: 0.11, duration: 0.13 },
-            { frequency: 1175, start: 0.24, duration: 0.18 }
-        ];
-
-        notes.forEach(function(note) {
-            const oscillator = audioContext.createOscillator();
-            oscillator.type = "sine";
-            oscillator.frequency.setValueAtTime(note.frequency, audioContext.currentTime + note.start);
-            oscillator.connect(gainNode);
-            oscillator.start(audioContext.currentTime + note.start);
-            oscillator.stop(audioContext.currentTime + note.start + note.duration);
-        });
-
-        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.48);
-    } catch (error) {
-        // Some mobile browsers may block generated audio. Visual feedback still works.
     }
 }
 
@@ -507,8 +452,6 @@ function showSaveSuccessFeedback(aiStatus) {
         navigator.vibrate([140, 70, 140]);
     }
 
-    playSaveSuccessChime();
-
     if (saveSuccessOverlay) {
         saveSuccessOverlay.classList.add("active");
         saveSuccessOverlay.setAttribute("aria-hidden", "false");
@@ -516,10 +459,7 @@ function showSaveSuccessFeedback(aiStatus) {
         setTimeout(function () {
             saveSuccessOverlay.classList.remove("active");
             saveSuccessOverlay.setAttribute("aria-hidden", "true");
-            focusStartCameraControls();
-        }, 1800);
-    } else {
-        focusStartCameraControls();
+        }, 1600);
     }
 }
 
@@ -531,15 +471,9 @@ function guideUserToSaveButton() {
     setTimeout(function () {
         saveBtn.scrollIntoView({ behavior: "smooth", block: "center" });
         saveBtn.classList.remove("save-review-attention");
-
         void saveBtn.offsetWidth;
-
         saveBtn.classList.add("save-review-attention");
         setStatus("Image captured. Tap the green Save to Review Queue button.");
-
-        if (navigator.vibrate) {
-            navigator.vibrate(80);
-        }
 
         setTimeout(function () {
             saveBtn.classList.remove("save-review-attention");
@@ -773,9 +707,6 @@ async function saveCapture(options = {}) {
 }
 
 updateAutoSaveUi();
-focusStartCameraControls();
-window.addEventListener("load", focusStartCameraControls);
-window.addEventListener("pageshow", focusStartCameraControls);
 
 if (autoSaveToggle) {
     autoSaveToggle.addEventListener("change", function () {
