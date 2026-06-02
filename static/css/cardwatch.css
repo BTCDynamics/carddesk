@@ -1887,33 +1887,26 @@ textarea.form-control {
 }
 
 .mobile-capture-mini-qr {
-    width: 54px;
-    height: 54px;
-    padding: .22rem;
-    border-radius: .55rem;
+    width: 220px;
+    height: 220px;
+    padding: .35rem;
+    border-radius: .75rem;
     background: #ffffff;
     border: 1px solid rgba(255,255,255,.28);
     box-shadow: 0 .35rem .85rem rgba(0,0,0,.22);
 
-    transition:
-        transform .18s ease,
-        box-shadow .18s ease;
-
-    transform-origin: top right;
-    position: relative;
-    z-index: 2;
-}
-
-.mobile-capture-mini-qr:hover {
-    transform: scale(4);
-    z-index: 999;
-    box-shadow: 0 1.25rem 2.5rem rgba(0,0,0,.45);
+    display: block;
+    margin: 0 auto;
 }
 
 @media (max-width: 575.98px) {
+    .mobile-capture-mini-qr {
+        width: 180px;
+        height: 180px;
+    }
+
     .mobile-capture-mini {
         width: 100%;
-        justify-content: space-between;
     }
 }
 
