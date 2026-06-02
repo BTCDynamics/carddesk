@@ -275,7 +275,17 @@ with app.app_context():
 
 @app.route("/intake-tools")
 def intake_tools():
-    return render_template("intake_tools.html")
+    mobile_capture_url = url_for("mobile_capture", _external=True)
+    mobile_capture_qr_url = (
+        "https://api.qrserver.com/v1/create-qr-code/"
+        f"?size=220x220&data={quote(mobile_capture_url, safe='')}"
+    )
+
+    return render_template(
+        "intake_tools.html",
+        mobile_capture_url=mobile_capture_url,
+        mobile_capture_qr_url=mobile_capture_qr_url,
+    )
 
 
 
