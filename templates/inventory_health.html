@@ -6,7 +6,7 @@
 <style>
 .health-summary-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 1rem;
 }
 
@@ -98,12 +98,21 @@
         <div class="health-description">Inventory cleanup plus staged AI review reminders.</div>
     </a>
 
+    <a class="health-tile {% if issue_filter == 'image' %}active{% endif %}"
+       href="{{ url_for('inventory_health', issue='image') }}">
+        <div class="health-count">{{ summary.missing_image_count or 0 }}</div>
+        <div class="health-label">Missing Images</div>
+        <div class="health-description">Images help identify cards and support listings.</div>
+    </a>
+
     {% for item in issue_definitions %}
-        <a class="health-tile {% if issue_filter == item.key %}active{% endif %}" href="{{ item.external_url if item.external_url is defined else url_for('inventory_health', issue=item.key) }}">
-            <div class="health-count">{{ item.count }}</div>
-            <div class="health-label">{{ item.label }}</div>
-            <div class="health-description">{{ item.description }}</div>
-        </a>
+        {% if item.key != 'image' %}
+            <a class="health-tile {% if issue_filter == item.key %}active{% endif %}" href="{{ item.external_url if item.external_url is defined else url_for('inventory_health', issue=item.key) }}">
+                <div class="health-count">{{ item.count }}</div>
+                <div class="health-label">{{ item.label }}</div>
+                <div class="health-description">{{ item.description }}</div>
+            </a>
+        {% endif %}
     {% endfor %}
 </div>
 
