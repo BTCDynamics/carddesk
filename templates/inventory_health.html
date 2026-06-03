@@ -58,6 +58,15 @@
     gap: .35rem;
 }
 
+.health-thumb {
+    width: 42px;
+    height: 58px;
+    object-fit: cover;
+    border-radius: .45rem;
+    border: 1px solid rgba(15, 23, 42, .12);
+    background: #f8fafc;
+}
+
 @media (max-width: 1199.98px) {
     .health-summary-grid {
         grid-template-columns: repeat(2, minmax(160px, 1fr));
@@ -115,6 +124,7 @@
                         <tr>
                             <th>Card</th>
                             <th>Issues</th>
+                            <th>Image</th>
                             <th>Cost</th>
                             <th>Storage</th>
                             <th>Ask</th>
@@ -138,6 +148,13 @@
                                             <span class="badge text-bg-warning">{{ issue }}</span>
                                         {% endfor %}
                                     </div>
+                                </td>
+                                <td>
+                                    {% if card.image_filename %}
+                                        <img class="health-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name or 'Card' }} image">
+                                    {% else %}
+                                        <span class="badge text-bg-warning">Missing</span>
+                                    {% endif %}
                                 </td>
                                 <td>{% if card.purchase_price is not none %}${{ "%.2f"|format(card.purchase_price or 0) }}{% else %}<span class="badge text-bg-danger">Missing</span>{% endif %}</td>
                                 <td>{% if card.storage_location %}{{ card.storage_location }}{% else %}<span class="badge text-bg-warning">Missing</span>{% endif %}</td>
