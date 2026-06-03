@@ -30,8 +30,6 @@ def register_storage_routes(app):
             return {"status": "error", "message": str(error)}, 500
 
 
-
-
     @app.route("/inventory-health")
     def inventory_health():
         """Dedicated cleanup page for inventory records that need finishing."""
@@ -66,6 +64,12 @@ def register_storage_routes(app):
                 "count": active_inventory_query.filter(db.or_(Card.estimated_value.is_(None), Card.estimated_value == 0)).count(),
             },
             {
+                "key": "image",
+                "label": "Missing Images",
+                "description": "Images help identify cards and support listings.",
+                "count": active_inventory_query.filter(db.or_(Card.image_filename.is_(None), Card.image_filename == "")).count(),
+            },
+            {
                 "key": "ai_review",
                 "label": "AI Review Queue",
                 "description": "Captured or uploaded cards waiting for import review.",
@@ -88,6 +92,9 @@ def register_storage_routes(app):
         elif issue_filter == "value":
             cards_query = active_inventory_query.filter(db.or_(Card.estimated_value.is_(None), Card.estimated_value == 0))
             current_label = "Missing Comp Value"
+        elif issue_filter == "image":
+            cards_query = active_inventory_query.filter(db.or_(Card.image_filename.is_(None), Card.image_filename == ""))
+            current_label = "Missing Images"
         elif issue_filter == "ai_review":
             return redirect(url_for("ai_import_review"))
         else:
@@ -105,6 +112,8 @@ def register_storage_routes(app):
                             Card.asking_price == 0,
                             Card.estimated_value.is_(None),
                             Card.estimated_value == 0,
+                            Card.image_filename.is_(None),
+                            Card.image_filename == "",
                         )
                     )
                 )
@@ -128,6 +137,7 @@ def register_storage_routes(app):
             current_label=current_label,
             summary=summary,
         )
+
 
     @app.route("/storage")
     def storage_explorer():
@@ -203,5 +213,3 @@ def register_storage_routes(app):
             total_estimated_value=total_estimated_value,
             today=date.today().isoformat(),
         )
-
-
