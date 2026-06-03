@@ -1,3 +1,5 @@
+from flask import session
+
 from models import db, Card, CardImportStaging
 
 
@@ -57,6 +59,62 @@ def get_storage_summary():
     return list(summary.values())
 
 
+def get_deal_cart_ids():
+    """Return selected deal-cart card IDs stored in the user session.
+
+    Kept here for backward compatibility with earlier CardDesk versions.
+    Newer code should use helpers.deal_cart_helpers.
+    """
+    return [int(card_id) for card_id in session.get("deal_cart", [])]
+
+
+def save_deal_cart_ids(card_ids):
+    """Store unique deal-cart card IDs in the session.
+
+    Kept here for backward compatibility with earlier CardDesk versions.
+    Newer code should use helpers.deal_cart_helpers.
+    """
+    clean_ids = []
+
+    for card_id in card_ids:
+        try:
+            clean_id = int(card_id)
+        except (TypeError, ValueError):
+            continue
+
+        if clean_id not in clean_ids:
+            clean_ids.append(clean_id)
+
+    session["deal_cart"] = clean_ids
+    session.modified = True
+
+
+def get_deal_cart_cards():
+    """Return active, unsold cards currently in the deal cart.
+
+    Kept here for backward compatibility with earlier CardDesk versions.
+    Newer code should use helpers.deal_cart_helpers.
+    """
+    cart_ids = get_deal_cart_ids()
+
+    if not cart_ids:
+        return []
+
+    cards = (
+        Card.query
+        .filter(Card.id.in_(cart_ids))
+        .order_by(Card.player_name.asc())
+        .all()
+    )
+
+    active_cards = [card for card in cards if card.status == "Active"]
+
+    if len(active_cards) != len(cards):
+        save_deal_cart_ids([card.id for card in active_cards])
+
+    return active_cards
+
+
 def get_inventory_health_summary():
     """Return quick counts for records that need cleanup or business follow-up."""
     try:
@@ -73,6 +131,9 @@ def get_inventory_health_summary():
         missing_estimated_value_count = active_inventory_query.filter(
             db.or_(Card.estimated_value.is_(None), Card.estimated_value == 0)
         ).count()
+        missing_image_count = active_inventory_query.filter(
+            db.or_(Card.image_filename.is_(None), Card.image_filename == "")
+        ).count()
         ai_review_count = CardImportStaging.query.filter(
             CardImportStaging.ai_status.in_(["Pending Review", "Needs Manual Review"])
         ).count()
@@ -82,6 +143,7 @@ def get_inventory_health_summary():
             + missing_storage_count
             + missing_asking_price_count
             + missing_estimated_value_count
+            + missing_image_count
             + ai_review_count
         )
 
@@ -90,6 +152,7 @@ def get_inventory_health_summary():
             "missing_storage_count": missing_storage_count,
             "missing_asking_price_count": missing_asking_price_count,
             "missing_estimated_value_count": missing_estimated_value_count,
+            "missing_image_count": missing_image_count,
             "ai_review_count": ai_review_count,
             "health_issue_count": health_issue_count,
         }
@@ -99,6 +162,7 @@ def get_inventory_health_summary():
             "missing_storage_count": 0,
             "missing_asking_price_count": 0,
             "missing_estimated_value_count": 0,
+            "missing_image_count": 0,
             "ai_review_count": 0,
             "health_issue_count": 0,
         }
@@ -118,5 +182,7 @@ def describe_inventory_health_issues(card):
             issues.append("Missing Asking Price")
         if card.estimated_value in (None, 0):
             issues.append("Missing Comp Value")
+        if not card.image_filename:
+            issues.append("Missing Image")
 
     return issues
