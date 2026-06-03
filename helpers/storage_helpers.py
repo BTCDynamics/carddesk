@@ -132,7 +132,10 @@ def get_inventory_health_summary():
             db.or_(Card.estimated_value.is_(None), Card.estimated_value == 0)
         ).count()
         missing_image_count = active_inventory_query.filter(
-            db.or_(Card.image_filename.is_(None), Card.image_filename == "")
+            db.or_(
+                Card.image_filename.is_(None),
+                db.func.trim(Card.image_filename) == ""
+            )
         ).count()
         ai_review_count = CardImportStaging.query.filter(
             CardImportStaging.ai_status.in_(["Pending Review", "Needs Manual Review"])
