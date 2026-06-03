@@ -136,16 +136,7 @@
     border-bottom: 2px solid rgba(96,165,250,.22);
 }
 
-.cd-section-title::before,
-.cd-sidebar-title::before {
-    content: "";
-    width: .85rem;
-    height: .85rem;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #fbbf24, #38bdf8);
-    box-shadow: 0 0 14px rgba(56, 189, 248, .35);
-    flex: 0 0 auto;
-}
+
 
 /* Forms */
 .add-card-page .form-label {
@@ -634,6 +625,48 @@
         width: 100% !important;
     }
 }
+
+/* Restore Add Card gray section header bars */
+.add-card-page .cd-section-title,
+.add-card-page .cd-sidebar-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: .75rem !important;
+
+    background-color: #4b5563 !important;
+    background-image: none !important;
+
+    padding: .85rem 1rem !important;
+    border-radius: 10px !important;
+
+    border: 1px solid #6b7280 !important;
+    border-bottom: 1px solid #6b7280 !important;
+
+    color: #ffffff !important;
+
+    font-size: 1.2rem !important;
+    font-weight: 900 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+
+    margin-bottom: 1.25rem !important;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 .35rem .9rem rgba(0,0,0,.18) !important;
+}
+
+.add-card-page .cd-section-title::before,
+.add-card-page .cd-sidebar-title::before {
+    content: "";
+    width: .85rem;
+    height: .85rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fbbf24, #38bdf8);
+    box-shadow: 0 0 14px rgba(56, 189, 248, .35);
+    flex: 0 0 auto;
+}
+
 </style>
 
 <div class="add-card-page">

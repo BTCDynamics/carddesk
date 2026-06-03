@@ -2007,3 +2007,211 @@ textarea.form-control {
     font-weight: 900;
     box-shadow: 0 .65rem 1.35rem rgba(22,163,74,.24);
 }
+
+.health-summary-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+
+/* =========================================================
+   Dashboard Responsive Polish Pass
+   Purpose: keep dashboard layout predictable on laptops,
+   smaller monitors, tablets, and phones.
+   Safe override layer: no Python/template logic changes.
+   ========================================================= */
+
+/* Convert the top dashboard stat row into a predictable grid. */
+.dashboard-top-stats {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1rem;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.dashboard-top-stats > .col {
+    width: auto !important;
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Large desktop / smaller wide monitor: clean 3 + 2 layout. */
+@media (max-width: 1399.98px) {
+    .dashboard-top-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Laptop / tablet landscape: clean 2-column layout. */
+@media (max-width: 991.98px) {
+    .dashboard-top-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-stat-card .display-6,
+    .dashboard-click-card .display-6 {
+        font-size: 2rem;
+        line-height: 1.1;
+    }
+}
+
+/* Small tablet / phone: single-column, no cramped cards. */
+@media (max-width: 575.98px) {
+    .dashboard-top-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-stat-card .card-body,
+    .dashboard-click-card .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Make the dashboard bottom section keep a deliberate order/feel. */
+.dashboard-bottom-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.35fr) minmax(260px, .9fr) minmax(0, 1.15fr);
+    gap: 1rem;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.dashboard-bottom-row > [class*="col-"] {
+    width: auto !important;
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    display: flex;
+}
+
+.dashboard-bottom-row > [class*="col-"] > .card {
+    width: 100%;
+}
+
+/* On smaller monitors/laptops, stack in template order:
+   Recent Sales, Brand, Action Needed. */
+@media (max-width: 1199.98px) {
+    .dashboard-bottom-row {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-bottom-row > [class*="col-"] {
+        display: block;
+    }
+}
+
+/* Keep Sales / Acquisitions tabs tidy on small screens. */
+.dashboard-tabs {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 575.98px) {
+    .dashboard-tabs {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: .6rem;
+    }
+
+    .dashboard-tab-btn {
+        width: 100%;
+    }
+}
+
+/* Prevent range links from crowding titles on narrow cards. */
+.dashboard-range-links {
+    justify-content: flex-start;
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-range-links {
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: .35rem;
+    }
+
+    .dashboard-range-links a {
+        min-height: 1.75rem;
+    }
+}
+
+/* Recent sales rows: keep money columns readable on narrower panels. */
+@media (max-width: 1199.98px) {
+    .recent-sale-row {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .recent-sale-row {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .recent-sale-main {
+        min-width: 0;
+    }
+
+    .recent-sale-player,
+    .recent-sale-meta,
+    .recent-sale-date {
+        overflow-wrap: anywhere;
+    }
+
+    .recent-sale-numbers {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        text-align: left;
+        white-space: normal;
+        gap: .35rem;
+        padding-top: .35rem;
+        border-top: 1px solid rgba(148, 163, 184, .18);
+    }
+}
+
+@media (max-width: 420px) {
+    .recent-sale-numbers {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Brand panel scales down instead of dominating laptop/tablet layouts. */
+@media (max-width: 1199.98px) {
+    .dashboard-brand-logo {
+        width: 88px;
+        height: 88px;
+        border-radius: 22px;
+        font-size: 2.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .dashboard-brand-title {
+        font-size: 1.65rem;
+    }
+}
+
+/* Action Needed rows remain readable on tablets/phones. */
+@media (max-width: 575.98px) {
+    .workflow-action-row {
+        align-items: flex-start;
+        gap: .75rem;
+        padding: .8rem;
+    }
+
+    .workflow-action-count {
+        min-width: 2.1rem;
+        min-height: 2.1rem;
+        font-size: .9rem;
+    }
+}
+
+/* Page header action buttons stack gracefully on smaller screens. */
+@media (max-width: 575.98px) {
+    .cw-page-title .btn {
+        width: 100%;
+    }
+
+    .cw-page-title > div:last-child {
+        width: 100%;
+    }
+}
+

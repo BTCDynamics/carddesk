@@ -4,7 +4,112 @@
 
 {% block content %}
 <style>
-/* Edit Card page: keep Raw/Graded boxes dark on page load, not white */
+/* Edit Card page: dark CardDesk form styling */
+.edit-card-page {
+    color: #e5e7eb;
+}
+
+.edit-card-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding: 1.15rem 1.25rem;
+    border-radius: 1rem;
+    background: linear-gradient(145deg, #111827, #1f2937);
+    border: 1px solid rgba(148, 163, 184, .18);
+    box-shadow: 0 .65rem 1.6rem rgba(0, 0, 0, .22);
+}
+
+.edit-card-title-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: .9rem;
+}
+
+.edit-card-icon {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(251, 191, 36, .38);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #fbbf24, #38bdf8);
+    color: #0f172a;
+    font-size: 1.35rem;
+    font-weight: 900;
+    box-shadow: 0 0 24px rgba(56, 189, 248, .24);
+}
+
+.edit-card-page h1 {
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.edit-card-page .text-muted {
+    color: #94a3b8 !important;
+}
+
+.edit-card-form-card {
+    background: linear-gradient(145deg, #111827, #1f2937) !important;
+    border: 1px solid rgba(148, 163, 184, .18) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 .65rem 1.6rem rgba(0, 0, 0, .22) !important;
+    overflow: hidden;
+}
+
+/* Match Add Card / Rapid Entry section styling */
+.edit-card-page .cd-section {
+    position: relative;
+    padding: 1rem;
+    border: 1px solid rgba(148, 163, 184, .13);
+    border-radius: 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, .12), transparent 34%),
+        rgba(15, 23, 42, .38);
+    margin-bottom: 1rem;
+}
+
+.edit-card-page .cd-section-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: .75rem !important;
+
+    background-color: #4b5563 !important;
+    background-image: none !important;
+
+    padding: .85rem 1rem !important;
+    border-radius: 10px !important;
+
+    border: 1px solid #6b7280 !important;
+    border-bottom: 1px solid #6b7280 !important;
+
+    color: #ffffff !important;
+
+    font-size: 1.2rem !important;
+    font-weight: 900 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+
+    margin-bottom: 1.25rem !important;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 .35rem .9rem rgba(0,0,0,.18) !important;
+}
+
+.edit-card-page .cd-section-title::before {
+    content: "";
+    width: .85rem;
+    height: .85rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fbbf24, #38bdf8);
+    box-shadow: 0 0 14px rgba(56, 189, 248, .35);
+    flex: 0 0 auto;
+}
+
+/* Keep Raw/Graded boxes dark on page load */
 .cw-form-compact #raw-fields,
 .cw-form-compact #graded-fields {
     background: linear-gradient(145deg, #202b3a, #253246) !important;
@@ -17,6 +122,42 @@
     border-color: rgba(96, 165, 250, .45) !important;
 }
 
+/* Buttons */
+.edit-card-page .btn-outline-secondary,
+.edit-card-page .btn-outline-primary,
+.cw-form-compact .btn-outline-secondary,
+.cw-form-compact .btn-outline-primary {
+    color: #dbe7ff !important;
+    border-color: rgba(148, 163, 184, .45) !important;
+    background-color: rgba(37, 50, 70, 0.55) !important;
+}
+
+.edit-card-page .btn-outline-secondary:hover,
+.edit-card-page .btn-outline-primary:hover,
+.cw-form-compact .btn-outline-secondary:hover,
+.cw-form-compact .btn-outline-primary:hover {
+    color: #ffffff !important;
+    background-color: #111827 !important;
+    border-color: rgba(96, 165, 250, .65) !important;
+}
+
+.edit-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    position: sticky;
+    bottom: .75rem;
+    z-index: 25;
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(96, 165, 250, .24);
+    border-radius: 1rem;
+    background: rgba(15, 23, 42, .86);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 .85rem 2rem rgba(0, 0, 0, .35);
+}
+
+/* Acquisition notes */
 .acquisition-note {
     margin-top: .5rem;
     padding: .65rem .8rem;
@@ -26,36 +167,56 @@
 }
 
 .acquisition-note.existing {
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    color: #334155;
+    background: rgba(148, 163, 184, .14);
+    border: 1px solid rgba(148, 163, 184, .20);
+    color: #cbd5e1;
 }
 
 .acquisition-note.new {
-    background: #dcfce7;
-    border: 1px solid #86efac;
-    color: #166534;
+    background: rgba(34, 197, 94, .16);
+    border: 1px solid rgba(34, 197, 94, .26);
+    color: #bbf7d0;
 }
 
 .cw-form-compact .form-control:disabled,
 .cw-form-compact .form-select:disabled {
-    background-color: #d1d5db !important;
-    color: #374151 !important;
+    background-color: rgba(55, 65, 81, .82) !important;
+    color: #cbd5e1 !important;
     opacity: 1 !important;
     cursor: not-allowed;
 }
+
+@media (max-width: 767.98px) {
+    .edit-card-hero {
+        flex-direction: column;
+    }
+
+    .edit-card-hero .btn,
+    .edit-card-actions .btn {
+        width: 100%;
+    }
+
+    .edit-card-actions {
+        flex-direction: column;
+    }
+}
 </style>
-<div class="d-flex justify-content-between align-items-center mb-4 cw-page-title">
-    <div>
-        <h1 class="h2 mb-1">Edit Card</h1>
-        <p class="text-muted mb-0">{{ card.card_code }} · {{ card.player_name }}</p>
+<div class="edit-card-page">
+<div class="edit-card-hero">
+    <div class="edit-card-title-wrap">
+        <div class="edit-card-icon">✎</div>
+        <div>
+            <h1 class="h2 mb-1">Edit Card</h1>
+            <p class="text-muted mb-0">{{ card.card_code }} · {{ card.player_name }}</p>
+        </div>
     </div>
     <a class="btn btn-outline-secondary" href="{{ url_for('card_detail', card_id=card.id) }}">Back to Detail</a>
 </div>
 
-<form method="POST" enctype="multipart/form-data" class="card page-card cw-form-compact">
+<form method="POST" enctype="multipart/form-data" class="card page-card cw-form-compact edit-card-form-card">
     <div class="card-body">
-        <div class="cw-section-label mb-2">Card Identity</div>
+        <section class="cd-section">
+        <div class="cd-section-title">Card Identity</div>
         <input type="hidden" name="card_code" value="{{ card.card_code }}">
 
         <div class="row g-3 align-items-end cw-form-row cw-row-a flex-nowrap overflow-auto">
@@ -133,10 +294,10 @@
                 {% endif %}
             </div>
         </div>
+        </section>
 
-        <hr>
-
-        <div id="raw-heading" class="cw-section-label mb-2">Raw Card Info</div>
+        <section class="cd-section">
+        <div id="raw-heading" class="cd-section-title">Raw Card Info</div>
         <div id="raw-fields" class="row g-3 cw-form-row cw-grade-row">
             <div class="col-6 col-md-auto cw-field-sm">
                 <label class="form-label">Grade Estimate</label>
@@ -144,7 +305,7 @@
             </div>
         </div>
 
-        <div id="graded-heading" class="cw-section-label mt-3 mb-2">Graded Card Info</div>
+        <div id="graded-heading" class="cd-section-title mt-3">Graded Card Info</div>
         <div id="graded-fields" class="row g-3 cw-form-row cw-grade-row">
             <div class="col-12 col-md-auto cw-field-md">
                 <label class="form-label">Grading Company</label>
@@ -159,10 +320,10 @@
                 <input class="form-control" type="text" name="cert_number" value="{{ card.cert_number or '' }}">
             </div>
         </div>
+        </section>
 
-        <hr>
-
-        <div class="cw-section-label mb-2">Inventory</div>
+        <section class="cd-section">
+        <div class="cd-section-title">Inventory</div>
         <div class="row g-3 align-items-end cw-form-row cw-row-a">
 
             <div class="col-6 col-md-auto cw-field-select-md">
@@ -271,13 +432,15 @@
                 <textarea class="form-control" name="notes" rows="4">{{ card.notes or '' }}</textarea>
             </div>
         </div>
+        </section>
 
-        <div class="mt-4 d-flex gap-2">
+        <div class="edit-card-actions">
             <button class="btn btn-primary" type="submit">Save Changes</button>
             <a class="btn btn-outline-secondary" href="{{ url_for('card_detail', card_id=card.id) }}">Cancel</a>
         </div>
     </div>
 </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
