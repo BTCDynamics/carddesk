@@ -63,12 +63,7 @@ def register_storage_routes(app):
                 "description": "Comp value helps estimate inventory value.",
                 "count": active_inventory_query.filter(db.or_(Card.estimated_value.is_(None), Card.estimated_value == 0)).count(),
             },
-            {
-                "key": "image",
-                "label": "Missing Images",
-                "description": "Images help identify cards and support listings.",
-                "count": active_inventory_query.filter(db.or_(Card.image_filename.is_(None), Card.image_filename == "")).count(),
-            },
+            
             {
                 "key": "ai_review",
                 "label": "AI Review Queue",
