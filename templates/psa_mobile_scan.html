@@ -83,7 +83,7 @@
 
         .scanner-status-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(150px, 1fr));
             gap: .75rem;
             margin-bottom: 1rem;
         }
@@ -242,6 +242,18 @@
             background: rgba(22, 163, 74, .15);
             border: 1px solid rgba(74, 222, 128, .34);
             color: #dcfce7;
+        }
+
+        .live-save-success {
+            display: none;
+        }
+
+        .live-save-success.active {
+            display: block;
+        }
+
+        .live-save-success-title {
+            font-weight: 650;
         }
 
         .success-card.post-submit-focus {
@@ -416,10 +428,6 @@
             <div class="scanner-body">
 <div class="scanner-status-grid">
                     <div class="scanner-status-tile">
-                        <div class="scanner-status-label">Pending Review</div>
-                        <div class="scanner-status-value">{{ pending_count }}</div>
-                    </div>
-                    <div class="scanner-status-tile">
                         <div class="scanner-status-label">Auto Save</div>
                         <div class="scanner-status-value" id="autoSaveStatusTile">Off</div>
                     </div>
@@ -448,6 +456,11 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
+
+                <div class="success-card live-save-success mb-3" id="liveSaveSuccessBanner" aria-live="polite">
+                    <div class="live-save-success-title" id="liveSaveSuccessTitle">PSA cert was staged for review.</div>
+                    <div class="small-help">Successful capture and save. Ready for the next scan.</div>
+                </div>
 
                 {% if staged_success %}
                     <div class="success-card mb-3" id="stagedSuccessBanner">
@@ -549,6 +562,8 @@
         const autoSaveAfterScan = document.getElementById("autoSaveAfterScan");
         const autoSaveStatusTile = document.getElementById("autoSaveStatusTile");
         const scannerStateTile = document.getElementById("scannerStateTile");
+        const liveSaveSuccessBanner = document.getElementById("liveSaveSuccessBanner");
+        const liveSaveSuccessTitle = document.getElementById("liveSaveSuccessTitle");
 
         let scanner = null;
         let scannerRunning = false;
@@ -568,6 +583,23 @@
             if (scannerStateTile) {
                 scannerStateTile.textContent = value;
             }
+        }
+
+        function showLiveSaveSuccessBanner(certNumber) {
+            if (!liveSaveSuccessBanner || !liveSaveSuccessTitle) {
+                return;
+            }
+
+            liveSaveSuccessTitle.textContent = "PSA cert " + certNumber + " was staged for review.";
+            liveSaveSuccessBanner.classList.add("active", "post-submit-focus");
+
+            setTimeout(function () {
+                liveSaveSuccessBanner.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 150);
+
+            setTimeout(function () {
+                liveSaveSuccessBanner.classList.remove("post-submit-focus");
+            }, 2600);
         }
 
         function restoreAutoSavePreference() {
@@ -808,6 +840,7 @@
                     }
 
                     certInput.value = "";
+                    showLiveSaveSuccessBanner(certNumber);
                     setStatus("✅ PSA cert " + certNumber + " staged. Ready for next scan.", "text-success");
 
                     if (navigator.vibrate) {
