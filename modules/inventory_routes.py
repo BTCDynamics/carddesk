@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from flask import render_template, request, redirect, url_for, flash
 
@@ -314,6 +314,243 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             active_inventory_count=active_inventory_count,
             missing_storage_count=missing_storage_count,
             scope=scope
+        )
+
+
+    @app.route("/inventory-aging")
+    def inventory_aging():
+        """Dealer view for aging active inventory.
+
+        Date priority:
+        1. acquisition_date
+        2. purchase_date
+        3. created_at fallback
+
+        Cards using created_at fallback are marked as estimated age.
+        """
+        bucket_filter = request.args.get("bucket", "all")
+
+        aging_buckets = {
+            "fresh": {
+                "label": "Fresh Inventory",
+                "range": "0-30 Days",
+                "description": "Recently added cards still inside the normal new-inventory window.",
+                "accent": "blue",
+            },
+            "aging": {
+                "label": "Aging Inventory",
+                "range": "31-90 Days",
+                "description": "Cards that may need pricing, promotion, or show placement attention.",
+                "accent": "green",
+            },
+            "old": {
+                "label": "Old Inventory",
+                "range": "91-180 Days",
+                "description": "Inventory that has been sitting long enough to deserve review.",
+                "accent": "gold",
+            },
+            "stale": {
+                "label": "Stale Inventory",
+                "range": "180+ Days",
+                "description": "Long-held cards that may be tying up capital.",
+                "accent": "red",
+            },
+        }
+
+        def parse_card_date(value):
+            if not value:
+                return None
+
+            if isinstance(value, datetime):
+                return value.date()
+
+            if isinstance(value, date):
+                return value
+
+            value = str(value).strip()
+            if not value:
+                return None
+
+            try:
+                return datetime.strptime(value[:10], "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+            for fmt in ("%m/%d/%Y", "%m-%d-%Y", "%Y/%m/%d"):
+                try:
+                    return datetime.strptime(value, fmt).date()
+                except ValueError:
+                    continue
+
+            return None
+
+        def get_aging_basis(card):
+            acquisition_dt = parse_card_date(card.acquisition_date)
+            if acquisition_dt:
+                return acquisition_dt, "Acquisition Date", False
+
+            purchase_dt = parse_card_date(card.purchase_date)
+            if purchase_dt:
+                return purchase_dt, "Purchase Date", False
+
+            created_dt = parse_card_date(card.created_at)
+            if created_dt:
+                return created_dt, "Created Date", True
+
+            return date.today(), "Unknown", True
+
+        def bucket_for_days(days_old):
+            if days_old <= 30:
+                return "fresh"
+            if days_old <= 90:
+                return "aging"
+            if days_old <= 180:
+                return "old"
+            return "stale"
+
+        def money(value):
+            return float(value or 0)
+
+        cards_for_aging = (
+            Card.query
+            .filter(Card.status != "Sold")
+            .filter(Card.collection_type == "Inventory")
+            .order_by(Card.created_at.asc())
+            .all()
+        )
+
+        bucket_stats = {
+            key: {
+                **bucket,
+                "key": key,
+                "count": 0,
+                "quantity": 0,
+                "cost": 0.0,
+                "estimated_value": 0.0,
+                "asking": 0.0,
+                "estimated_age_count": 0,
+                "percent": 0,
+            }
+            for key, bucket in aging_buckets.items()
+        }
+
+        enriched_cards = []
+        missing_true_date_count = 0
+        today_value = date.today()
+
+        for card in cards_for_aging:
+            basis_date, basis_label, estimated_age = get_aging_basis(card)
+            days_old = max((today_value - basis_date).days, 0)
+            bucket_key = bucket_for_days(days_old)
+            quantity = card.quantity or 1
+
+            cost_total = money(card.purchase_price) * quantity
+            estimated_total = money(card.estimated_value) * quantity
+            asking_total = money(card.asking_price) * quantity
+
+            bucket_stats[bucket_key]["count"] += 1
+            bucket_stats[bucket_key]["quantity"] += quantity
+            bucket_stats[bucket_key]["cost"] += cost_total
+            bucket_stats[bucket_key]["estimated_value"] += estimated_total
+            bucket_stats[bucket_key]["asking"] += asking_total
+
+            if estimated_age:
+                bucket_stats[bucket_key]["estimated_age_count"] += 1
+                missing_true_date_count += 1
+
+            review_flags = []
+
+            if estimated_age:
+                review_flags.append("Estimated Age")
+
+            if days_old > 180:
+                review_flags.append("180+ Days")
+            elif days_old > 90:
+                review_flags.append("90+ Days")
+
+            if not card.asking_price:
+                review_flags.append("No Ask")
+            if not card.estimated_value:
+                review_flags.append("No Comp")
+            if not card.storage_location:
+                review_flags.append("No Storage")
+            if not card.image_filename:
+                review_flags.append("No Image")
+
+            enriched_cards.append({
+                "card": card,
+                "days_old": days_old,
+                "basis_label": basis_label,
+                "basis_date": basis_date,
+                "estimated_age": estimated_age,
+                "bucket": bucket_key,
+                "quantity": quantity,
+                "cost_total": cost_total,
+                "estimated_total": estimated_total,
+                "asking_total": asking_total,
+                "review_flags": review_flags,
+            })
+
+        total_count = sum(item["count"] for item in bucket_stats.values())
+
+        for stats in bucket_stats.values():
+            if total_count:
+                stats["percent"] = round((stats["count"] / total_count) * 100)
+            else:
+                stats["percent"] = 0
+
+        if bucket_filter in aging_buckets:
+            visible_cards = [
+                item for item in enriched_cards
+                if item["bucket"] == bucket_filter
+            ]
+            current_label = aging_buckets[bucket_filter]["label"]
+        else:
+            visible_cards = enriched_cards
+            current_label = "All Active Inventory"
+
+        visible_cards = sorted(
+            visible_cards,
+            key=lambda item: item["days_old"],
+            reverse=True
+        )
+
+        old_plus_count = bucket_stats["old"]["count"] + bucket_stats["stale"]["count"]
+        stale_count = bucket_stats["stale"]["count"]
+        total_cost = sum(item["cost"] for item in bucket_stats.values())
+        stale_cost = bucket_stats["stale"]["cost"]
+        stale_asking = bucket_stats["stale"]["asking"]
+        stale_estimated_value = bucket_stats["stale"]["estimated_value"]
+        stale_potential_profit = stale_asking - stale_cost
+
+        if total_count:
+            freshness_score = round(((total_count - old_plus_count) / total_count) * 100)
+        else:
+            freshness_score = 100
+
+        oldest_item = visible_cards[0] if visible_cards else None
+
+        summary = {
+            "total_count": total_count,
+            "old_plus_count": old_plus_count,
+            "stale_count": stale_count,
+            "total_cost": total_cost,
+            "stale_cost": stale_cost,
+            "stale_asking": stale_asking,
+            "stale_estimated_value": stale_estimated_value,
+            "stale_potential_profit": stale_potential_profit,
+            "missing_true_date_count": missing_true_date_count,
+            "freshness_score": max(min(freshness_score, 100), 0),
+            "oldest_item": oldest_item,
+        }
+
+        return render_template(
+            "inventory_aging.html",
+            bucket_stats=bucket_stats,
+            bucket_filter=bucket_filter,
+            visible_cards=visible_cards[:150],
+            current_label=current_label,
+            summary=summary,
         )
 
 
