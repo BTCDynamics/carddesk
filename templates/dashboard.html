@@ -42,6 +42,14 @@
     display: block;
 }
 
+.dashboard-bottom-panel {
+    display: none;
+}
+
+.dashboard-bottom-panel.active {
+    display: block;
+}
+
 </style>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
@@ -149,8 +157,8 @@
 {% endif %}
 
 <div class="dashboard-tabs">
-    <button class="dashboard-tab-btn {% if active_dashboard_tab != 'purchases' %}active{% endif %}" onclick="showDashboardTab('sales-tab', this)">Sales</button>
-    <button class="dashboard-tab-btn {% if active_dashboard_tab == 'purchases' %}active{% endif %}" onclick="showDashboardTab('purchases-tab', this)">Acquisitions</button>
+    <button class="dashboard-tab-btn {% if active_dashboard_tab != 'purchases' %}active{% endif %}" onclick="showDashboardTab('sales-tab', this, 'sales')">Sales</button>
+    <button class="dashboard-tab-btn {% if active_dashboard_tab == 'purchases' %}active{% endif %}" onclick="showDashboardTab('purchases-tab', this, 'purchases')">Acquisitions</button>
 </div>
 
 <div id="sales-tab" class="dashboard-tab-panel {% if active_dashboard_tab != 'purchases' %}active{% endif %}">
@@ -210,12 +218,17 @@
 <div class="row g-3 mb-4">
 
     <div class="col-md-4">
-        <div class="card page-card dashboard-click-card h-100">
+        <div class="card page-card dashboard-click-card h-100"
+             role="link"
+             tabindex="0"
+             style="cursor: pointer;"
+             onclick="window.location.href='{{ url_for('cards', acquisition_range=purchase_summary_range, status='Active', collection_type='Inventory') }}'"
+             onkeydown="if (event.key === 'Enter' || event.key === ' ') { window.location.href='{{ url_for('cards', acquisition_range=purchase_summary_range, status='Active', collection_type='Inventory') }}'; }">
             <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-1">
                     <div class="cw-section-label mb-0">Cards Acquired · {{ purchase_summary_label or 'Last 30 Days' }}</div>
 
-                    <div class="dashboard-range-links">
+                    <div class="dashboard-range-links" onclick="event.stopPropagation();">
                         <a class="{% if purchase_summary_range == 'today' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range=recent_sales_range or '30d', purchase_summary_range='today', dashboard_tab='purchases') }}">Today</a>
                         <a class="{% if purchase_summary_range == '3d' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range=recent_sales_range or '30d', purchase_summary_range='3d', dashboard_tab='purchases') }}">3D</a>
                         <a class="{% if purchase_summary_range == '7d' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range=recent_sales_range or '30d', purchase_summary_range='7d', dashboard_tab='purchases') }}">7D</a>
@@ -233,31 +246,35 @@
     </div>
 
     <div class="col-md-4">
-        <div class="card page-card dashboard-click-card h-100">
-            <div class="card-body">
-                <div class="cw-section-label mb-1">Acquisition Cost · {{ purchase_summary_label or 'Last 30 Days' }}</div>
+        <a class="dashboard-card-link" href="{{ url_for('cards', acquisition_range=purchase_summary_range, status='Active', collection_type='Inventory') }}">
+            <div class="card page-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <div class="cw-section-label mb-1">Acquisition Cost · {{ purchase_summary_label or 'Last 30 Days' }}</div>
 
-                <div class="display-6 fw-bold">${{ "%.2f"|format(cost_bought_in_range or 0) }}</div>
+                    <div class="display-6 fw-bold">${{ "%.2f"|format(cost_bought_in_range or 0) }}</div>
 
-                <p class="text-muted mb-0 small">
-                    Total cost basis for newly acquired inventory in the selected range.
-                </p>
+                    <p class="text-muted mb-0 small">
+                        Total cost basis for newly acquired inventory in the selected range.
+                    </p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <div class="col-md-4">
-        <div class="card page-card dashboard-click-card h-100">
-            <div class="card-body">
-                <div class="cw-section-label mb-1">Comp Value Acquired · {{ purchase_summary_label or 'Last 30 Days' }}</div>
+        <a class="dashboard-card-link" href="{{ url_for('cards', acquisition_range=purchase_summary_range, status='Active', collection_type='Inventory') }}">
+            <div class="card page-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <div class="cw-section-label mb-1">Comp Value Acquired · {{ purchase_summary_label or 'Last 30 Days' }}</div>
 
-                <div class="display-6 fw-bold">${{ "%.2f"|format(comp_value_bought_in_range or value_bought_in_range or 0) }}</div>
+                    <div class="display-6 fw-bold">${{ "%.2f"|format(comp_value_bought_in_range or value_bought_in_range or 0) }}</div>
 
-                <p class="text-muted mb-0 small">
-                    Estimated market value of newly acquired inventory.
-                </p>
+                    <p class="text-muted mb-0 small">
+                        Estimated market value of newly acquired inventory.
+                    </p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 
 </div>
@@ -267,77 +284,134 @@
     <div class="col-lg-4">
         <div class="card page-card dashboard-click-card h-100">
             <div class="card-header fw-bold d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <span>Recent Sales</span>
+                <span class="dashboard-bottom-panel dashboard-bottom-sales {% if active_dashboard_tab != 'purchases' %}active{% endif %}">Recent Sales</span>
+                <span class="dashboard-bottom-panel dashboard-bottom-purchases {% if active_dashboard_tab == 'purchases' %}active{% endif %}">Recent Acquisitions</span>
 
-                <div class="dashboard-range-links">
+                <div class="dashboard-range-links dashboard-bottom-panel dashboard-bottom-sales {% if active_dashboard_tab != 'purchases' %}active{% endif %}">
                     <a class="{% if recent_sales_range == 'today' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range='today') }}">Today</a>
                     <a class="{% if recent_sales_range == '3d' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range='3d') }}">3D</a>
                     <a class="{% if recent_sales_range == '7d' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range='7d') }}">7D</a>
                     <a class="{% if recent_sales_range == '30d' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range='30d') }}">30D</a>
                 </div>
 
-                <span class="badge text-bg-dark">{{ recent_sales_label or 'Last 30 Days' }}</span>
+                <div class="dashboard-range-links dashboard-bottom-panel dashboard-bottom-purchases {% if active_dashboard_tab == 'purchases' %}active{% endif %}">
+                    <a class="{% if purchase_summary_range == 'today' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range=recent_sales_range or '30d', purchase_summary_range='today', dashboard_tab='purchases') }}">Today</a>
+                    <a class="{% if purchase_summary_range == '3d' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range=recent_sales_range or '30d', purchase_summary_range='3d', dashboard_tab='purchases') }}">3D</a>
+                    <a class="{% if purchase_summary_range == '7d' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range=recent_sales_range or '30d', purchase_summary_range='7d', dashboard_tab='purchases') }}">7D</a>
+                    <a class="{% if purchase_summary_range == '30d' %}active{% endif %}" href="{{ url_for('dashboard', recent_sales_range=recent_sales_range or '30d', purchase_summary_range='30d', dashboard_tab='purchases') }}">30D</a>
+                </div>
+
+                <span class="badge text-bg-dark dashboard-bottom-panel dashboard-bottom-sales {% if active_dashboard_tab != 'purchases' %}active{% endif %}">{{ recent_sales_label or 'Last 30 Days' }}</span>
+                <span class="badge text-bg-dark dashboard-bottom-panel dashboard-bottom-purchases {% if active_dashboard_tab == 'purchases' %}active{% endif %}">{{ purchase_summary_label or 'Last 30 Days' }}</span>
             </div>
 
             <div class="card-body">
-                {% if recent_sales %}
-                    <div class="recent-sales-list">
-                        {% for card in recent_sales %}
-                            {% set sale_total = (card.sold_price or 0) * (card.quantity or 1) %}
-                            {% set cost_total = (card.purchase_price or 0) * (card.quantity or 1) %}
-                            {% set profit_total = sale_total - cost_total %}
-                            {% set profit_percent = (profit_total / cost_total * 100) if cost_total else 0 %}
+                <div class="dashboard-bottom-panel dashboard-bottom-sales {% if active_dashboard_tab != 'purchases' %}active{% endif %}">
+                    {% if recent_sales %}
+                        <div class="recent-sales-list">
+                            {% for card in recent_sales %}
+                                {% set sale_total = (card.sold_price or 0) * (card.quantity or 1) %}
+                                {% set cost_total = (card.purchase_price or 0) * (card.quantity or 1) %}
+                                {% set profit_total = sale_total - cost_total %}
+                                {% set profit_percent = (profit_total / cost_total * 100) if cost_total else 0 %}
 
-                            <a class="recent-sale-row" href="{{ url_for('card_detail', card_id=card.id) }}">
-                                <div class="recent-sale-thumb-wrap">
-                                    {% if card.image_filename %}
-                                        <img class="recent-sale-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name }} card image">
-                                    {% else %}
-                                        <div class="recent-sale-placeholder">No Image</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="recent-sale-main">
-                                    <div class="recent-sale-player">{{ card.player_name }}</div>
-                                    <div class="recent-sale-meta">
-                                        {{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}
-                                    </div>
-                                    <div class="recent-sale-date">Sold {{ card.sold_date or '—' }}</div>
-
-                                    <div class="mt-1">
-                                        {% if card.fulfillment_status == "Needs Pulling" %}
-                                            <span class="badge text-bg-warning">Needs Pulling</span>
-                                        {% elif card.fulfillment_status == "Pulled" %}
-                                            <span class="badge text-bg-dark">Pulled</span>
-                                        {% elif card.fulfillment_status == "Shipped" %}
-                                            <span class="badge text-bg-primary">Shipped</span>
-                                        {% elif card.fulfillment_status in ["Delivered", "Completed"] %}
-                                            <span class="badge text-bg-success">{{ card.fulfillment_status }}</span>
+                                <a class="recent-sale-row" href="{{ url_for('card_detail', card_id=card.id) }}">
+                                    <div class="recent-sale-thumb-wrap">
+                                        {% if card.image_filename %}
+                                            <img class="recent-sale-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name }} card image">
                                         {% else %}
-                                            <span class="badge text-bg-secondary">{{ card.fulfillment_status or '—' }}</span>
+                                            <div class="recent-sale-placeholder">No Image</div>
                                         {% endif %}
                                     </div>
-                                </div>
 
-                                <div class="recent-sale-numbers">
-                                    <div><span>Cost</span> ${{ "%.2f"|format(cost_total) }}</div>
-                                    <div><span>Sold</span> ${{ "%.2f"|format(sale_total) }}</div>
-                                    <div class="{% if profit_total >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                        <span>P/L</span> ${{ "%.2f"|format(profit_total) }}
+                                    <div class="recent-sale-main">
+                                        <div class="recent-sale-player">{{ card.player_name }}</div>
+                                        <div class="recent-sale-meta">
+                                            {{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}
+                                        </div>
+                                        <div class="recent-sale-date">Sold {{ card.sold_date or '—' }}</div>
+
+                                        <div class="mt-1">
+                                            {% if card.fulfillment_status == "Needs Pulling" %}
+                                                <span class="badge text-bg-warning">Needs Pulling</span>
+                                            {% elif card.fulfillment_status == "Pulled" %}
+                                                <span class="badge text-bg-dark">Pulled</span>
+                                            {% elif card.fulfillment_status == "Shipped" %}
+                                                <span class="badge text-bg-primary">Shipped</span>
+                                            {% elif card.fulfillment_status in ["Delivered", "Completed"] %}
+                                                <span class="badge text-bg-success">{{ card.fulfillment_status }}</span>
+                                            {% else %}
+                                                <span class="badge text-bg-secondary">{{ card.fulfillment_status or '—' }}</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    <div class="{% if profit_total >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                        <span>%</span> {{ "%.1f"|format(profit_percent) }}%
+
+                                    <div class="recent-sale-numbers">
+                                        <div><span>Cost</span> ${{ "%.2f"|format(cost_total) }}</div>
+                                        <div><span>Sold</span> ${{ "%.2f"|format(sale_total) }}</div>
+                                        <div class="{% if profit_total >= 0 %}text-success{% else %}text-danger{% endif %}"><span>P/L</span> ${{ "%.2f"|format(profit_total) }}</div>
+                                        <div class="{% if profit_total >= 0 %}text-success{% else %}text-danger{% endif %}"><span>%</span> {{ "%.1f"|format(profit_percent) }}%</div>
                                     </div>
-                                </div>
-                            </a>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center text-muted py-4">
-                        <h5 class="mb-2">No recent sales yet.</h5>
-                        <p class="mb-0 small">Cards sold in the selected time frame will appear here.</p>
-                    </div>
-                {% endif %}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <h5 class="mb-2">No recent sales yet.</h5>
+                            <p class="mb-0 small">Cards sold in the selected time frame will appear here.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="dashboard-bottom-panel dashboard-bottom-purchases {% if active_dashboard_tab == 'purchases' %}active{% endif %}">
+                    {% if recent_acquisitions %}
+                        <div class="recent-sales-list">
+                            {% for card in recent_acquisitions %}
+                                {% set quantity = card.quantity or 1 %}
+                                {% set cost_total = (card.purchase_price or 0) * quantity %}
+                                {% set comp_total = (card.estimated_value or 0) * quantity %}
+                                {% set asking_total = (card.asking_price or 0) * quantity %}
+
+                                <a class="recent-sale-row" href="{{ url_for('card_detail', card_id=card.id) }}">
+                                    <div class="recent-sale-thumb-wrap">
+                                        {% if card.image_filename %}
+                                            <img class="recent-sale-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name }} card image">
+                                        {% else %}
+                                            <div class="recent-sale-placeholder">No Image</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="recent-sale-main">
+                                        <div class="recent-sale-player">{{ card.player_name }}</div>
+                                        <div class="recent-sale-meta">
+                                            {{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}
+                                        </div>
+                                        <div class="recent-sale-date">Acquired {{ card.acquisition_date or '—' }}</div>
+
+                                        <div class="mt-1">
+                                            <span class="badge text-bg-success">{{ card.status or 'Active' }}</span>
+                                            {% if card.collection_type %}
+                                                <span class="badge text-bg-dark">{{ card.collection_type }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="recent-sale-numbers">
+                                        <div><span>Qty</span> {{ quantity }}</div>
+                                        <div><span>Cost</span> ${{ "%.2f"|format(cost_total) }}</div>
+                                        <div><span>Comp</span> ${{ "%.2f"|format(comp_total) }}</div>
+                                        <div><span>Ask</span> ${{ "%.2f"|format(asking_total) }}</div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <h5 class="mb-2">No recent acquisitions yet.</h5>
+                            <p class="mb-0 small">Newly acquired inventory in the selected time frame will appear here.</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -435,7 +509,7 @@
 </div>
 
 <script>
-function showDashboardTab(tabId, button) {
+function showDashboardTab(tabId, button, dashboardTab) {
     document.querySelectorAll('.dashboard-tab-panel').forEach(tab => {
         tab.classList.remove('active');
     });
@@ -446,6 +520,15 @@ function showDashboardTab(tabId, button) {
 
     document.getElementById(tabId).classList.add('active');
     button.classList.add('active');
+
+    document.querySelectorAll('.dashboard-bottom-sales, .dashboard-bottom-purchases').forEach(panel => {
+        panel.classList.remove('active');
+    });
+
+    const bottomClass = dashboardTab === 'purchases' ? '.dashboard-bottom-purchases' : '.dashboard-bottom-sales';
+    document.querySelectorAll(bottomClass).forEach(panel => {
+        panel.classList.add('active');
+    });
 }
 
 </script>

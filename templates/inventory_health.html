@@ -146,8 +146,12 @@
                         {% for card in cards_needing_attention %}
                             <tr>
                                 <td>
-                                    <div class="fw-bold">
-                                        <a class="text-decoration-none" href="{{ url_for('card_detail', card_id=card.id) }}">{{ card.player_name or 'Unknown Player' }}</a>
+                                   <div class="fw-bold">
+                                       <a class="text-decoration-none"
+                                          style="color:#000 !important;"
+                                          href="{{ url_for('card_detail', card_id=card.id) }}">
+                                          {{ card.player_name or 'Unknown Player' }}
+                                       </a>
                                     </div>
                                     <div class="small text-muted">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}</div>
                                 </td>
