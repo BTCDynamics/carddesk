@@ -265,7 +265,7 @@
             <div class="scanner-body">
                 <div class="autosave-control-card mb-3">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="autoSaveAfterScan" checked>
+                        <input class="form-check-input" type="checkbox" id="autoSaveAfterScan">
                         <label class="form-check-label fw-bold" for="autoSaveAfterScan">
                             Auto-save after successful scan
                         </label>
@@ -312,11 +312,11 @@
                         <span class="small-help" id="zoomValue">1x</span>
                     </div>
                     <button class="btn btn-outline-warning" type="button" id="torchButton" style="display:none;">Toggle Light</button>
-                    <div class="small-help">Tip: PSA slab barcodes usually scan best around 4.8x zoom. Hold the phone steady, keep the slab flat, and use bright light.</div>
+                    <div class="small-help">Tip: PSA slab barcodes usually scan best around 4.2x zoom. Hold the phone steady, keep the slab flat, and use bright light.</div>
                 </div>
 
                 <div class="scan-tip-card mt-3 mb-3 small">
-                    For tiny PSA barcodes, CardDesk now starts the camera near 4.8x zoom when supported. Use bright light, keep the slab flat, and hold steady while the phone focuses.
+                    For tiny PSA barcodes, CardDesk now starts the camera near 4.2x zoom when supported. Use bright light, keep the slab flat, and hold steady while the phone focuses.
                 </div>
 
                 <form method="POST" action="{{ url_for('psa_mobile_scan') }}" class="mt-4" id="psaMobileForm">
@@ -391,13 +391,9 @@
                 return;
             }
 
-            const savedValue = localStorage.getItem("carddeskPsaAutoSaveAfterScan");
-
-            if (savedValue === "off") {
-                autoSaveAfterScan.checked = false;
-            } else {
-                autoSaveAfterScan.checked = true;
-            }
+            // Keep autosave OFF by default on every page load.
+            // User can turn it on manually for testing/batch mode.
+            autoSaveAfterScan.checked = false;
 
             autoSaveAfterScan.addEventListener("change", function () {
                 localStorage.setItem(
@@ -759,8 +755,8 @@
                     fps: 18,
                     qrbox: function(viewfinderWidth, viewfinderHeight) {
                         // PSA slab barcodes are short and wide, so use a wide, shallow scan area.
-                        const width = Math.floor(viewfinderWidth * 0.96);
-                        const height = Math.max(70, Math.floor(viewfinderHeight * 0.18));
+                        const width = Math.floor(viewfinderWidth * 0.72);
+                        const height = Math.max(70, Math.floor(viewfinderHeight * 0.14));
                         return { width: width, height: height };
                     },
                     aspectRatio: 1.777778,
@@ -795,7 +791,7 @@
                     function() {}
                 );
 
-                setStatus("Camera active. Fill the wide rectangle with the PSA barcode.", "text-info");
+                setStatus("Camera active. Center the PSA barcode inside the smaller rectangle.", "text-info");
                 setTimeout(configureCameraControls, 650);
             } catch (error) {
                 scannerRunning = false;
@@ -808,8 +804,8 @@
                             fps: 18,
                             qrbox: function(viewfinderWidth, viewfinderHeight) {
                                 return {
-                                    width: Math.floor(viewfinderWidth * 0.96),
-                                    height: Math.max(70, Math.floor(viewfinderHeight * 0.18))
+                                    width: Math.floor(viewfinderWidth * 0.72),
+                                    height: Math.max(70, Math.floor(viewfinderHeight * 0.14))
                                 };
                             },
                             aspectRatio: 1.777778,
@@ -827,7 +823,7 @@
                     );
 
                     scannerRunning = true;
-                    setStatus("Camera active. Fill the wide rectangle with the PSA barcode.", "text-info");
+                    setStatus("Camera active. Center the PSA barcode inside the smaller rectangle.", "text-info");
                     setTimeout(configureCameraControls, 650);
                 } catch (fallbackError) {
                     setStatus("Could not start camera: " + fallbackError, "text-warning");
@@ -862,6 +858,8 @@
                 setStatus("Torch is not available on this camera/browser.", "text-warning");
             }
         });
+
+        restoreAutoSavePreference();
 
         focusStagedSuccessBanner();
 
