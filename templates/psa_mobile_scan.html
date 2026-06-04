@@ -121,6 +121,20 @@
             color: #fef3c7;
         }
 
+
+        .autosave-control-card {
+            background: rgba(34, 197, 94, .12);
+            border: 1px solid rgba(74, 222, 128, .35);
+            border-radius: 1rem;
+            padding: .85rem;
+            color: #dcfce7;
+        }
+
+        .autosave-control-card .form-check-input {
+            transform: scale(1.25);
+            margin-right: .35rem;
+        }
+
         .scan-tip-card {
             background: rgba(96, 165, 250, .10);
             border: 1px solid rgba(96, 165, 250, .26);
@@ -249,6 +263,18 @@
             </div>
 
             <div class="scanner-body">
+                <div class="autosave-control-card mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="autoSaveAfterScan" checked>
+                        <label class="form-check-label fw-bold" for="autoSaveAfterScan">
+                            Auto-save after successful scan
+                        </label>
+                    </div>
+                    <div class="small-help mt-1">
+                        Batch mode: scan → stage in background → scan next slab. Turn this off if you want to review before saving.
+                    </div>
+                </div>
+
                 {% with messages = get_flashed_messages() %}
                     {% if messages %}
                         {% for message in messages %}
@@ -256,6 +282,13 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
+
+                {% if staged_success %}
+                    <div class="success-card mb-3" id="stagedSuccessBanner">
+                        <div class="fw-bold">PSA cert {{ scanned_cert }} was staged for review.</div>
+                        <div class="small-help">Scan another slab, or open the review queue from your desktop.</div>
+                    </div>
+                {% endif %}
 
                 {% if not token_configured %}
                     <div class="warning-card mb-3">
@@ -279,24 +312,14 @@
                         <span class="small-help" id="zoomValue">1x</span>
                     </div>
                     <button class="btn btn-outline-warning" type="button" id="torchButton" style="display:none;">Toggle Light</button>
-                    <div class="small-help">Tip: PSA slab barcodes usually scan best around 4.2x zoom. Hold the phone steady, keep the slab flat, and use bright light.</div>
+                    <div class="small-help">Tip: PSA slab barcodes usually scan best around 4.8x zoom. Hold the phone steady, keep the slab flat, and use bright light.</div>
                 </div>
 
                 <div class="scan-tip-card mt-3 mb-3 small">
-                    For tiny PSA barcodes, CardDesk now starts the camera near 4.2x zoom when supported. Use bright light, keep the slab flat, and hold steady while the phone focuses.
+                    For tiny PSA barcodes, CardDesk now starts the camera near 4.8x zoom when supported. Use bright light, keep the slab flat, and hold steady while the phone focuses.
                 </div>
 
                 <form method="POST" action="{{ url_for('psa_mobile_scan') }}" class="mt-4" id="psaMobileForm">
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="autoSaveAfterScan" checked>
-                        <label class="form-check-label fw-bold" for="autoSaveAfterScan">
-                            Auto-save after successful scan
-                        </label>
-                        <div class="small-help">
-                            Batch mode: scan → stage → scan next slab. Turn this off if you want to review before saving.
-                        </div>
-                    </div>
-
                     <label class="form-label fw-bold">PSA Cert Number</label>
                     <input class="form-control form-control-lg mb-3" id="mobileCertNumber" type="text" name="cert_number" value="{{ '' if staged_success else scanned_cert }}" placeholder="Scan or enter cert #" inputmode="numeric" autocomplete="off" required>
 
@@ -359,6 +382,30 @@
         let scannerRunning = false;
         let activeTrack = null;
         let torchOn = false;
+        let autoSaveInProgress = false;
+        let lastSavedCert = "";
+        let lastSavedAt = 0;
+
+        function restoreAutoSavePreference() {
+            if (!autoSaveAfterScan) {
+                return;
+            }
+
+            const savedValue = localStorage.getItem("carddeskPsaAutoSaveAfterScan");
+
+            if (savedValue === "off") {
+                autoSaveAfterScan.checked = false;
+            } else {
+                autoSaveAfterScan.checked = true;
+            }
+
+            autoSaveAfterScan.addEventListener("change", function () {
+                localStorage.setItem(
+                    "carddeskPsaAutoSaveAfterScan",
+                    autoSaveAfterScan.checked ? "on" : "off"
+                );
+            });
+        }
 
         function cleanCertValue(rawValue) {
             const value = String(rawValue || "").trim();
@@ -369,17 +416,6 @@
             }
 
             return value.replace(/[^A-Za-z0-9]/g, "");
-        }
-
-        function isLikelyCompletePsaCert(certNumber) {
-            const value = String(certNumber || "").trim();
-
-            // PSA cert numbers are numeric. Reject likely partial reads before staging.
-            if (!/^\d+$/.test(value)) {
-                return false;
-            }
-
-            return value.length >= 7 && value.length <= 9;
         }
 
         function setStatus(message, cssClass) {
@@ -422,17 +458,18 @@
             }
         }
 
-        function focusScannerAfterStagedSave() {
-            const reader = document.getElementById("psa-mobile-reader");
+        function focusStagedSuccessBanner() {
+            const successBanner = document.getElementById("stagedSuccessBanner");
 
-            if (!reader) {
+            if (!successBanner) {
                 return;
             }
 
             setStatus("✅ PSA cert staged for review. Ready for the next scan.", "text-success");
+            successBanner.classList.add("post-submit-focus");
 
             setTimeout(function () {
-                reader.scrollIntoView({ behavior: "smooth", block: "center" });
+                successBanner.scrollIntoView({ behavior: "smooth", block: "center" });
             }, 250);
 
             if (navigator.vibrate) {
@@ -440,7 +477,7 @@
             }
 
             // Browsers may block autoplay audio on page load. This works where allowed;
-            // the visual status still confirms success everywhere.
+            // the visual scroll/highlight still confirms success everywhere.
             setTimeout(playConfirmationChime, 350);
         }
 
@@ -517,12 +554,10 @@
                     scanSuccessOverlay.classList.remove("active");
                     scanSuccessOverlay.setAttribute("aria-hidden", "true");
 
-                    // In manual mode, guide the user to the save button.
-                    // In auto-save mode, the form submits automatically after a short confirmation pause.
                     if (!autoSaveAfterScan || !autoSaveAfterScan.checked) {
                         setTimeout(guideUserToStageButton, 150);
                     }
-                }, 1200);
+                }, 900);
             }
         }
 
@@ -536,21 +571,71 @@
                 return false;
             }
 
-            setStatus("✅ Cert captured. Auto-saving for review...", "text-success");
+            const now = Date.now();
 
-            setTimeout(function () {
+            if (autoSaveInProgress) {
+                return true;
+            }
+
+            if (certNumber === lastSavedCert && (now - lastSavedAt) < 4500) {
+                setStatus("Duplicate scan ignored: " + certNumber, "text-warning");
+                return true;
+            }
+
+            autoSaveInProgress = true;
+            lastSavedCert = certNumber;
+            lastSavedAt = now;
+
+            setStatus("✅ Cert captured. Staging in background...", "text-success");
+
+            setTimeout(async function () {
                 if (stageReviewButton && stageReviewButton.disabled) {
+                    autoSaveInProgress = false;
                     setStatus("Auto-save is unavailable because the PSA API token is not configured.", "text-warning");
                     return;
                 }
 
-                psaMobileForm.submit();
-            }, 900);
+                try {
+                    const formData = new FormData(psaMobileForm);
+                    formData.set("cert_number", certNumber);
+
+                    const response = await fetch(psaMobileForm.action, {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "X-Requested-With": "fetch"
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Save failed");
+                    }
+
+                    certInput.value = "";
+                    setStatus("✅ PSA cert " + certNumber + " staged. Ready for next scan.", "text-success");
+
+                    if (navigator.vibrate) {
+                        navigator.vibrate([80, 50, 80]);
+                    }
+
+                    setTimeout(function () {
+                        autoSaveInProgress = false;
+                    }, 900);
+                } catch (error) {
+                    autoSaveInProgress = false;
+                    setStatus("Auto-save failed. Tap Stage PSA Cert for Review or try again.", "text-warning");
+                    guideUserToStageButton();
+                }
+            }, 650);
 
             return true;
         }
 
         async function handleSuccessfulCertScan(certNumber) {
+            if (autoSaveInProgress) {
+                return;
+            }
+
             certInput.value = certNumber;
             showScanSuccessFeedback(certNumber);
 
@@ -558,10 +643,11 @@
 
             if (autoSaving) {
                 setStatus("✅ PSA cert " + certNumber + " scanned. Auto-saving...", "text-success");
-            } else {
-                setStatus("✅ PSA cert " + certNumber + " scanned. Tap Stage PSA Cert for Review.", "text-success");
+                certInput.focus();
+                return;
             }
 
+            setStatus("✅ PSA cert " + certNumber + " scanned. Tap Stage PSA Cert for Review.", "text-success");
             await stopScanner();
             certInput.focus();
         }
@@ -700,8 +786,7 @@
                             return;
                         }
 
-                        if (!isLikelyCompletePsaCert(certNumber)) {
-                            setStatus("Possible partial PSA cert scan: " + certNumber + ". Please rescan or type the full cert.", "text-warning");
+                        if (autoSaveInProgress) {
                             return;
                         }
 
@@ -735,11 +820,6 @@
                         async function(decodedText) {
                             const certNumber = cleanCertValue(decodedText);
                             if (certNumber) {
-                                if (!isLikelyCompletePsaCert(certNumber)) {
-                                    setStatus("Possible partial PSA cert scan: " + certNumber + ". Please rescan or type the full cert.", "text-warning");
-                                    return;
-                                }
-
                                 await handleSuccessfulCertScan(certNumber);
                             }
                         },
@@ -783,9 +863,7 @@
             }
         });
 
-        {% if staged_success %}
-        focusScannerAfterStagedSave();
-        {% endif %}
+        focusStagedSuccessBanner();
 
         startButton.addEventListener("click", startScanner);
         stopButton.addEventListener("click", stopScanner);
