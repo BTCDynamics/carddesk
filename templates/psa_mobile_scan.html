@@ -287,6 +287,16 @@
                 </div>
 
                 <form method="POST" action="{{ url_for('psa_mobile_scan') }}" class="mt-4" id="psaMobileForm">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="autoSaveAfterScan" checked>
+                        <label class="form-check-label fw-bold" for="autoSaveAfterScan">
+                            Auto-save after successful scan
+                        </label>
+                        <div class="small-help">
+                            Batch mode: scan → stage → scan next slab. Turn this off if you want to review before saving.
+                        </div>
+                    </div>
+
                     <label class="form-label fw-bold">PSA Cert Number</label>
                     <input class="form-control form-control-lg mb-3" id="mobileCertNumber" type="text" name="cert_number" value="{{ '' if staged_success else scanned_cert }}" placeholder="Scan or enter cert #" inputmode="numeric" autocomplete="off" required>
 
@@ -342,6 +352,8 @@
         const scanSuccessOverlay = document.getElementById("scanSuccessOverlay");
         const scanSuccessCert = document.getElementById("scanSuccessCert");
         const stageReviewButton = document.getElementById("stageReviewButton");
+        const psaMobileForm = document.getElementById("psaMobileForm");
+        const autoSaveAfterScan = document.getElementById("autoSaveAfterScan");
 
         let scanner = null;
         let scannerRunning = false;
@@ -505,16 +517,51 @@
                     scanSuccessOverlay.classList.remove("active");
                     scanSuccessOverlay.setAttribute("aria-hidden", "true");
 
-                    // Once the green scan confirmation clears, guide the user to the next action.
-                    setTimeout(guideUserToStageButton, 150);
-                }, 3000);
+                    // In manual mode, guide the user to the save button.
+                    // In auto-save mode, the form submits automatically after a short confirmation pause.
+                    if (!autoSaveAfterScan || !autoSaveAfterScan.checked) {
+                        setTimeout(guideUserToStageButton, 150);
+                    }
+                }, 1200);
             }
+        }
+
+        function autoSubmitScannedCertIfEnabled(certNumber) {
+            if (!autoSaveAfterScan || !autoSaveAfterScan.checked || !psaMobileForm) {
+                return false;
+            }
+
+            if (!isLikelyCompletePsaCert(certNumber)) {
+                setStatus("Auto-save blocked: possible partial PSA cert scan.", "text-warning");
+                return false;
+            }
+
+            setStatus("✅ Cert captured. Auto-saving for review...", "text-success");
+
+            setTimeout(function () {
+                if (stageReviewButton && stageReviewButton.disabled) {
+                    setStatus("Auto-save is unavailable because the PSA API token is not configured.", "text-warning");
+                    return;
+                }
+
+                psaMobileForm.submit();
+            }, 900);
+
+            return true;
         }
 
         async function handleSuccessfulCertScan(certNumber) {
             certInput.value = certNumber;
             showScanSuccessFeedback(certNumber);
-            setStatus("✅ PSA cert " + certNumber + " scanned. Tap Stage PSA Cert for Review.", "text-success");
+
+            const autoSaving = autoSubmitScannedCertIfEnabled(certNumber);
+
+            if (autoSaving) {
+                setStatus("✅ PSA cert " + certNumber + " scanned. Auto-saving...", "text-success");
+            } else {
+                setStatus("✅ PSA cert " + certNumber + " scanned. Tap Stage PSA Cert for Review.", "text-success");
+            }
+
             await stopScanner();
             certInput.focus();
         }
