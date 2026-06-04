@@ -34,9 +34,15 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("CARDWATCH_SECRET_KEY", "cardwatch-dev-secret")
 
 DATA_DIR = os.environ.get("CARDWATCH_DATA_DIR", "/var/data")
+os.makedirs(DATA_DIR, exist_ok=True)
+
+DB_NAME = os.environ.get("CARDWATCH_DB_NAME", "carddesk.db")
+
 PERSISTENT_UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
 
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(DATA_DIR, 'cardwatch.db')}"
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    f"sqlite:///{os.path.join(DATA_DIR, DB_NAME)}"
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = PERSISTENT_UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB upload limit
