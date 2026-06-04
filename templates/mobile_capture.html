@@ -8,7 +8,7 @@
         <div class="capture-save-success-check">✓</div>
         <div class="capture-save-success-title">Card Saved</div>
         <div class="capture-save-success-detail" id="saveSuccessDetail">Added to AI Review Queue</div>
-        <div class="capture-save-success-hint">Ready to capture the next card</div>
+        <div class="capture-save-success-hint">Ready for the next card</div>
     </div>
 </div>
 
@@ -80,7 +80,7 @@
     border: 1px solid rgba(255,255,255,.35);
     box-shadow: 0 1rem 2.2rem rgba(0,0,0,.35);
     font-size: 1rem;
-    font-weight: 900;
+    font-weight: 750;
     opacity: 0;
     pointer-events: none;
     transition: opacity .18s ease, transform .18s ease;
@@ -124,7 +124,7 @@
     padding: .28rem .65rem;
     border-radius: 999px;
     font-size: .78rem;
-    font-weight: 800;
+    font-weight: 700;
     white-space: nowrap;
 }
 
@@ -174,7 +174,7 @@
 
 
 .capture-autosave-top-panel {
-    padding: 1rem;
+    padding: .9rem 1rem;
     border-radius: 1.1rem;
     background: linear-gradient(145deg, rgba(14, 165, 233, .18), rgba(15, 23, 42, .86));
     border: 1px solid rgba(125, 211, 252, .38);
@@ -189,8 +189,8 @@
 
 .capture-autosave-title {
     color: #f8fafc;
-    font-size: 1.05rem;
-    font-weight: 1000;
+    font-size: 1rem;
+    font-weight: 700;
 }
 
 .capture-autosave-help {
@@ -204,8 +204,8 @@
     align-items: center;
     gap: .65rem;
     color: #f8fafc;
-    font-weight: 1000;
-    font-size: 1.05rem;
+    font-weight: 700;
+    font-size: 1rem;
 }
 
 .capture-autosave-switch .form-check-input {
@@ -244,21 +244,21 @@
 .capture-save-success-check {
     display: grid;
     place-items: center;
-    width: 74px;
-    height: 74px;
+    width: 66px;
+    height: 66px;
     margin: 0 auto .85rem;
     border-radius: 999px;
     color: #166534;
     background: #dcfce7;
-    font-size: 2.5rem;
-    font-weight: 1000;
+    font-size: 2.25rem;
+    font-weight: 700;
     line-height: 1;
 }
 
 .capture-save-success-title {
-    font-size: 1.35rem;
-    font-weight: 1000;
-    letter-spacing: .04em;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: .035em;
     text-transform: uppercase;
 }
 
@@ -274,6 +274,15 @@
     color: #bbf7d0;
     font-size: .9rem;
     font-weight: 750;
+}
+
+.capture-save-success-box {
+    animation: capture-save-pop .22s ease-out;
+}
+
+@keyframes capture-save-pop {
+    from { transform: scale(.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
 .save-review-attention {
@@ -319,9 +328,9 @@
     <div class="capture-autosave-top-panel mb-4" id="captureModeCard">
         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div>
-                <div class="capture-autosave-title">Production Capture Mode</div>
+                <div class="capture-autosave-title">Capture Mode</div>
                 <div class="capture-autosave-help" id="autoSaveHelp">
-                    Auto Save is OFF. Capture a card, review the preview, then tap Save to Review Queue.
+                    Auto Save is OFF. Capture, preview, then save to the Review Queue.
                 </div>
             </div>
             <div class="form-check form-switch capture-autosave-switch mb-0">
@@ -369,9 +378,9 @@
 
         <div class="col-lg-4">
             <div class="capture-tip-card mb-4">
-                <div class="cw-section-label mb-3">Capture Preview</div>
+                <div class="cw-section-label mb-3">Last Capture</div>
                 <div id="previewEmpty" class="text-muted small">
-                    No card captured yet.
+                    No capture yet.
                 </div>
                 <img id="capturePreview" class="capture-preview-img" alt="Captured card preview" style="display:none;">
             </div>
@@ -432,11 +441,11 @@ function updateAutoSaveUi() {
 
     if (isAutoSaveEnabled()) {
         captureModeCard.classList.add("auto-save-on");
-        autoSaveHelp.textContent = "Auto Save is ON. Each capture saves directly to the AI Review Queue.";
+        autoSaveHelp.textContent = "Auto Save is ON. Each capture saves directly to the Review Queue.";
         saveBtn.disabled = true;
     } else {
         captureModeCard.classList.remove("auto-save-on");
-        autoSaveHelp.textContent = "Auto Save is OFF. Capture a card, review the preview, then tap Save to Review Queue.";
+        autoSaveHelp.textContent = "Auto Save is OFF. Capture, preview, then save to the Review Queue.";
         saveBtn.disabled = !lastCapturedBlob;
     }
 }
@@ -459,7 +468,7 @@ function showSaveSuccessFeedback(aiStatus) {
         setTimeout(function () {
             saveSuccessOverlay.classList.remove("active");
             saveSuccessOverlay.setAttribute("aria-hidden", "true");
-        }, 1600);
+        }, 2200);
     }
 }
 
