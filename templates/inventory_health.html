@@ -197,7 +197,7 @@
 
 .health-workqueue-title {
     color: #f8fafc;
-    font-weight: 900;
+    font-weight: 700;
     font-size: 1.08rem;
 }
 
@@ -215,7 +215,7 @@
     background: rgba(2, 6, 23, .42) !important;
     border-color: rgba(96, 165, 250, .18) !important;
     font-size: .72rem;
-    font-weight: 900;
+    font-weight: 650;
     letter-spacing: .06em;
     text-transform: uppercase;
 }
@@ -236,7 +236,7 @@
 
 .health-card-title-link {
     color: #f8fafc !important;
-    font-weight: 900;
+    font-weight: 650;
     text-decoration: none;
 }
 
@@ -256,7 +256,7 @@
 }
 
 .health-issue-badges .badge {
-    font-weight: 850;
+    font-weight: 650;
 }
 
 .health-thumb {
@@ -270,7 +270,7 @@
 }
 
 .health-value {
-    font-weight: 800;
+    font-weight: 600;
     color: #e5edf7;
 }
 
@@ -287,7 +287,7 @@
     background: rgba(59, 130, 246, .14);
     border: 1px solid rgba(96, 165, 250, .28);
     font-size: .78rem;
-    font-weight: 850;
+    font-weight: 650;
 }
 
 .health-actions {
@@ -298,6 +298,11 @@
     padding: 3rem 1rem;
     text-align: center;
     color: #94a3b8;
+}
+
+.health-empty-title {
+    color: #e5edf7;
+    font-weight: 600;
 }
 
 .health-empty-icon {
@@ -493,7 +498,7 @@
             {% else %}
                 <div class="health-empty-state">
                     <div class="health-empty-icon">✓</div>
-                    <div class="fw-bold text-light">No inventory health issues in this view.</div>
+                    <div class="health-empty-title">No inventory health issues in this view.</div>
                     <div class="small mt-1">This filter is clean.</div>
                 </div>
             {% endif %}
