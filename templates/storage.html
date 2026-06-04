@@ -22,7 +22,7 @@
 
 .storage-hero-title {
     color: #f8fafc;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: -.02em;
 }
 
@@ -84,9 +84,9 @@
 }
 
 .storage-stat-count {
-    font-size: 2rem;
+    font-size: 1.95rem;
     line-height: 1;
-    font-weight: 950;
+    font-weight: 750;
     letter-spacing: -.04em;
 }
 
@@ -94,7 +94,7 @@
     margin-top: .55rem;
     color: #e5edf7;
     font-size: .8rem;
-    font-weight: 900;
+    font-weight: 650;
     text-transform: uppercase;
     letter-spacing: .06em;
 }
@@ -126,7 +126,7 @@
 
 .storage-location-title {
     color: #f8fafc;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .storage-location-subtitle {
@@ -167,7 +167,7 @@
     align-items: center;
     gap: .55rem;
     color: #f8fafc;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1.15;
     overflow-wrap: anywhere;
 }
@@ -202,7 +202,7 @@
 .storage-location-metric-label {
     color: #94a3b8;
     font-size: .68rem;
-    font-weight: 900;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .06em;
 }
@@ -210,8 +210,8 @@
 .storage-location-metric-value {
     margin-top: .2rem;
     color: #f8fafc;
-    font-size: 1.05rem;
-    font-weight: 900;
+    font-size: 1.02rem;
+    font-weight: 650;
 }
 
 .storage-ready-pill {
@@ -225,7 +225,7 @@
     background: rgba(22, 163, 74, .16);
     border: 1px solid rgba(74, 222, 128, .30);
     font-size: .78rem;
-    font-weight: 900;
+    font-weight: 650;
 }
 
 .storage-table {
@@ -245,7 +245,7 @@
 
 .storage-table tbody td:not(:first-child) {
     color: #dbeafe !important;
-    font-weight: 750;
+    font-weight: 600;
 }
 
 .storage-table tbody td:first-child,
@@ -294,7 +294,7 @@
     background: rgba(2, 6, 23, .55) !important;
     border: 1px solid rgba(96, 165, 250, .30) !important;
     border-radius: .9rem;
-    font-weight: 750;
+    font-weight: 600;
 }
 
 .storage-search-input:focus {
@@ -332,7 +332,7 @@
     color: #cbd5e1;
     background: transparent;
     font-size: .82rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .storage-view-toggle button.active {
@@ -345,7 +345,7 @@
     margin-top: .65rem;
     color: #94a3b8;
     font-size: .8rem;
-    font-weight: 750;
+    font-weight: 600;
 }
 
 .storage-no-results {
@@ -430,7 +430,7 @@
     background: rgba(59, 130, 246, .14);
     border: 1px solid rgba(96, 165, 250, .28);
     font-size: .76rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .storage-detail-disclosure[open] .storage-detail-summary .storage-location-header::after {
@@ -454,6 +454,41 @@
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Storage Explorer typography refinement: calmer weights to match Inventory Health */
+.storage-hero-title,
+.storage-location-title {
+    font-weight: 700 !important;
+}
+
+.storage-stat-count {
+    font-weight: 750 !important;
+    letter-spacing: -.025em;
+}
+
+.storage-stat-label,
+.storage-location-metric-label,
+.storage-ready-pill,
+.storage-view-toggle button,
+.storage-detail-summary .storage-location-header::after {
+    font-weight: 650 !important;
+}
+
+.storage-location-name {
+    font-weight: 700 !important;
+}
+
+.storage-location-metric-value,
+.storage-table tbody td:not(:first-child) {
+    font-weight: 600 !important;
+}
+
+.storage-search-input,
+.storage-results-note {
+    font-weight: 500 !important;
+}
+
 </style>
 
 <div class="storage-shell">
