@@ -411,9 +411,9 @@
     <div class="scan-success-overlay" id="scanSuccessOverlay" aria-live="polite" aria-hidden="true">
         <div class="scan-success-box">
             <div class="scan-success-check">✓</div>
-            <div class="scan-success-title">Card Staged</div>
+            <div class="scan-success-title" id="scanSuccessTitle">Cert Captured</div>
             <div class="scan-success-cert" id="scanSuccessCert">Cert found</div>
-            <div class="scan-success-hint">Ready for AI Review</div>
+            <div class="scan-success-hint" id="scanSuccessHint">Ready to stage for review</div>
         </div>
     </div>
 
@@ -459,13 +459,13 @@
 
                 <div class="success-card live-save-success mb-3" id="liveSaveSuccessBanner" aria-live="polite">
                     <div class="live-save-success-title" id="liveSaveSuccessTitle">PSA cert was staged for review.</div>
-                    <div class="small-help">Successful capture and save. Ready for the next scan.</div>
+                    <div class="small-help">Saved successfully. Ready for the next scan.</div>
                 </div>
 
                 {% if staged_success %}
                     <div class="success-card mb-3" id="stagedSuccessBanner">
                         <div style="font-weight:650;">PSA cert {{ scanned_cert }} was staged for review.</div>
-                        <div class="small-help">Scan another slab, or open the review queue from your desktop.</div>
+                        <div class="small-help">Saved successfully. Scan another slab, or open the review queue from your desktop.</div>
                     </div>
                 {% endif %}
 
@@ -556,7 +556,9 @@
         const zoomValue = document.getElementById("zoomValue");
         const torchButton = document.getElementById("torchButton");
         const scanSuccessOverlay = document.getElementById("scanSuccessOverlay");
+        const scanSuccessTitle = document.getElementById("scanSuccessTitle");
         const scanSuccessCert = document.getElementById("scanSuccessCert");
+        const scanSuccessHint = document.getElementById("scanSuccessHint");
         const stageReviewButton = document.getElementById("stageReviewButton");
         const psaMobileForm = document.getElementById("psaMobileForm");
         const autoSaveAfterScan = document.getElementById("autoSaveAfterScan");
@@ -774,6 +776,18 @@
             }, 3000);
 
             if (scanSuccessOverlay && scanSuccessCert) {
+                const autoSaveOn = !!(autoSaveAfterScan && autoSaveAfterScan.checked);
+
+                if (scanSuccessTitle) {
+                    scanSuccessTitle.textContent = "Cert Captured";
+                }
+
+                if (scanSuccessHint) {
+                    scanSuccessHint.textContent = autoSaveOn
+                        ? "Auto-save is starting..."
+                        : "Tap Stage PSA Cert for Review to save";
+                }
+
                 scanSuccessCert.textContent = "Cert #" + certNumber;
                 scanSuccessOverlay.classList.add("active");
                 scanSuccessOverlay.setAttribute("aria-hidden", "false");
@@ -782,7 +796,7 @@
                     scanSuccessOverlay.classList.remove("active");
                     scanSuccessOverlay.setAttribute("aria-hidden", "true");
 
-                    if (!autoSaveAfterScan || !autoSaveAfterScan.checked) {
+                    if (!autoSaveOn) {
                         setTimeout(guideUserToStageButton, 150);
                     }
                 }, 2200);
