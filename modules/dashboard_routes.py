@@ -298,6 +298,15 @@ def register_dashboard_routes(app):
 
         comp_value_bought_in_range = value_bought_in_range
 
+        recent_acquisitions = sorted(
+            bought_range_cards,
+            key=lambda card: (
+                parse_card_date(getattr(card, "acquisition_date", None)) or date.min,
+                card.id or 0
+            ),
+            reverse=True
+        )[:12]
+
         # Keep the original template variable names, but make them follow the selected dashboard sales range.
         today_sold_price = selected_range_sold_price
         today_sold_cost = selected_range_sold_cost
@@ -402,6 +411,7 @@ def register_dashboard_routes(app):
             purchase_summary_label=purchase_summary_label,
             purchase_summary_start_date=purchase_summary_start_date,
             recent_sales=recent_sales,
+            recent_acquisitions=recent_acquisitions,
             recent_sales_start_date=recent_sales_start_date,
             recent_sales_range=recent_sales_range,
             recent_sales_label=recent_sales_label,
