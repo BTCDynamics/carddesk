@@ -286,11 +286,11 @@
                         <span class="small-help" id="zoomValue">1x</span>
                     </div>
                     <button class="btn btn-outline-warning" type="button" id="torchButton" style="display:none;">Toggle Light</button>
-                    <div class="small-help">Tip: hold the phone 4–8 inches from the slab, tap the barcode area to focus, then use zoom only after focus locks.</div>
+                    <div class="small-help">Tip: PSA slab barcodes usually scan best around 4x zoom. Hold the phone steady, keep the slab flat, and use bright light.</div>
                 </div>
 
                 <div class="scan-tip-card mt-3 mb-3 small">
-                    For tiny PSA barcodes, light and focus matter more than getting extremely close. Use bright light, keep the slab flat, and let the phone focus before zooming.
+                    For tiny PSA barcodes, CardDesk now starts the camera near 4x zoom when supported. Use bright light, keep the slab flat, and hold steady while the phone focuses.
                 </div>
 
                 <form method="POST" action="{{ url_for('psa_mobile_scan') }}" class="mt-4" id="psaMobileForm">
@@ -571,7 +571,11 @@
                 zoomSlider.max = capabilities.zoom.max || 1;
                 zoomSlider.step = capabilities.zoom.step || 0.1;
 
-                const startingZoom = Math.min(Math.max(2, zoomSlider.min), zoomSlider.max);
+                const preferredZoom = 4;
+                const startingZoom = Math.min(
+                    Math.max(preferredZoom, Number(zoomSlider.min)),
+                    Number(zoomSlider.max)
+                );
                 zoomSlider.value = startingZoom;
                 zoomValue.textContent = Number(startingZoom).toFixed(1) + "x";
                 zoomRow.classList.add("active");
