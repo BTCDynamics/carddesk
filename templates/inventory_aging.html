@@ -1,0 +1,669 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Aging | CardDesk{% endblock %}
+
+{% block content %}
+<style>
+.inventory-aging-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+}
+
+.aging-hero-card {
+    overflow: hidden;
+    border: 1px solid rgba(96, 165, 250, .24) !important;
+    border-radius: 1.25rem;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .16), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, .10), transparent 40%),
+        linear-gradient(145deg, #07111f, #101b2b) !important;
+    color: #f8fafc;
+    box-shadow: 0 20px 46px rgba(2, 6, 23, .38) !important;
+}
+
+.aging-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.25rem;
+    align-items: center;
+}
+
+.aging-hero-eyebrow {
+    color: #67e8f9;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.aging-hero-title {
+    margin-top: .2rem;
+    color: #ffffff;
+    font-size: 1.45rem;
+    font-weight: 750;
+    line-height: 1.1;
+}
+
+.aging-hero-subtitle {
+    max-width: 760px;
+    margin-top: .45rem;
+    color: #b8c7dc;
+    font-size: .92rem;
+}
+
+.aging-score-panel {
+    min-width: 230px;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: rgba(2, 6, 23, .46);
+    border: 1px solid rgba(147, 197, 253, .22);
+    text-align: center;
+}
+
+.aging-score-word {
+    color: #ffffff;
+    font-size: 1.75rem;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.aging-score-number {
+    margin-top: .35rem;
+    color: #67e8f9;
+    font-size: 1.15rem;
+    line-height: 1;
+    font-weight: 700;
+}
+
+.aging-score-label {
+    margin-top: .5rem;
+    color: #cbd5e1;
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.aging-score-meter {
+    height: .55rem;
+    margin-top: .8rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(148, 163, 184, .20);
+}
+
+.aging-score-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #22c55e, #22d3ee);
+}
+
+.aging-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+    gap: 1rem;
+}
+
+.aging-tile {
+    position: relative;
+    display: block;
+    min-height: 150px;
+    overflow: hidden;
+    text-decoration: none;
+    border-radius: 1.1rem;
+    padding: 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(96, 165, 250, .10), transparent 42%),
+        linear-gradient(145deg, #0b1220, #101a2c);
+    border: 1px solid rgba(96, 165, 250, .22);
+    color: #f8fafc;
+    box-shadow: 0 14px 30px rgba(2, 6, 23, .24);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.aging-tile::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: .35rem;
+    background: linear-gradient(180deg, #22d3ee, #3b82f6);
+    opacity: .85;
+}
+
+.aging-tile:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+    border-color: rgba(125, 211, 252, .60);
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .36);
+}
+
+.aging-tile.active {
+    border-color: rgba(14, 165, 233, .85);
+    box-shadow: 0 0 0 .16rem rgba(14, 165, 233, .16), 0 18px 42px rgba(2, 6, 23, .36);
+}
+
+.aging-accent-blue::before { background: linear-gradient(180deg, #38bdf8, #2563eb); }
+.aging-accent-green::before { background: linear-gradient(180deg, #4ade80, #16a34a); }
+.aging-accent-gold::before { background: linear-gradient(180deg, #facc15, #f59e0b); }
+.aging-accent-red::before { background: linear-gradient(180deg, #f87171, #ef4444); }
+
+.aging-count {
+    color: #ffffff;
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.aging-label {
+    color: #dbeafe;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .055em;
+    text-transform: uppercase;
+    margin-top: .6rem;
+}
+
+.aging-range {
+    color: #93c5fd;
+    font-size: .82rem;
+    margin-top: .15rem;
+    font-weight: 650;
+}
+
+.aging-description {
+    color: #94a3b8;
+    font-size: .82rem;
+    line-height: 1.35;
+    margin-top: .35rem;
+}
+
+.aging-tile-money {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+    margin-top: .8rem;
+}
+
+.aging-mini-metric {
+    padding: .48rem;
+    border-radius: .7rem;
+    background: rgba(2, 6, 23, .36);
+    border: 1px solid rgba(148, 163, 184, .14);
+}
+
+.aging-mini-label {
+    color: #94a3b8;
+    font-size: .64rem;
+    text-transform: uppercase;
+    letter-spacing: .055em;
+    font-weight: 650;
+}
+
+.aging-mini-value {
+    margin-top: .12rem;
+    color: #f8fafc;
+    font-size: .88rem;
+    font-weight: 700;
+}
+
+.aging-insight-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: .85rem;
+    margin-bottom: 1rem;
+}
+
+.aging-insight-card {
+    border-radius: 1rem;
+    padding: .9rem;
+    background: rgba(2, 6, 23, .42);
+    border: 1px solid rgba(96, 165, 250, .18);
+    color: #e5edf7;
+}
+
+.aging-insight-card.warning {
+    background:
+        radial-gradient(circle at top right, rgba(245, 158, 11, .12), transparent 44%),
+        rgba(2, 6, 23, .42);
+    border-color: rgba(251, 191, 36, .36);
+}
+
+.aging-insight-card.danger {
+    background:
+        radial-gradient(circle at top right, rgba(239, 68, 68, .12), transparent 44%),
+        rgba(2, 6, 23, .42);
+    border-color: rgba(248, 113, 113, .32);
+}
+
+.aging-insight-label {
+    color: #94a3b8;
+    font-size: .7rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.aging-insight-value {
+    margin-top: .25rem;
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 750;
+}
+
+.aging-insight-sub {
+    margin-top: .25rem;
+    color: #94a3b8;
+    font-size: .8rem;
+}
+
+.aging-distribution {
+    margin-bottom: 1rem;
+    border-radius: 1.1rem;
+    padding: 1rem;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .08), transparent 36%),
+        linear-gradient(145deg, #07111f, #101b2b);
+    border: 1px solid rgba(96, 165, 250, .20);
+}
+
+.aging-distribution-title {
+    color: #f8fafc;
+    font-size: .92rem;
+    font-weight: 700;
+    margin-bottom: .75rem;
+}
+
+.aging-dist-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 54px;
+    gap: .75rem;
+    align-items: center;
+    margin-bottom: .5rem;
+}
+
+.aging-dist-label {
+    color: #cbd5e1;
+    font-size: .8rem;
+    font-weight: 650;
+}
+
+.aging-dist-track {
+    height: .55rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, .16);
+}
+
+.aging-dist-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #22d3ee, #60a5fa);
+}
+
+.aging-dist-fill.green { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.aging-dist-fill.gold { background: linear-gradient(90deg, #f59e0b, #facc15); }
+.aging-dist-fill.red { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+.aging-dist-percent {
+    color: #94a3b8;
+    font-size: .78rem;
+    text-align: right;
+}
+
+.aging-workqueue-card {
+    border: 1px solid rgba(96, 165, 250, .22) !important;
+    border-radius: 1.2rem;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .08), transparent 36%),
+        linear-gradient(145deg, #07111f, #101b2b) !important;
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .34) !important;
+}
+
+.aging-workqueue-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: .85rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(96, 165, 250, .20);
+}
+
+.aging-workqueue-title {
+    color: #f8fafc;
+    font-weight: 600;
+    font-size: 1.08rem;
+}
+
+.aging-workqueue-subtitle {
+    color: #94a3b8;
+    font-size: .86rem;
+}
+
+.aging-table {
+    color: #e5edf7 !important;
+}
+
+.aging-table thead th {
+    color: #9fb7d4 !important;
+    background: rgba(2, 6, 23, .42) !important;
+    border-color: rgba(96, 165, 250, .18) !important;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.aging-table tbody tr > * {
+    color: #e5edf7 !important;
+    background: rgba(15, 23, 42, .58) !important;
+    border-color: rgba(96, 165, 250, .12) !important;
+}
+
+.aging-table tbody tr:nth-child(even) > * {
+    background: rgba(8, 18, 33, .70) !important;
+}
+
+.aging-table tbody tr:hover > * {
+    background: rgba(14, 165, 233, .12) !important;
+}
+
+.aging-card-title-link {
+    color: #f8fafc !important;
+    font-weight: 500;
+    font-size: .95rem;
+    text-decoration: none;
+}
+
+.aging-card-title-link:hover {
+    color: #bfdbfe !important;
+}
+
+.aging-card-meta {
+    color: #94a3b8;
+    font-size: .82rem;
+}
+
+.aging-badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+}
+
+.aging-thumb {
+    width: 46px;
+    height: 62px;
+    object-fit: cover;
+    border-radius: .55rem;
+    border: 1px solid rgba(147, 197, 253, .28);
+    background: #020617;
+    box-shadow: 0 .35rem .85rem rgba(2, 6, 23, .30);
+}
+
+.aging-value {
+    font-weight: 450;
+    color: #dbe7f5;
+}
+
+.aging-muted {
+    color: #94a3b8;
+}
+
+.aging-days-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: .32rem .55rem;
+    border-radius: 999px;
+    color: #dbeafe;
+    background: rgba(59, 130, 246, .14);
+    border: 1px solid rgba(96, 165, 250, .28);
+    font-size: .78rem;
+    font-weight: 500;
+}
+
+.aging-days-pill.stale {
+    color: #fecaca;
+    background: rgba(239, 68, 68, .14);
+    border-color: rgba(248, 113, 113, .28);
+}
+
+.aging-days-pill.old {
+    color: #fde68a;
+    background: rgba(245, 158, 11, .16);
+    border-color: rgba(251, 191, 36, .28);
+}
+
+.aging-empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+}
+
+@media (max-width: 991.98px) {
+    .aging-hero-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .aging-score-panel {
+        min-width: 0;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .aging-tile-money,
+    .aging-dist-row {
+        grid-template-columns: 1fr;
+    }
+
+    .aging-dist-percent {
+        text-align: left;
+    }
+}
+</style>
+
+<div class="inventory-aging-shell">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+        <div>
+            <h1 class="h2 mb-1">Inventory Aging</h1>
+            <p class="text-muted mb-0">See which cards are fresh, aging, old, or stale using acquisition date, purchase date, or created date fallback.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-light" href="{{ url_for('cards') }}">Back to Cards</a>
+            <a class="btn btn-primary" href="{{ url_for('inventory_health') }}">Inventory Health</a>
+        </div>
+    </div>
+
+    <div class="card page-card aging-hero-card mb-4">
+        <div class="card-body p-4">
+            <div class="aging-hero-grid">
+                <div>
+                    <div class="aging-hero-eyebrow">Dealer Intelligence</div>
+                    <div class="aging-hero-title">Find inventory that may be sitting too long</div>
+                    <div class="aging-hero-subtitle">
+                        Aging buckets help identify stale inventory, capital tied up in older cards, and records that may need pricing, show placement, or promotion attention.
+                    </div>
+                </div>
+
+                <div class="aging-score-panel">
+                    {% if summary.freshness_score >= 90 %}
+                        <div class="aging-score-word">Excellent</div>
+                    {% elif summary.freshness_score >= 70 %}
+                        <div class="aging-score-word">Healthy</div>
+                    {% elif summary.freshness_score >= 45 %}
+                        <div class="aging-score-word">Watch List</div>
+                    {% else %}
+                        <div class="aging-score-word">Needs Review</div>
+                    {% endif %}
+                    <div class="aging-score-number">{{ summary.freshness_score }}% Fresh</div>
+                    <div class="aging-score-label">Inventory Freshness</div>
+                    <div class="aging-score-meter">
+                        <div class="aging-score-meter-fill" style="width: {{ summary.freshness_score }}%;"></div>
+                    </div>
+                    <div class="text-muted small mt-2">{{ summary.old_plus_count }} cards are 91+ days old</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="aging-insight-grid">
+        <div class="aging-insight-card">
+            <div class="aging-insight-label">Active Inventory Records</div>
+            <div class="aging-insight-value">{{ summary.total_count }}</div>
+            <div class="aging-insight-sub">Inventory cards not marked Sold.</div>
+        </div>
+
+        <div class="aging-insight-card {% if summary.missing_true_date_count %}warning{% endif %}">
+            <div class="aging-insight-label">Missing Acquisition Dates</div>
+            <div class="aging-insight-value">⚠ {{ summary.missing_true_date_count }}</div>
+            <div class="aging-insight-sub">Using created date fallback when acquisition/purchase date is blank.</div>
+        </div>
+
+        <div class="aging-insight-card danger">
+            <div class="aging-insight-label">Capital Tied Up</div>
+            <div class="aging-insight-value">${{ "%.0f"|format(summary.stale_cost or 0) }}</div>
+            <div class="aging-insight-sub">Cost basis in inventory aged 180+ days.</div>
+        </div>
+
+        <div class="aging-insight-card">
+            <div class="aging-insight-label">Oldest Card</div>
+            {% if summary.oldest_item %}
+                <div class="aging-insight-value">{{ summary.oldest_item.days_old }} days</div>
+                <div class="aging-insight-sub">{{ summary.oldest_item.card.player_name }} · {{ summary.oldest_item.card.card_code }}</div>
+            {% else %}
+                <div class="aging-insight-value">—</div>
+                <div class="aging-insight-sub">No active inventory records.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="aging-distribution">
+        <div class="aging-distribution-title">Aging Distribution</div>
+        {% for key, item in bucket_stats.items() %}
+            <div class="aging-dist-row">
+                <div class="aging-dist-label">{{ item.label }}</div>
+                <div class="aging-dist-track">
+                    <div class="aging-dist-fill {% if key == 'aging' %}green{% elif key == 'old' %}gold{% elif key == 'stale' %}red{% endif %}" style="width: {{ item.percent }}%;"></div>
+                </div>
+                <div class="aging-dist-percent">{{ item.percent }}%</div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="aging-summary-grid mb-4">
+        {% for key, item in bucket_stats.items() %}
+            <a class="aging-tile aging-accent-{{ item.accent }} {% if bucket_filter == key %}active{% endif %}"
+               href="{{ url_for('inventory_aging', bucket=key) }}">
+                <div class="aging-count">{{ item.count }}</div>
+                <div class="aging-label">{{ item.label }}</div>
+                <div class="aging-range">{{ item.range }}</div>
+                <div class="aging-description">{{ item.description }}</div>
+
+                <div class="aging-tile-money">
+                    <div class="aging-mini-metric">
+                        <div class="aging-mini-label">Cost</div>
+                        <div class="aging-mini-value">${{ "%.0f"|format(item.cost or 0) }}</div>
+                    </div>
+                    <div class="aging-mini-metric">
+                        <div class="aging-mini-label">Ask</div>
+                        <div class="aging-mini-value">${{ "%.0f"|format(item.asking or 0) }}</div>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+
+    <div class="card page-card aging-workqueue-card">
+        <div class="card-body p-4">
+            <div class="aging-workqueue-header mb-3">
+                <div>
+                    <div class="aging-workqueue-title">{{ current_label }}</div>
+                    <div class="aging-workqueue-subtitle">
+                        Showing up to 150 active inventory records, oldest first. "Estimated Age" means CardDesk used created date because acquisition/purchase date was missing.
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-sm btn-outline-info" href="{{ url_for('inventory_aging') }}">All Inventory</a>
+                    <a class="btn btn-sm btn-outline-warning" href="{{ url_for('inventory_aging', bucket='stale') }}">Stale Only</a>
+                </div>
+            </div>
+
+            {% if visible_cards %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 aging-table">
+                        <thead>
+                            <tr>
+                                <th>Age</th>
+                                <th>Basis</th>
+                                <th>Card</th>
+                                <th>Flags</th>
+                                <th>Image</th>
+                                <th>Cost</th>
+                                <th>Ask</th>
+                                <th>Comp</th>
+                                <th>Storage</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in visible_cards %}
+                                {% set card = item.card %}
+                                <tr>
+                                    <td>
+                                        <span class="aging-days-pill {% if item.bucket == 'stale' %}stale{% elif item.bucket == 'old' %}old{% endif %}">
+                                            {{ item.days_old }} days
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="aging-value">{{ item.basis_label }}</div>
+                                        <div class="aging-card-meta">{{ item.basis_date }}</div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <a class="aging-card-title-link" href="{{ url_for('card_detail', card_id=card.id) }}">
+                                                {{ card.player_name or 'Unknown Player' }}
+                                            </a>
+                                        </div>
+                                        <div class="aging-card-meta">
+                                            {{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }}
+                                            {% if card.card_number %}#{{ card.card_number }}{% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="aging-badge-row">
+                                            {% for flag in item.review_flags %}
+                                                <span class="badge text-bg-warning">{{ flag }}</span>
+                                            {% else %}
+                                                <span class="aging-muted">—</span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if card.image_filename %}
+                                            <img class="aging-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name or 'Card' }} image">
+                                        {% else %}
+                                            <span class="badge text-bg-warning">Missing</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="aging-value">${{ "%.2f"|format(item.cost_total or 0) }}</span></td>
+                                    <td>{% if item.asking_total %}<span class="aging-value">${{ "%.2f"|format(item.asking_total or 0) }}</span>{% else %}<span class="aging-muted">—</span>{% endif %}</td>
+                                    <td>{% if item.estimated_total %}<span class="aging-value">${{ "%.2f"|format(item.estimated_total or 0) }}</span>{% else %}<span class="aging-muted">—</span>{% endif %}</td>
+                                    <td>{% if card.storage_location %}<span class="aging-value">{{ card.storage_location }}</span>{% else %}<span class="badge text-bg-warning">Missing</span>{% endif %}</td>
+                                    <td class="text-end">
+                                        <a class="btn btn-sm btn-primary" href="{{ url_for('edit_card', card_id=card.id) }}">Review</a>
+                                        <a class="btn btn-sm btn-outline-info" href="{{ url_for('card_detail', card_id=card.id) }}">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="aging-empty-state">
+                    <div class="h5 text-light mb-2">No cards in this aging bucket.</div>
+                    <div class="small">This section is clean.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
