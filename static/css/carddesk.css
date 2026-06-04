@@ -2215,3 +2215,139 @@ textarea.form-control {
     }
 }
 
+
+/* =========================================================
+   AI Import Review - Deep Blue Override Fix
+   Purpose: forces AI Review cards/sections away from gray panels
+   and into the darker blue dealer-terminal look.
+   Keep at bottom of carddesk.css so it wins the cascade.
+   ========================================================= */
+
+.ai-review-shell {
+    color: #e5edf7;
+}
+
+.ai-review-shell .page-card,
+.ai-review-shell .card,
+.ai-review-card {
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .10), transparent 36%),
+        linear-gradient(145deg, #07111f, #0d1728) !important;
+    border: 1px solid rgba(96, 165, 250, .22) !important;
+    color: #f8fafc !important;
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .38) !important;
+}
+
+.ai-review-card .card-body {
+    background: transparent !important;
+}
+
+.ai-review-card-header {
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .18), transparent 38%),
+        linear-gradient(145deg, #0a182a, #050d1a) !important;
+    border-bottom: 1px solid rgba(96, 165, 250, .22) !important;
+}
+
+.ai-review-section {
+    background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, .09), transparent 38%),
+        linear-gradient(145deg, #0b1220, #101a2c) !important;
+    border: 1px solid rgba(96, 165, 250, .22) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .045),
+        0 14px 30px rgba(2, 6, 23, .22) !important;
+}
+
+.ai-review-image-panel {
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .08), transparent 40%),
+        linear-gradient(145deg, #081221, #020617) !important;
+    border: 1px solid rgba(96, 165, 250, .24) !important;
+}
+
+.ai-review-actions {
+    background:
+        linear-gradient(145deg, rgba(8, 18, 33, .98), rgba(2, 6, 23, .96)) !important;
+    border: 1px solid rgba(96, 165, 250, .26) !important;
+    box-shadow: 0 16px 36px rgba(2, 6, 23, .48) !important;
+}
+
+.ai-review-section-title,
+.ai-review-card-title {
+    color: #f8fafc !important;
+}
+
+.ai-review-card-subtitle,
+.ai-review-shell .text-muted,
+.ai-review-card .text-muted,
+.ai-review-section .text-muted {
+    color: #b8c7dc !important;
+}
+
+.ai-review-form-panel .form-label,
+.ai-review-form-panel .form-check-label,
+.ai-review-section label {
+    color: #dbeafe !important;
+}
+
+.ai-review-form-panel .form-control,
+.ai-review-form-panel .form-select,
+.ai-review-actions .form-select {
+    background-color: #020b18 !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(96, 165, 250, .30) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035) !important;
+}
+
+.ai-review-form-panel .form-control:focus,
+.ai-review-form-panel .form-select:focus,
+.ai-review-actions .form-select:focus {
+    background-color: #06111f !important;
+    color: #ffffff !important;
+    border-color: rgba(14, 165, 233, .78) !important;
+    box-shadow: 0 0 0 .18rem rgba(14, 165, 233, .18) !important;
+}
+
+.ai-review-form-panel .form-control::placeholder {
+    color: #94a3b8 !important;
+}
+
+.ai-review-form-panel .form-control:disabled,
+.ai-review-form-panel .form-select:disabled {
+    background-color: #111827 !important;
+    color: #94a3b8 !important;
+    border-color: rgba(148, 163, 184, .22) !important;
+    opacity: 1 !important;
+}
+
+.ai-acquisition-note.existing {
+    background: rgba(14, 165, 233, .10) !important;
+    border: 1px solid rgba(14, 165, 233, .34) !important;
+    color: #dbeafe !important;
+}
+
+.ai-acquisition-note.new {
+    background: rgba(22, 163, 74, .16) !important;
+    border: 1px solid rgba(74, 222, 128, .34) !important;
+    color: #bbf7d0 !important;
+}
+
+.ai-review-toolbar {
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .12), transparent 34%),
+        linear-gradient(145deg, #0b1220, #101a2c) !important;
+    border: 1px solid rgba(96, 165, 250, .24) !important;
+}
+
+.ai-review-empty-state {
+    background:
+        linear-gradient(145deg, #0b1220, #101a2c) !important;
+    border: 1px dashed rgba(96, 165, 250, .50) !important;
+}
+
+.ai-json-box {
+    background: #020617 !important;
+    color: #dbeafe !important;
+    border: 1px solid rgba(96, 165, 250, .24) !important;
+}
