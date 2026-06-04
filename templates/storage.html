@@ -3,59 +3,593 @@
 {% block title %}Storage Explorer{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
-    <div>
-        <h1 class="h2 mb-1">Storage Explorer</h1>
-        <p class="text-muted mb-0">See where your cards are physically stored.</p>
-    </div>
-    <a class="btn btn-primary" href="{{ url_for('cards') }}">Back to Inventory</a>
-</div>
+<style>
+.storage-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+}
 
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card stat-card stat-blue">
-            <div class="card-body position-relative">
-                <div class="text-muted">Storage Locations</div>
-                <div class="display-6 fw-bold">{{ total_locations }}</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card stat-purple">
-            <div class="card-body position-relative">
-                <div class="text-muted">Stored Cards</div>
-                <div class="display-6 fw-bold">{{ total_cards }}</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card stat-green">
-            <div class="card-body position-relative">
-                <div class="text-muted">Purchase Cost</div>
-                <div class="display-6 fw-bold">${{ "%.2f"|format(total_purchase_cost or 0) }}</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card stat-gold">
-            <div class="card-body position-relative">
-                <div class="text-muted">Estimated Value</div>
-                <div class="display-6 fw-bold">${{ "%.2f"|format(total_estimated_value or 0) }}</div>
-            </div>
-        </div>
-    </div>
-</div>
+.storage-hero-card {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(96, 165, 250, .24);
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .16), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, .10), transparent 38%),
+        linear-gradient(145deg, #07111f, #101b2b);
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .34);
+    overflow: hidden;
+}
 
-<div class="card page-card">
-    <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <h5 class="mb-0 fw-bold">Storage Locations</h5>
-            <span class="text-muted small">Click a location to view the cards stored there.</span>
+.storage-hero-title {
+    color: #f8fafc;
+    font-weight: 900;
+    letter-spacing: -.02em;
+}
+
+.storage-hero-subtitle {
+    color: #b8c7dc;
+    font-size: .92rem;
+}
+
+.storage-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.storage-stat-tile {
+    display: block;
+    height: 100%;
+    padding: 1.05rem;
+    border-radius: 1.05rem;
+    text-decoration: none;
+    color: #f8fafc;
+    border: 1px solid rgba(96, 165, 250, .20);
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, .14), transparent 42%),
+        linear-gradient(145deg, #0b1220, #101a2c);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.storage-stat-tile:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+    border-color: rgba(14, 165, 233, .58);
+    box-shadow: 0 1rem 2.2rem rgba(2, 6, 23, .32);
+}
+
+.storage-stat-tile.storage-blue {
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, .20), transparent 42%),
+        linear-gradient(145deg, #0b1220, #101a2c);
+}
+
+.storage-stat-tile.storage-purple {
+    background:
+        radial-gradient(circle at top right, rgba(139, 92, 246, .22), transparent 42%),
+        linear-gradient(145deg, #0b1220, #101a2c);
+}
+
+.storage-stat-tile.storage-green {
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, .18), transparent 42%),
+        linear-gradient(145deg, #0b1220, #101a2c);
+}
+
+.storage-stat-tile.storage-gold {
+    background:
+        radial-gradient(circle at top right, rgba(245, 158, 11, .22), transparent 42%),
+        linear-gradient(145deg, #0b1220, #101a2c);
+}
+
+.storage-stat-count {
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -.04em;
+}
+
+.storage-stat-label {
+    margin-top: .55rem;
+    color: #e5edf7;
+    font-size: .8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.storage-stat-description {
+    margin-top: .35rem;
+    color: #94a3b8;
+    font-size: .82rem;
+    line-height: 1.25;
+}
+
+.storage-location-card {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(96, 165, 250, .22);
+    background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, .10), transparent 36%),
+        linear-gradient(145deg, #07111f, #0d1728);
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .30);
+    overflow: hidden;
+}
+
+.storage-location-header {
+    padding: 1rem 1.1rem;
+    border-bottom: 1px solid rgba(96, 165, 250, .20);
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .14), transparent 38%),
+        linear-gradient(145deg, #0a182a, #050d1a);
+}
+
+.storage-location-title {
+    color: #f8fafc;
+    font-weight: 900;
+}
+
+.storage-location-subtitle {
+    color: #b8c7dc;
+    font-size: .84rem;
+}
+
+.storage-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.storage-location-tile {
+    display: block;
+    padding: 1rem;
+    min-height: 190px;
+    text-decoration: none;
+    border-radius: 1rem;
+    color: #f8fafc;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .12), transparent 38%),
+        linear-gradient(145deg, #0b1220, #101a2c);
+    border: 1px solid rgba(96, 165, 250, .22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.storage-location-tile:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+    border-color: rgba(14, 165, 233, .62);
+    box-shadow: 0 1rem 2.2rem rgba(2, 6, 23, .32);
+}
+
+.storage-location-name {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    color: #f8fafc;
+    font-weight: 900;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.storage-location-name::before {
+    content: "📦";
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    min-width: 2rem;
+    border-radius: .75rem;
+    background: rgba(14, 165, 233, .18);
+    border: 1px solid rgba(125, 211, 252, .25);
+    font-size: 1rem;
+}
+
+.storage-location-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .65rem;
+    margin-top: 1rem;
+}
+
+.storage-location-metric {
+    padding: .7rem;
+    border-radius: .85rem;
+    background: rgba(2, 6, 23, .42);
+    border: 1px solid rgba(148, 163, 184, .18);
+}
+
+.storage-location-metric-label {
+    color: #94a3b8;
+    font-size: .68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.storage-location-metric-value {
+    margin-top: .2rem;
+    color: #f8fafc;
+    font-size: 1.05rem;
+    font-weight: 900;
+}
+
+.storage-ready-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-top: 1rem;
+    padding: .4rem .65rem;
+    border-radius: 999px;
+    color: #dcfce7;
+    background: rgba(22, 163, 74, .16);
+    border: 1px solid rgba(74, 222, 128, .30);
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+.storage-table {
+    color: #e5edf7 !important;
+}
+
+.storage-table thead th {
+    color: #cbd5e1 !important;
+    background: #0b1220 !important;
+    border-color: rgba(96, 165, 250, .18) !important;
+}
+
+.storage-table tbody td {
+    color: #f8fafc !important;
+    border-color: rgba(148, 163, 184, .14) !important;
+}
+
+.storage-table tbody td:not(:first-child) {
+    color: #dbeafe !important;
+    font-weight: 750;
+}
+
+.storage-table tbody td:first-child,
+.storage-table tbody td:last-child {
+    color: #f8fafc !important;
+}
+
+.storage-table tbody .text-muted,
+.storage-table tbody span:not(.badge),
+.storage-table tbody a:not(.btn):not(.storage-pill) {
+    color: #cbd5e1 !important;
+}
+
+.storage-table tbody tr > * {
+    background: rgba(15, 23, 42, .45) !important;
+}
+
+.storage-table tbody tr:hover > * {
+    background: rgba(37, 99, 235, .16) !important;
+}
+
+.storage-empty-state {
+    border-radius: 1.1rem;
+    border: 1px dashed rgba(96, 165, 250, .44);
+    background: rgba(15, 23, 42, .52);
+}
+
+
+.storage-explorer-toolbar {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) auto;
+    gap: .85rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.storage-search-wrap {
+    position: relative;
+}
+
+.storage-search-input {
+    width: 100%;
+    min-height: 46px;
+    padding-left: 2.6rem;
+    color: #f8fafc !important;
+    background: rgba(2, 6, 23, .55) !important;
+    border: 1px solid rgba(96, 165, 250, .30) !important;
+    border-radius: .9rem;
+    font-weight: 750;
+}
+
+.storage-search-input:focus {
+    border-color: rgba(14, 165, 233, .75) !important;
+    box-shadow: 0 0 0 .18rem rgba(14, 165, 233, .16) !important;
+}
+
+.storage-search-input::placeholder {
+    color: #94a3b8 !important;
+}
+
+.storage-search-icon {
+    position: absolute;
+    left: .9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #93c5fd;
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+.storage-view-toggle {
+    display: inline-flex;
+    gap: .35rem;
+    padding: .25rem;
+    border-radius: .9rem;
+    background: rgba(2, 6, 23, .42);
+    border: 1px solid rgba(96, 165, 250, .22);
+}
+
+.storage-view-toggle button {
+    border: 0;
+    border-radius: .7rem;
+    padding: .5rem .85rem;
+    color: #cbd5e1;
+    background: transparent;
+    font-size: .82rem;
+    font-weight: 900;
+}
+
+.storage-view-toggle button.active {
+    color: #020617;
+    background: linear-gradient(135deg, #22d3ee, #60a5fa);
+    box-shadow: 0 .45rem 1rem rgba(14, 165, 233, .20);
+}
+
+.storage-results-note {
+    margin-top: .65rem;
+    color: #94a3b8;
+    font-size: .8rem;
+    font-weight: 750;
+}
+
+.storage-no-results {
+    display: none;
+    border-radius: 1rem;
+    border: 1px dashed rgba(96, 165, 250, .40);
+    background: rgba(15, 23, 42, .52);
+    color: #cbd5e1;
+}
+
+.storage-shell.storage-compact-mode .storage-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: .75rem;
+}
+
+.storage-shell.storage-compact-mode .storage-location-tile {
+    min-height: 0;
+    padding: .85rem;
+}
+
+.storage-shell.storage-compact-mode .storage-location-name {
+    font-size: .92rem;
+}
+
+.storage-shell.storage-compact-mode .storage-location-name::before {
+    width: 1.75rem;
+    height: 1.75rem;
+    min-width: 1.75rem;
+    border-radius: .65rem;
+    font-size: .9rem;
+}
+
+.storage-shell.storage-compact-mode .storage-location-metrics {
+    grid-template-columns: 1fr;
+    gap: .35rem;
+    margin-top: .75rem;
+}
+
+.storage-shell.storage-compact-mode .storage-location-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .65rem;
+    padding: .48rem .6rem;
+}
+
+.storage-shell.storage-compact-mode .storage-location-metric-label {
+    font-size: .62rem;
+}
+
+.storage-shell.storage-compact-mode .storage-location-metric-value {
+    margin-top: 0;
+    font-size: .9rem;
+}
+
+.storage-shell.storage-compact-mode .storage-ready-pill {
+    margin-top: .7rem;
+    font-size: .72rem;
+}
+
+.storage-detail-disclosure {
+    border-radius: 1.25rem;
+    overflow: hidden;
+}
+
+.storage-detail-summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.storage-detail-summary::-webkit-details-marker {
+    display: none;
+}
+
+.storage-detail-summary .storage-location-header::after {
+    content: "Show / hide table";
+    display: inline-flex;
+    align-items: center;
+    padding: .35rem .65rem;
+    border-radius: 999px;
+    color: #bfdbfe;
+    background: rgba(59, 130, 246, .14);
+    border: 1px solid rgba(96, 165, 250, .28);
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.storage-detail-disclosure[open] .storage-detail-summary .storage-location-header::after {
+    content: "Hide table";
+}
+
+.storage-table tbody tr.storage-hidden,
+.storage-location-tile.storage-hidden {
+    display: none !important;
+}
+
+@media (max-width: 991.98px) {
+    .storage-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .storage-stat-grid,
+    .storage-location-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="storage-shell">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+        <div>
+            <h1 class="h2 mb-1">Storage Explorer</h1>
+            <p class="text-muted mb-0">Quickly see where cards are physically stored and what each location is holding.</p>
         </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-info" href="{{ url_for('cards', storage='__missing__') }}">Missing Storage</a>
+            <a class="btn btn-primary" href="{{ url_for('cards') }}">Back to Inventory</a>
+        </div>
+    </div>
+
+    <div class="card storage-hero-card mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <div class="storage-hero-title h4 mb-1">Storage Command Center</div>
+                    <div class="storage-hero-subtitle">
+                        Use this page as a quick physical inventory map. Open any location to view the cards stored there.
+                    </div>
+                </div>
+                <span class="badge text-bg-info rounded-pill px-3 py-2">{{ total_locations or 0 }} location(s)</span>
+            </div>
+
+            <div class="storage-stat-grid">
+                <a class="storage-stat-tile storage-blue" href="#storageLocations">
+                    <div class="storage-stat-count">{{ total_locations or 0 }}</div>
+                    <div class="storage-stat-label">Storage Locations</div>
+                    <div class="storage-stat-description">Physical boxes, rows, cases, or bins currently in use.</div>
+                </a>
+
+                <a class="storage-stat-tile storage-purple" href="{{ url_for('cards') }}">
+                    <div class="storage-stat-count">{{ total_cards or 0 }}</div>
+                    <div class="storage-stat-label">Stored Cards</div>
+                    <div class="storage-stat-description">Total card quantity across known storage locations.</div>
+                </a>
+
+                <a class="storage-stat-tile storage-green" href="{{ url_for('cards') }}">
+                    <div class="storage-stat-count">${{ "%.0f"|format(total_purchase_cost or 0) }}</div>
+                    <div class="storage-stat-label">Purchase Cost</div>
+                    <div class="storage-stat-description">Cost basis tied to cards with storage locations.</div>
+                </a>
+
+                <a class="storage-stat-tile storage-gold" href="{{ url_for('cards') }}">
+                    <div class="storage-stat-count">${{ "%.0f"|format(total_estimated_value or 0) }}</div>
+                    <div class="storage-stat-label">Estimated Value</div>
+                    <div class="storage-stat-description">Comp value estimate across stored cards.</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="storageLocations" class="card storage-location-card mb-4">
+        <div class="storage-location-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <div class="storage-location-title h5 mb-1">Storage Locations</div>
+                <div class="storage-location-subtitle">Search, compact view, or open a location to see the filtered inventory list.</div>
+            </div>
+            <span class="badge text-bg-dark"><span id="storageVisibleCount">{{ storage_summary|length if storage_summary else 0 }}</span> shown</span>
+        </div>
+
+        <div class="card-body p-4">
+            {% if storage_summary %}
+                <div class="storage-explorer-toolbar">
+                    <div>
+                        <div class="storage-search-wrap">
+                            <span class="storage-search-icon">⌕</span>
+                            <input id="storageLocationSearch" class="form-control storage-search-input" type="search" placeholder="Search storage locations, boxes, rows, sections..." autocomplete="off">
+                        </div>
+                        <div class="storage-results-note">Tip: search by box, row, section, showcase, PSA case, or any part of the location name.</div>
+                    </div>
+                    <div class="storage-view-toggle" aria-label="Storage view mode">
+                        <button id="storageCompactBtn" type="button" class="active" data-storage-view="compact">Compact View</button>
+                        <button id="storageDetailBtn" type="button" data-storage-view="detail">Detail View</button>
+                    </div>
+                </div>
+
+                <div id="storageNoResults" class="storage-no-results text-center py-4 mb-3">
+                    No storage locations match that search.
+                </div>
+
+                <div class="storage-card-grid">
+                    {% for item in storage_summary %}
+                        <a class="storage-location-tile" data-storage-location="{{ item.location|lower }}" href="{{ url_for('cards', storage=item.location) }}">
+                            <div class="storage-location-name">{{ item.location }}</div>
+
+                            <div class="storage-location-metrics">
+                                <div class="storage-location-metric">
+                                    <div class="storage-location-metric-label">Records</div>
+                                    <div class="storage-location-metric-value">{{ item.unique_cards }}</div>
+                                </div>
+                                <div class="storage-location-metric">
+                                    <div class="storage-location-metric-label">Total Cards</div>
+                                    <div class="storage-location-metric-value">{{ item.total_cards }}</div>
+                                </div>
+                                <div class="storage-location-metric">
+                                    <div class="storage-location-metric-label">Cost</div>
+                                    <div class="storage-location-metric-value">${{ "%.0f"|format(item.purchase_cost or 0) }}</div>
+                                </div>
+                                <div class="storage-location-metric">
+                                    <div class="storage-location-metric-label">Comp Value</div>
+                                    <div class="storage-location-metric-value">${{ "%.0f"|format(item.estimated_value or 0) }}</div>
+                                </div>
+                            </div>
+
+                            <div class="storage-ready-pill">
+                                {{ item.ready_to_sell }} ready to sell
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="storage-empty-state text-center text-muted py-5">
+                    <div class="h5 mb-2">No storage locations found yet.</div>
+                    <div class="small">Add storage locations on card records to use this page.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <details class="card storage-location-card storage-detail-disclosure">
+        <summary class="storage-detail-summary">
+            <div class="storage-location-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <div class="storage-location-title h5 mb-1">Advanced Storage Detail Table</div>
+                    <div class="storage-location-subtitle">Same data in table format for quick comparison when you have many locations.</div>
+                </div>
+                <span class="text-muted small">Click a location or View Cards to open inventory.</span>
+            </div>
+        </summary>
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="table table-hover align-middle mb-0 storage-table">
+                <thead>
                     <tr>
                         <th>Location</th>
                         <th>Unique Records</th>
@@ -68,7 +602,7 @@
                 </thead>
                 <tbody>
                     {% for item in storage_summary %}
-                        <tr class="inventory-row">
+                        <tr>
                             <td><a class="storage-pill" href="{{ url_for('cards', storage=item.location) }}">{{ item.location }}</a></td>
                             <td>{{ item.unique_cards }}</td>
                             <td>{{ item.total_cards }}</td>
@@ -89,6 +623,59 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </details>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const shell = document.querySelector(".storage-shell");
+    const searchInput = document.getElementById("storageLocationSearch");
+    const visibleCount = document.getElementById("storageVisibleCount");
+    const noResults = document.getElementById("storageNoResults");
+    const compactBtn = document.getElementById("storageCompactBtn");
+    const detailBtn = document.getElementById("storageDetailBtn");
+    const tiles = Array.from(document.querySelectorAll(".storage-location-tile"));
+    const rows = Array.from(document.querySelectorAll(".storage-table tbody tr"));
+
+    function setViewMode(mode) {
+        if (!shell || !compactBtn || !detailBtn) return;
+
+        const compact = mode === "compact";
+        shell.classList.toggle("storage-compact-mode", compact);
+        compactBtn.classList.toggle("active", compact);
+        detailBtn.classList.toggle("active", !compact);
+        try { localStorage.setItem("carddeskStorageViewMode", mode); } catch (e) {}
+    }
+
+    function filterStorage() {
+        const term = (searchInput?.value || "").trim().toLowerCase();
+        let shown = 0;
+
+        tiles.forEach(function (tile) {
+            const text = (tile.dataset.storageLocation || tile.textContent || "").toLowerCase();
+            const match = !term || text.includes(term);
+            tile.classList.toggle("storage-hidden", !match);
+            if (match) shown += 1;
+        });
+
+        rows.forEach(function (row) {
+            const text = (row.textContent || "").toLowerCase();
+            const match = !term || text.includes(term);
+            row.classList.toggle("storage-hidden", !match);
+        });
+
+        if (visibleCount) visibleCount.textContent = shown;
+        if (noResults) noResults.style.display = shown === 0 ? "block" : "none";
+    }
+
+    compactBtn?.addEventListener("click", function () { setViewMode("compact"); });
+    detailBtn?.addEventListener("click", function () { setViewMode("detail"); });
+    searchInput?.addEventListener("input", filterStorage);
+
+    let savedMode = "compact";
+    try { savedMode = localStorage.getItem("carddeskStorageViewMode") || "compact"; } catch (e) {}
+    setViewMode(savedMode);
+    filterStorage();
+});
+</script>
 {% endblock %}
