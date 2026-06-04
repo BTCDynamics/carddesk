@@ -571,10 +571,8 @@
                 zoomSlider.max = capabilities.zoom.max || 1;
                 zoomSlider.step = capabilities.zoom.step || 0.1;
 
-                const preferredZoom = 4.7;
-                const startingZoom = Math.min(
-                    Math.max(preferredZoom, Number(zoomSlider.min)),
-                    Number(zoomSlider.max)
+                const preferredZoom = 4.8;
+                const startingZoom = Math.min(Math.max(4.8, zoomSlider.min), zoomSlider.max);
                 );
                 zoomSlider.value = startingZoom;
                 zoomValue.textContent = Number(startingZoom).toFixed(1) + "x";
