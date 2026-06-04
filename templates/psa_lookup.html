@@ -17,7 +17,7 @@
 }
 
 .psa-main-panel,
-.psa-mobile-qr-card,
+.psa-scanner-card,
 .psa-options-panel {
     height: 100%;
     border-radius: 1.15rem;
@@ -32,14 +32,14 @@
     max-width: 560px;
 }
 
-.psa-mobile-qr-card {
+.psa-scanner-card {
     background: radial-gradient(circle at top left, rgba(56, 189, 248, .22), transparent 36%), linear-gradient(145deg, #0f172a, #1e293b);
     border: 1px solid rgba(96, 165, 250, .35);
     color: #ffffff;
     box-shadow: 0 18px 40px rgba(15, 23, 42, .22);
 }
 
-.psa-mobile-qr-card .text-muted {
+.psa-scanner-card .text-muted {
     color: #cbd5e1 !important;
 }
 
@@ -128,7 +128,7 @@
         grid-template-columns: 1fr;
     }
 
-    .psa-mobile-qr-card {
+    .psa-scanner-card {
         max-width: 560px;
     }
 }
@@ -191,24 +191,32 @@
                 </div>
             </div>
 
-            <div class="card psa-mobile-qr-card">
+            <div class="card psa-scanner-card">
                 <div class="card-body p-4 text-center">
-                    <div class="fw-bold h5 mb-1">Phone Scanner</div>
-                    <p class="text-muted small mb-2">Scan PSA slab barcodes from your phone and send them straight to the AI Review Queue.</p>
+                    <div class="fw-bold h5 mb-1">PSA Barcode Scanner</div>
+                    <p class="text-muted small mb-2">
+                        Use the button for a local USB or Bluetooth scanner. Use the QR code when scanning slabs with your phone.
+                    </p>
+
+                    <a class="btn btn-info w-100 fw-bold" href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener">
+                        Open Local Browser Scanner
+                    </a>
+                    <div class="small text-muted mt-2">
+                        Best for desktop, laptop, handheld, or Bluetooth barcode scanners.
+                    </div>
 
                     <div class="psa-qr-wrap">
-                        <a href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener" title="Open Mobile PSA Scanner">
+                        <a href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener" title="Open PSA Scanner on Phone">
                             <img
                                 class="psa-mobile-qr-img"
                                 src="{{ psa_mobile_scan_qr_url }}"
                                 alt="QR code for CardDesk PSA mobile scanner"
-                                onerror="this.style.display='none'; this.closest('a').insertAdjacentHTML('afterend', '<div class=&quot;alert alert-warning mt-2 mb-0 small&quot;>QR image did not load. Use the Open Mobile PSA Scanner button or the URL below.</div>');"
+                                onerror="this.style.display='none'; this.closest('a').insertAdjacentHTML('afterend', '<div class=&quot;alert alert-warning mt-2 mb-0 small&quot;>QR image did not load. Use the local browser scanner button or the URL below.</div>');"
                             >
                         </a>
                     </div>
 
-                    <a class="btn btn-info w-100 fw-bold" href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener">Open Mobile Scanner</a>
-                    <div class="small text-muted mt-2">Point your phone camera at the QR code.</div>
+                    <div class="small text-muted">Phone option: point your phone camera at the QR code.</div>
                     <div class="psa-url-pill text-break mt-3">{{ psa_mobile_scan_url }}</div>
                 </div>
             </div>
