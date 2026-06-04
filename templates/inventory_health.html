@@ -4,52 +4,249 @@
 
 {% block content %}
 <style>
+.inventory-health-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+}
+
+.health-hero-card {
+    overflow: hidden;
+    border: 1px solid rgba(96, 165, 250, .24) !important;
+    border-radius: 1.25rem;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .16), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, .10), transparent 40%),
+        linear-gradient(145deg, #07111f, #101b2b) !important;
+    color: #f8fafc;
+    box-shadow: 0 20px 46px rgba(2, 6, 23, .38) !important;
+}
+
+.health-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.25rem;
+    align-items: center;
+}
+
+.health-hero-eyebrow {
+    color: #67e8f9;
+    font-size: .78rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.health-hero-title {
+    margin-top: .2rem;
+    color: #ffffff;
+    font-size: 1.45rem;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+.health-hero-subtitle {
+    max-width: 760px;
+    margin-top: .45rem;
+    color: #b8c7dc;
+    font-size: .92rem;
+}
+
+.health-score-panel {
+    min-width: 220px;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: rgba(2, 6, 23, .46);
+    border: 1px solid rgba(147, 197, 253, .22);
+    text-align: center;
+}
+
+.health-score-number {
+    color: #ffffff;
+    font-size: 2.6rem;
+    line-height: 1;
+    font-weight: 950;
+}
+
+.health-score-label {
+    margin-top: .35rem;
+    color: #cbd5e1;
+    font-size: .8rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.health-score-meter {
+    height: .55rem;
+    margin-top: .8rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(148, 163, 184, .20);
+}
+
+.health-score-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #22c55e, #22d3ee);
+}
+
 .health-summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 1rem;
 }
 
 .health-tile {
+    position: relative;
     display: block;
+    min-height: 128px;
+    overflow: hidden;
     text-decoration: none;
-    border-radius: 1rem;
+    border-radius: 1.1rem;
     padding: 1rem;
-    background: linear-gradient(145deg, #f8fafc, #e5e7eb);
-    border: 1px solid rgba(15, 23, 42, .14);
-    color: #111827;
-    min-height: 120px;
+    background:
+        radial-gradient(circle at top right, rgba(96, 165, 250, .10), transparent 42%),
+        linear-gradient(145deg, #0b1220, #101a2c);
+    border: 1px solid rgba(96, 165, 250, .22);
+    color: #f8fafc;
+    box-shadow: 0 14px 30px rgba(2, 6, 23, .24);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.health-tile::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: .35rem;
+    background: linear-gradient(180deg, #22d3ee, #3b82f6);
+    opacity: .85;
 }
 
 .health-tile:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 .75rem 1.5rem rgba(15, 23, 42, .16);
+    color: #ffffff;
+    transform: translateY(-2px);
+    border-color: rgba(125, 211, 252, .60);
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .36);
 }
 
 .health-tile.active {
-    border: 2px solid #2563eb;
-    background: linear-gradient(145deg, #eff6ff, #dbeafe);
-    box-shadow: 0 .75rem 1.5rem rgba(37, 99, 235, .16);
+    border-color: rgba(14, 165, 233, .85);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, .22), transparent 42%),
+        linear-gradient(145deg, #0a182a, #101f35);
+    box-shadow: 0 0 0 .16rem rgba(14, 165, 233, .16), 0 18px 42px rgba(2, 6, 23, .36);
+}
+
+.health-tile-image::before {
+    background: linear-gradient(180deg, #38bdf8, #2563eb);
+}
+
+.health-tile-critical::before {
+    background: linear-gradient(180deg, #f87171, #ef4444);
+}
+
+.health-tile-money::before {
+    background: linear-gradient(180deg, #4ade80, #16a34a);
+}
+
+.health-tile-storage::before {
+    background: linear-gradient(180deg, #facc15, #f59e0b);
 }
 
 .health-count {
-    font-size: 2rem;
+    color: #ffffff;
+    font-size: 2.15rem;
     line-height: 1;
-    font-weight: 900;
+    font-weight: 950;
 }
 
 .health-label {
-    font-size: .82rem;
+    color: #dbeafe;
+    font-size: .8rem;
     font-weight: 900;
-    letter-spacing: .04em;
+    letter-spacing: .055em;
     text-transform: uppercase;
-    margin-top: .55rem;
+    margin-top: .6rem;
 }
 
 .health-description {
-    color: #64748b;
+    color: #94a3b8;
     font-size: .82rem;
+    line-height: 1.35;
     margin-top: .35rem;
+}
+
+.health-workqueue-card {
+    border: 1px solid rgba(96, 165, 250, .22) !important;
+    border-radius: 1.2rem;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .08), transparent 36%),
+        linear-gradient(145deg, #07111f, #101b2b) !important;
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .34) !important;
+}
+
+.health-workqueue-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: .85rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(96, 165, 250, .20);
+}
+
+.health-workqueue-title {
+    color: #f8fafc;
+    font-weight: 900;
+    font-size: 1.08rem;
+}
+
+.health-workqueue-subtitle {
+    color: #94a3b8;
+    font-size: .86rem;
+}
+
+.health-table {
+    color: #e5edf7 !important;
+}
+
+.health-table thead th {
+    color: #9fb7d4 !important;
+    background: rgba(2, 6, 23, .42) !important;
+    border-color: rgba(96, 165, 250, .18) !important;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.health-table tbody tr > * {
+    color: #e5edf7 !important;
+    background: rgba(15, 23, 42, .58) !important;
+    border-color: rgba(96, 165, 250, .12) !important;
+}
+
+.health-table tbody tr:nth-child(even) > * {
+    background: rgba(8, 18, 33, .70) !important;
+}
+
+.health-table tbody tr:hover > * {
+    background: rgba(14, 165, 233, .12) !important;
+}
+
+.health-card-title-link {
+    color: #f8fafc !important;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.health-card-title-link:hover {
+    color: #bfdbfe !important;
+}
+
+.health-card-meta {
+    color: #94a3b8;
+    font-size: .82rem;
 }
 
 .health-issue-badges {
@@ -58,13 +255,63 @@
     gap: .35rem;
 }
 
+.health-issue-badges .badge {
+    font-weight: 850;
+}
+
 .health-thumb {
-    width: 42px;
-    height: 58px;
+    width: 46px;
+    height: 62px;
     object-fit: cover;
-    border-radius: .45rem;
-    border: 1px solid rgba(15, 23, 42, .12);
-    background: #f8fafc;
+    border-radius: .55rem;
+    border: 1px solid rgba(147, 197, 253, .28);
+    background: #020617;
+    box-shadow: 0 .35rem .85rem rgba(2, 6, 23, .30);
+}
+
+.health-value {
+    font-weight: 800;
+    color: #e5edf7;
+}
+
+.health-muted {
+    color: #94a3b8;
+}
+
+.health-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: .32rem .55rem;
+    border-radius: 999px;
+    color: #dbeafe;
+    background: rgba(59, 130, 246, .14);
+    border: 1px solid rgba(96, 165, 250, .28);
+    font-size: .78rem;
+    font-weight: 850;
+}
+
+.health-actions {
+    white-space: nowrap;
+}
+
+.health-empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.health-empty-icon {
+    width: 3rem;
+    height: 3rem;
+    display: inline-grid;
+    place-items: center;
+    margin-bottom: .85rem;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, .16);
+    border: 1px solid rgba(74, 222, 128, .32);
+    color: #bbf7d0;
+    font-size: 1.35rem;
+    font-weight: 900;
 }
 
 @media (max-width: 1199.98px) {
@@ -73,121 +320,184 @@
     }
 }
 
+@media (max-width: 991.98px) {
+    .health-hero-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .health-score-panel {
+        min-width: 0;
+    }
+}
+
 @media (max-width: 767.98px) {
     .health-summary-grid {
         grid-template-columns: 1fr;
     }
+
+    .health-actions {
+        white-space: normal;
+    }
 }
 </style>
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
-    <div>
-        <h1 class="h2 mb-1">Inventory Health</h1>
-        <p class="text-muted mb-0">A focused cleanup page for records that need business-critical details finished.</p>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-light" href="{{ url_for('cards') }}">Back to Cards</a>
-        <a class="btn btn-primary" href="{{ url_for('ai_import_review') }}">AI Review</a>
-    </div>
-</div>
-
-<div class="health-summary-grid mb-4">
-    <a class="health-tile {% if issue_filter == 'all' %}active{% endif %}" href="{{ url_for('inventory_health') }}">
-        <div class="health-count">{{ summary.health_issue_count }}</div>
-        <div class="health-label">Total Issues</div>
-        <div class="health-description">Inventory cleanup plus staged AI review reminders.</div>
-    </a>
-
-    <a class="health-tile {% if issue_filter == 'image' %}active{% endif %}"
-       href="{{ url_for('inventory_health', issue='image') }}">
-        <div class="health-count">{{ summary.missing_image_count or 0 }}</div>
-        <div class="health-label">Missing Images</div>
-        <div class="health-description">Images help identify cards and support listings.</div>
-    </a>
-
-    {% for item in issue_definitions %}
-        {% if item.key != 'image' %}
-            <a class="health-tile {% if issue_filter == item.key %}active{% endif %}" href="{{ item.external_url if item.external_url is defined else url_for('inventory_health', issue=item.key) }}">
-                <div class="health-count">{{ item.count }}</div>
-                <div class="health-label">{{ item.label }}</div>
-                <div class="health-description">{{ item.description }}</div>
-            </a>
-        {% endif %}
-    {% endfor %}
-</div>
-
-<div class="card page-card">
-    <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <div>
-                <h5 class="mb-1">{{ current_label }}</h5>
-                <div class="text-muted small">Showing up to 100 inventory records that need attention. AI Review items open from the tile above.</div>
-            </div>
-            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('inventory_health') }}">Reset View</a>
+<div class="inventory-health-shell">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+        <div>
+            <h1 class="h2 mb-1">Inventory Health</h1>
+            <p class="text-muted mb-0">A focused cleanup page for records that need business-critical details finished.</p>
         </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-light" href="{{ url_for('cards') }}">Back to Cards</a>
+            <a class="btn btn-primary" href="{{ url_for('ai_import_review') }}">AI Review</a>
+        </div>
+    </div>
 
-        {% if cards_needing_attention %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Card</th>
-                            <th>Issues</th>
-                            <th>Image</th>
-                            <th>Cost</th>
-                            <th>Storage</th>
-                            <th>Ask</th>
-                            <th>Comp</th>
-                            <th>Status</th>
-                            <th class="text-end">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for card in cards_needing_attention %}
+    <div class="card page-card health-hero-card mb-4">
+        <div class="card-body p-4">
+            <div class="health-hero-grid">
+                <div>
+                    <div class="health-hero-eyebrow">Dealer Cleanup Center</div>
+                    <div class="health-hero-title">Inventory records that need attention</div>
+                    <div class="health-hero-subtitle">
+                        Use this work queue to clean up missing images, cost, storage, pricing, and other details before cards move deeper into sales or fulfillment workflows.
+                    </div>
+                </div>
+                <div class="health-score-panel">
+                    {% if summary.total_inventory_count is defined and summary.total_inventory_count %}
+                        {% set issue_count = summary.health_issue_count or 0 %}
+                        {% set total_count = summary.total_inventory_count or 0 %}
+                        {% set healthy_percent = (((total_count - issue_count) / total_count) * 100) | round(0, 'floor') %}
+                        {% if healthy_percent < 0 %}{% set healthy_percent = 0 %}{% endif %}
+                        <div class="health-score-number">{{ healthy_percent|int }}%</div>
+                        <div class="health-score-label">Inventory Health</div>
+                        <div class="health-score-meter">
+                            <div class="health-score-meter-fill" style="width: {{ healthy_percent|int }}%;"></div>
+                        </div>
+                    {% else %}
+                        <div class="health-score-number">{{ summary.health_issue_count }}</div>
+                        <div class="health-score-label">Open Issues</div>
+                        <div class="health-score-meter">
+                            <div class="health-score-meter-fill" style="width: {% if summary.health_issue_count %}35{% else %}100{% endif %}%;"></div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="health-summary-grid mb-4">
+        <a class="health-tile health-tile-critical {% if issue_filter == 'all' %}active{% endif %}" href="{{ url_for('inventory_health') }}">
+            <div class="health-count">{{ summary.health_issue_count }}</div>
+            <div class="health-label">Total Issues</div>
+            <div class="health-description">Inventory cleanup plus staged AI review reminders.</div>
+        </a>
+
+        <a class="health-tile health-tile-image {% if issue_filter == 'image' %}active{% endif %}"
+           href="{{ url_for('inventory_health', issue='image') }}">
+            <div class="health-count">{{ summary.missing_image_count or 0 }}</div>
+            <div class="health-label">Missing Images</div>
+            <div class="health-description">Images help identify cards and support listings.</div>
+        </a>
+
+        {% for item in issue_definitions %}
+            {% if item.key != 'image' %}
+                <a class="health-tile {% if 'cost' in item.key or 'price' in item.key or 'value' in item.key %}health-tile-money{% elif 'storage' in item.key or 'location' in item.key %}health-tile-storage{% else %}health-tile-critical{% endif %} {% if issue_filter == item.key %}active{% endif %}"
+                   href="{{ item.external_url if item.external_url is defined else url_for('inventory_health', issue=item.key) }}">
+                    <div class="health-count">{{ item.count }}</div>
+                    <div class="health-label">{{ item.label }}</div>
+                    <div class="health-description">{{ item.description }}</div>
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="card page-card health-workqueue-card">
+        <div class="card-body p-4">
+            <div class="health-workqueue-header mb-3">
+                <div>
+                    <div class="health-workqueue-title">{{ current_label }}</div>
+                    <div class="health-workqueue-subtitle">Showing up to 100 inventory records that need attention. AI Review items open from the tile above.</div>
+                </div>
+                <a class="btn btn-sm btn-outline-info" href="{{ url_for('inventory_health') }}">Reset View</a>
+            </div>
+
+            {% if cards_needing_attention %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 health-table">
+                        <thead>
                             <tr>
-                                <td>
-                                   <div class="fw-bold">
-                                       <a class="text-decoration-none"
-                                          style="color:#000 !important;"
-                                          href="{{ url_for('card_detail', card_id=card.id) }}">
-                                          {{ card.player_name or 'Unknown Player' }}
-                                       </a>
-                                    </div>
-                                    <div class="small text-muted">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}</div>
-                                </td>
-                                <td>
-                                    <div class="health-issue-badges">
-                                        {% for issue in card_issue_map.get(card.id, []) %}
-                                            <span class="badge text-bg-warning">{{ issue }}</span>
-                                        {% endfor %}
-                                    </div>
-                                </td>
-                                <td>
-                                    {% if card.image_filename %}
-                                        <img class="health-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name or 'Card' }} image">
-                                    {% else %}
-                                        <span class="badge text-bg-warning">Missing</span>
-                                    {% endif %}
-                                </td>
-                                <td>{% if card.purchase_price is not none %}${{ "%.2f"|format(card.purchase_price or 0) }}{% else %}<span class="badge text-bg-danger">Missing</span>{% endif %}</td>
-                                <td>{% if card.storage_location %}{{ card.storage_location }}{% else %}<span class="badge text-bg-warning">Missing</span>{% endif %}</td>
-                                <td>{% if card.asking_price %}${{ "%.2f"|format(card.asking_price or 0) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                                <td>{% if card.estimated_value %}${{ "%.2f"|format(card.estimated_value or 0) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                                <td>{{ card.status or '—' }}</td>
-                                <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('edit_card', card_id=card.id) }}">Fix</a>
-                                    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('card_detail', card_id=card.id) }}">View</a>
-                                </td>
+                                <th>Card</th>
+                                <th>Issues</th>
+                                <th>Image</th>
+                                <th>Cost</th>
+                                <th>Storage</th>
+                                <th>Ask</th>
+                                <th>Comp</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="text-center text-muted py-5">
-                No inventory health issues in this view.
-            </div>
-        {% endif %}
+                        </thead>
+                        <tbody>
+                            {% for card in cards_needing_attention %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <a class="health-card-title-link"
+                                               href="{{ url_for('card_detail', card_id=card.id) }}">
+                                               {{ card.player_name or 'Unknown Player' }}
+                                            </a>
+                                        </div>
+                                        <div class="health-card-meta">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} {% if card.card_number %}#{{ card.card_number }}{% endif %}</div>
+                                    </td>
+                                    <td>
+                                        <div class="health-issue-badges">
+                                            {% for issue in card_issue_map.get(card.id, []) %}
+                                                <span class="badge text-bg-warning">{{ issue }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if card.image_filename %}
+                                            <img class="health-thumb" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name or 'Card' }} image">
+                                        {% else %}
+                                            <span class="badge text-bg-warning">Missing</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if card.purchase_price is not none %}
+                                            <span class="health-value">${{ "%.2f"|format(card.purchase_price or 0) }}</span>
+                                        {% else %}
+                                            <span class="badge text-bg-danger">Missing</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if card.storage_location %}
+                                            <span class="health-value">{{ card.storage_location }}</span>
+                                        {% else %}
+                                            <span class="badge text-bg-warning">Missing</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{% if card.asking_price %}<span class="health-value">${{ "%.2f"|format(card.asking_price or 0) }}</span>{% else %}<span class="health-muted">—</span>{% endif %}</td>
+                                    <td>{% if card.estimated_value %}<span class="health-value">${{ "%.2f"|format(card.estimated_value or 0) }}</span>{% else %}<span class="health-muted">—</span>{% endif %}</td>
+                                    <td><span class="health-status-pill">{{ card.status or '—' }}</span></td>
+                                    <td class="text-end health-actions">
+                                        <a class="btn btn-sm btn-primary" href="{{ url_for('edit_card', card_id=card.id) }}">Fix</a>
+                                        <a class="btn btn-sm btn-outline-info" href="{{ url_for('card_detail', card_id=card.id) }}">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="health-empty-state">
+                    <div class="health-empty-icon">✓</div>
+                    <div class="fw-bold text-light">No inventory health issues in this view.</div>
+                    <div class="small mt-1">This filter is clean.</div>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
