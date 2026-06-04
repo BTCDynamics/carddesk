@@ -257,13 +257,6 @@
                     {% endif %}
                 {% endwith %}
 
-                {% if staged_success %}
-                    <div class="success-card mb-3" id="stagedSuccessBanner">
-                        <div class="fw-bold">PSA cert {{ scanned_cert }} was staged for review.</div>
-                        <div class="small-help">Scan another slab, or open the review queue from your desktop.</div>
-                    </div>
-                {% endif %}
-
                 {% if not token_configured %}
                     <div class="warning-card mb-3">
                         <div class="fw-bold">PSA API token is not configured.</div>
@@ -417,18 +410,17 @@
             }
         }
 
-        function focusStagedSuccessBanner() {
-            const successBanner = document.getElementById("stagedSuccessBanner");
+        function focusScannerAfterStagedSave() {
+            const reader = document.getElementById("psa-mobile-reader");
 
-            if (!successBanner) {
+            if (!reader) {
                 return;
             }
 
             setStatus("✅ PSA cert staged for review. Ready for the next scan.", "text-success");
-            successBanner.classList.add("post-submit-focus");
 
             setTimeout(function () {
-                successBanner.scrollIntoView({ behavior: "smooth", block: "center" });
+                reader.scrollIntoView({ behavior: "smooth", block: "center" });
             }, 250);
 
             if (navigator.vibrate) {
@@ -436,7 +428,7 @@
             }
 
             // Browsers may block autoplay audio on page load. This works where allowed;
-            // the visual scroll/highlight still confirms success everywhere.
+            // the visual status still confirms success everywhere.
             setTimeout(playConfirmationChime, 350);
         }
 
@@ -744,7 +736,9 @@
             }
         });
 
-        focusStagedSuccessBanner();
+        {% if staged_success %}
+        focusScannerAfterStagedSave();
+        {% endif %}
 
         startButton.addEventListener("click", startScanner);
         stopButton.addEventListener("click", stopScanner);
