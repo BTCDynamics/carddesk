@@ -286,11 +286,11 @@
                         <span class="small-help" id="zoomValue">1x</span>
                     </div>
                     <button class="btn btn-outline-warning" type="button" id="torchButton" style="display:none;">Toggle Light</button>
-                    <div class="small-help">Tip: PSA slab barcodes usually scan best around 4.8x zoom. Hold the phone steady, keep the slab flat, and use bright light.</div>
+                    <div class="small-help">Tip: PSA slab barcodes usually scan best around 4.2x zoom. Hold the phone steady, keep the slab flat, and use bright light.</div>
                 </div>
 
                 <div class="scan-tip-card mt-3 mb-3 small">
-                    For tiny PSA barcodes, CardDesk now starts the camera near 4.8x zoom when supported. Use bright light, keep the slab flat, and hold steady while the phone focuses.
+                    For tiny PSA barcodes, CardDesk now starts the camera near 4.2x zoom when supported. Use bright light, keep the slab flat, and hold steady while the phone focuses.
                 </div>
 
                 <form method="POST" action="{{ url_for('psa_mobile_scan') }}" class="mt-4" id="psaMobileForm">
@@ -364,6 +364,17 @@
             }
 
             return value.replace(/[^A-Za-z0-9]/g, "");
+        }
+
+        function isLikelyCompletePsaCert(certNumber) {
+            const value = String(certNumber || "").trim();
+
+            // PSA cert numbers are numeric. Reject likely partial reads before staging.
+            if (!/^\d+$/.test(value)) {
+                return false;
+            }
+
+            return value.length >= 7 && value.length <= 9;
         }
 
         function setStatus(message, cssClass) {
@@ -571,7 +582,7 @@
                 zoomSlider.max = capabilities.zoom.max || 1;
                 zoomSlider.step = capabilities.zoom.step || 0.1;
 
-                const preferredZoom = 4.8;
+                const preferredZoom = 4.2;
                 const startingZoom = Math.min(
                     Math.max(preferredZoom, Number(zoomSlider.min)),
                     Number(zoomSlider.max)
@@ -650,6 +661,11 @@
                             return;
                         }
 
+                        if (!isLikelyCompletePsaCert(certNumber)) {
+                            setStatus("Possible partial PSA cert scan: " + certNumber + ". Please rescan or type the full cert.", "text-warning");
+                            return;
+                        }
+
                         await handleSuccessfulCertScan(certNumber);
                     },
                     function() {}
@@ -680,6 +696,11 @@
                         async function(decodedText) {
                             const certNumber = cleanCertValue(decodedText);
                             if (certNumber) {
+                                if (!isLikelyCompletePsaCert(certNumber)) {
+                                    setStatus("Possible partial PSA cert scan: " + certNumber + ". Please rescan or type the full cert.", "text-warning");
+                                    return;
+                                }
+
                                 await handleSuccessfulCertScan(certNumber);
                             }
                         },
