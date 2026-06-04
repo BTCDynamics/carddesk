@@ -4,23 +4,90 @@
 
 {% block content %}
 <style>
+.psa-lookup-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.psa-lookup-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 1.25rem;
+    align-items: stretch;
+}
+
+.psa-main-panel,
+.psa-mobile-qr-card,
+.psa-options-panel {
+    height: 100%;
+    border-radius: 1.15rem;
+}
+
+.psa-main-panel {
+    border: 1px solid rgba(148, 163, 184, .22);
+    background: rgba(255, 255, 255, .02);
+}
+
+.psa-cert-input-wrap {
+    max-width: 560px;
+}
+
 .psa-mobile-qr-card {
-    background: linear-gradient(145deg, #0f172a, #1e293b);
+    background: radial-gradient(circle at top left, rgba(56, 189, 248, .22), transparent 36%), linear-gradient(145deg, #0f172a, #1e293b);
     border: 1px solid rgba(96, 165, 250, .35);
-    border-radius: 1rem;
     color: #ffffff;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .22);
 }
 
 .psa-mobile-qr-card .text-muted {
     color: #cbd5e1 !important;
 }
 
+.psa-qr-wrap {
+    display: flex;
+    justify-content: center;
+    margin: .85rem 0;
+}
+
 .psa-mobile-qr-img {
-    width: 180px;
-    height: 180px;
-    border-radius: .85rem;
+    width: 172px;
+    height: 172px;
+    border-radius: 1rem;
     background: #ffffff;
-    padding: .5rem;
+    padding: .55rem;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .24);
+}
+
+.psa-url-pill {
+    max-width: 100%;
+    padding: .55rem .7rem;
+    border-radius: .75rem;
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: #dbeafe;
+    font-size: .78rem;
+}
+
+.psa-options-panel {
+    border: 1px solid rgba(148, 163, 184, .18);
+    background: rgba(15, 23, 42, .025);
+}
+
+.psa-section-label {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: 1rem;
+    font-weight: 800;
+}
+
+.psa-section-label::before {
+    content: "";
+    display: inline-block;
+    width: .45rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    background: var(--bs-info);
 }
 
 .psa-scan-panel {
@@ -55,124 +122,140 @@
     font-size: .85rem;
     color: #64748b;
 }
+
+@media (max-width: 991.98px) {
+    .psa-lookup-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .psa-mobile-qr-card {
+        max-width: 560px;
+    }
+}
 </style>
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
-    <div>
-        <h1 class="h2 mb-1">PSA Cert Lookup</h1>
-        <p class="text-muted mb-0">Enter a PSA certification number to stage a graded card for CardDesk review.</p>
+<div class="psa-lookup-shell">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+        <div>
+            <h1 class="h2 mb-1">PSA Cert Lookup</h1>
+            <p class="text-muted mb-0">Enter a PSA certification number to stage a graded card for CardDesk review.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-info" href="{{ url_for('ai_import_review') }}">AI Review Queue</a>
+            <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Back to Inventory</a>
+        </div>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-info" href="{{ url_for('ai_import_review') }}">AI Review Queue</a>
-        <a class="btn btn-outline-secondary" href="{{ url_for('cards') }}">Back to Inventory</a>
-    </div>
-</div>
 
-<div class="card page-card mb-4">
-    <div class="card-body">
-        {% if not token_configured %}
-            <div class="alert alert-warning">
-                PSA_ACCESS_TOKEN is not configured. Add it in Render before using PSA Cert Lookup.
-            </div>
-        {% endif %}
+    {% if not token_configured %}
+        <div class="alert alert-warning">
+            PSA_ACCESS_TOKEN is not configured. Add it in Render before using PSA Cert Lookup.
+        </div>
+    {% endif %}
 
-        <form method="POST" action="{{ url_for('psa_lookup') }}">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">PSA Cert Number</label>
-                    <input id="psa-cert-number" class="form-control form-control-lg" type="text" name="cert_number" placeholder="Example: 98491811" inputmode="numeric" autocomplete="off" required autofocus>
-                    <div class="form-text">CardDesk will use PSA's cert data to pre-fill the review record.</div>
+    <form method="POST" action="{{ url_for('psa_lookup') }}">
+        <div class="psa-lookup-grid mb-4">
+            <div class="card page-card psa-main-panel">
+                <div class="card-body p-4">
+                    <div class="psa-section-label">Lookup Details</div>
 
-                    <div class="mt-3">
-                        <button class="btn btn-primary px-4" type="submit" {% if not token_configured %}disabled{% endif %}>
-                            Lookup PSA Cert
-                        </button>
-                    </div>
-                </div>
-            </div>
+                    <div class="psa-cert-input-wrap">
+                        <label class="form-label fw-bold">PSA Cert Number</label>
+                        <input id="psa-cert-number" class="form-control form-control-lg" type="text" name="cert_number" placeholder="Example: 98491811" inputmode="numeric" autocomplete="off" required autofocus>
+                        <div class="form-text">CardDesk will use PSA's cert data to pre-fill the review record.</div>
 
-            <div class="row g-3 mt-2">
-                <div class="col-md-3">
-                    <label class="form-label">Collection</label>
-                    <select class="form-select" name="collection_type">
-                        <option value="Inventory" selected>Inventory</option>
-                        <option value="Personal Collection">Personal Collection</option>
-                        <option value="Trade Bait">Trade Bait</option>
-                        <option value="Grading Queue">Grading Queue</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" name="status">
-                        <option value="Active" selected>Active</option>
-                        <option value="Holding">Holding</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="card psa-mobile-qr-card mt-4">
-                <div class="card-body">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-md-8">
-                            <div class="fw-bold h5 mb-1">Scan PSA Slabs With Your Phone</div>
-                            <p class="text-muted mb-2">Open the dedicated mobile scanner by scanning this QR code. The phone page is simplified for barcode intake and sends scanned slabs straight to the AI Review Queue.</p>
-                            <a class="btn btn-info" href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener">Open Mobile PSA Scanner</a>
+                        <div class="mt-3">
+                            <button class="btn btn-primary px-4" type="submit" {% if not token_configured %}disabled{% endif %}>
+                                Lookup PSA Cert
+                            </button>
                         </div>
-                        <div class="col-md-4 text-md-end text-center">
-                            <a href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener" title="Open Mobile PSA Scanner">
-                                <img
-                                    class="psa-mobile-qr-img"
-                                    src="{{ psa_mobile_scan_qr_url }}"
-                                    alt="QR code for CardDesk PSA mobile scanner"
-                                    onerror="this.style.display='none'; this.closest('a').insertAdjacentHTML('afterend', '<div class=&quot;alert alert-warning mt-2 mb-0 small&quot;>QR image did not load. Use the Open Mobile PSA Scanner button or the URL below.</div>');"
-                                >
-                            </a>
-                            <div class="small text-muted mt-2">Scan this with your phone camera.</div>
-                            <div class="small text-muted mt-1 text-break">{{ psa_mobile_scan_url }}</div>
+                    </div>
+
+                    <div class="row g-3 mt-4">
+                        <div class="col-md-6 col-lg-4">
+                            <label class="form-label">Collection</label>
+                            <select class="form-select" name="collection_type">
+                                <option value="Inventory" selected>Inventory</option>
+                                <option value="Personal Collection">Personal Collection</option>
+                                <option value="Trade Bait">Trade Bait</option>
+                                <option value="Grading Queue">Grading Queue</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="Active" selected>Active</option>
+                                <option value="Holding">Holding</option>
+                            </select>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <hr class="my-4">
+            <div class="card psa-mobile-qr-card">
+                <div class="card-body p-4 text-center">
+                    <div class="fw-bold h5 mb-1">Phone Scanner</div>
+                    <p class="text-muted small mb-2">Scan PSA slab barcodes from your phone and send them straight to the AI Review Queue.</p>
 
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Acquisition Source</label>
-                    <select class="form-select" name="acquisition_source">
-                        {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
-                            <option value="{{ source }}" {% if source == "Existing Inventory" %}selected{% endif %}>{{ source }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="form-text">Existing Inventory will not count as a new acquisition.</div>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Acquisition Date</label>
-                    <input class="form-control" type="date" name="acquisition_date">
-                    <input type="hidden" name="purchase_date" value="">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Acquisition Event / Location</label>
-                    <input class="form-control" type="text" name="acquisition_event" placeholder="Card show, eBay, trade...">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Default Storage Location</label>
-                    <input class="form-control" type="text" name="storage_location" placeholder="Box A / PSA Slabs / Row 1">
+                    <div class="psa-qr-wrap">
+                        <a href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener" title="Open Mobile PSA Scanner">
+                            <img
+                                class="psa-mobile-qr-img"
+                                src="{{ psa_mobile_scan_qr_url }}"
+                                alt="QR code for CardDesk PSA mobile scanner"
+                                onerror="this.style.display='none'; this.closest('a').insertAdjacentHTML('afterend', '<div class=&quot;alert alert-warning mt-2 mb-0 small&quot;>QR image did not load. Use the Open Mobile PSA Scanner button or the URL below.</div>');"
+                            >
+                        </a>
+                    </div>
+
+                    <a class="btn btn-info w-100 fw-bold" href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener">Open Mobile Scanner</a>
+                    <div class="small text-muted mt-2">Point your phone camera at the QR code.</div>
+                    <div class="psa-url-pill text-break mt-3">{{ psa_mobile_scan_url }}</div>
                 </div>
             </div>
-        </form>
-    </div>
-</div>
+        </div>
 
-<div class="card page-card">
-    <div class="card-body">
-        <div class="fw-bold mb-2">How this works</div>
-        <p class="text-muted mb-2">
-            PSA lookup creates a staged review record instead of importing directly. That lets you confirm the card,
-            add cost, storage, asking price, and acquisition details before it becomes real inventory.
-        </p>
-        <div class="small text-muted">
-            Pending review cards: <strong>{{ pending_count }}</strong>
+        <div class="card page-card psa-options-panel mb-4">
+            <div class="card-body p-4">
+                <div class="psa-section-label">Acquisition Defaults</div>
+
+                <div class="row g-3">
+                    <div class="col-md-6 col-xl-3">
+                        <label class="form-label">Acquisition Source</label>
+                        <select class="form-select" name="acquisition_source">
+                            {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
+                                <option value="{{ source }}" {% if source == "Existing Inventory" %}selected{% endif %}>{{ source }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Existing Inventory will not count as a new acquisition.</div>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <label class="form-label">Acquisition Date</label>
+                        <input class="form-control" type="date" name="acquisition_date">
+                        <input type="hidden" name="purchase_date" value="">
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <label class="form-label">Acquisition Event / Location</label>
+                        <input class="form-control" type="text" name="acquisition_event" placeholder="Card show, eBay, trade...">
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <label class="form-label">Default Storage Location</label>
+                        <input class="form-control" type="text" name="storage_location" placeholder="Box A / PSA Slabs / Row 1">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card page-card">
+        <div class="card-body">
+            <div class="fw-bold mb-2">How this works</div>
+            <p class="text-muted mb-2">
+                PSA lookup creates a staged review record instead of importing directly. That lets you confirm the card,
+                add cost, storage, asking price, and acquisition details before it becomes real inventory.
+            </p>
+            <div class="small text-muted">
+                Pending review cards: <strong>{{ pending_count }}</strong>
+            </div>
         </div>
     </div>
 </div>
