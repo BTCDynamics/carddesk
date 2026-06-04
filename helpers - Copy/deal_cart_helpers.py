@@ -47,9 +47,6 @@ def get_deal_cart_cards():
     return active_cards
 
 
-
-
-
 def get_deal_cart_quantity():
     """Return total card quantity represented by active deal-cart records."""
     return sum((card.quantity or 1) for card in get_deal_cart_cards())

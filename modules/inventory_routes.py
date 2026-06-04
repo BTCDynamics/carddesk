@@ -20,6 +20,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
     @app.route("/cards")
     def cards():
         sold_range = request.args.get("sold_range")
+        acquisition_range = request.args.get("acquisition_range")
         search_query = request.args.get("q", "")
         sport_filter = request.args.get("sport", "")
         status_filter = request.args.get("status", "")
@@ -45,6 +46,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         # If the user chooses filters, those filters take control.
         has_manual_scope_filter = any([
             sold_range,
+            acquisition_range,
             status_filter,
             collection_type_filter,
         ])
@@ -161,8 +163,26 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             if start_date:
                 query = query.filter(Card.sold_date >= start_date.isoformat())
 
+        if acquisition_range:
+            today_value = date.today()
+
+            if acquisition_range == "today":
+                start_date = today_value
+            elif acquisition_range == "3d":
+                start_date = today_value - timedelta(days=3)
+            elif acquisition_range == "7d":
+                start_date = today_value - timedelta(days=6)
+            elif acquisition_range == "30d":
+                start_date = today_value - timedelta(days=29)
+            else:
+                start_date = None
+
+            if start_date:
+                query = query.filter(Card.acquisition_date >= start_date.isoformat())
+
         has_active_filter = any([
             sold_range,
+            acquisition_range,
             search_query,
             sport_filter,
             status_filter,
@@ -269,6 +289,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             filtered_total_sold=filtered_total_sold,
             filtered_total_profit=filtered_total_profit,
             search_query=search_query,
+            acquisition_range=acquisition_range,
             sport_filter=sport_filter,
             status_filter=status_filter,
             collection_type_filter=collection_type_filter,

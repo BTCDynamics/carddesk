@@ -26,12 +26,13 @@ def save_uploaded_image(file_storage):
         flash("Image must be a PNG, JPG, JPEG, GIF, or WEBP file.")
         return None
 
-    os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(upload_folder, exist_ok=True)
 
     original_filename = secure_filename(file_storage.filename)
     extension = original_filename.rsplit(".", 1)[1].lower()
     unique_filename = f"{uuid4().hex}.{extension}"
-    save_path = os.path.join(current_app.config["UPLOAD_FOLDER"], unique_filename)
+    save_path = os.path.join(upload_folder, unique_filename)
 
     file_storage.save(save_path)
 
@@ -42,7 +43,8 @@ def delete_image_file(filename):
     if not filename:
         return
 
-    image_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    image_path = os.path.join(upload_folder, filename)
 
     if os.path.exists(image_path):
         os.remove(image_path)
@@ -53,6 +55,7 @@ def save_uploaded_image_with_source(file_storage):
     source_filename = secure_filename(file_storage.filename) if file_storage and file_storage.filename else None
     image_filename = save_uploaded_image(file_storage)
     return image_filename, source_filename
+
 
 def slugify_image_part(value):
     """Convert a card field into a safe, readable filename part."""
@@ -69,8 +72,10 @@ def slugify_image_part(value):
 
 def unique_upload_filename(base_name, extension, current_filename=None):
     """Return a filename that does not collide inside the upload folder."""
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+
     candidate = f"{base_name}.{extension}"
-    candidate_path = os.path.join(current_app.config["UPLOAD_FOLDER"], candidate)
+    candidate_path = os.path.join(upload_folder, candidate)
 
     if current_filename and candidate == current_filename:
         return candidate
@@ -78,7 +83,7 @@ def unique_upload_filename(base_name, extension, current_filename=None):
     counter = 2
     while os.path.exists(candidate_path):
         candidate = f"{base_name}_{counter}.{extension}"
-        candidate_path = os.path.join(current_app.config["UPLOAD_FOLDER"], candidate)
+        candidate_path = os.path.join(upload_folder, candidate)
         counter += 1
 
     return candidate
@@ -93,7 +98,8 @@ def rename_image_for_inventory(image_filename, card_like):
     if not image_filename:
         return image_filename
 
-    source_path = os.path.join(current_app.config["UPLOAD_FOLDER"], image_filename)
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    source_path = os.path.join(upload_folder, image_filename)
 
     if not os.path.exists(source_path):
         return image_filename
@@ -118,10 +124,7 @@ def rename_image_for_inventory(image_filename, card_like):
     if new_filename == image_filename:
         return image_filename
 
-    destination_path = os.path.join(current_app.config["UPLOAD_FOLDER"], new_filename)
+    destination_path = os.path.join(upload_folder, new_filename)
     os.replace(source_path, destination_path)
 
     return new_filename
-
-
-

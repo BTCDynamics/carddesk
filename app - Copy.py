@@ -1,10 +1,27 @@
 import os
+import re
+import json
+import base64
+import urllib.error
+import urllib.request
 from urllib.parse import quote
+from datetime import date, datetime, timedelta
+from uuid import uuid4
 
-from flask import Flask, render_template, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
 from sqlalchemy import inspect, text
+from werkzeug.utils import secure_filename
 
-from models import db, CardImportStaging
+from models import db, Card, CardImportStaging
+from helpers.psa_helpers import *
+from helpers.acquisition_helpers import (
+    clean_value,
+    acquisition_value,
+    acquisition_date_value,
+    purchase_date_value,
+    parse_card_date,
+    is_dashboard_acquisition,
+)
 from helpers.card_code_helpers import generate_card_code
 from helpers.image_helpers import (
     save_uploaded_image,
@@ -17,8 +34,22 @@ from helpers.recognition_helpers import (
     recognize_card_image,
     recognition_configured,
 )
-from helpers.deal_cart_helpers import get_deal_cart_cards
-from helpers.inventory_health_helpers import get_inventory_health_summary
+from helpers.ai_review_helpers import (
+    find_probable_duplicate_from_staging,
+    duplicate_reason_from_staging,
+)
+from helpers.storage_helpers import get_storage_locations, get_storage_summary
+from helpers.deal_cart_helpers import (
+    get_deal_cart_ids,
+    save_deal_cart_ids,
+    get_deal_cart_cards,
+    get_deal_cart_quantity,
+)
+from helpers.inventory_health_helpers import (
+    get_inventory_health_summary,
+    describe_inventory_health_issues,
+)
+from helpers.reference_helpers import build_reference_search_query, build_reference_links
 from modules.storage_routes import register_storage_routes
 from modules.dashboard_routes import register_dashboard_routes
 from modules.inventory_routes import register_inventory_routes
@@ -27,8 +58,6 @@ from modules.psa_routes import register_psa_routes
 from modules.ai_import_routes import register_ai_import_routes
 from modules.capture_routes import register_capture_routes
 from modules.fulfillment_routes import register_fulfillment_routes
-
-
 app = Flask(__name__)
 
 app.secret_key = os.environ.get("CARDWATCH_SECRET_KEY", "cardwatch-dev-secret")
@@ -40,6 +69,17 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(DATA_DIR, 'car
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = PERSISTENT_UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB upload limit
+
+# PSA cert lookup testing. Add PSA_ACCESS_TOKEN in Render environment variables.
+PSA_ACCESS_TOKEN = os.environ.get("PSA_ACCESS_TOKEN")
+PSA_CERT_LOOKUP_ENDPOINT = os.environ.get(
+    "PSA_CERT_LOOKUP_ENDPOINT",
+    "https://api.psacard.com/publicapi/cert/GetByCertNumber"
+)
+PSA_CERT_IMAGES_ENDPOINT = os.environ.get(
+    "PSA_CERT_IMAGES_ENDPOINT",
+    "https://api.psacard.com/publicapi/cert/GetImagesByCertNumber"
+)
 
 db.init_app(app)
 
@@ -318,6 +358,11 @@ def inject_global_counts():
         "missing_asking_price_count": inventory_health["missing_asking_price_count"],
         "missing_estimated_value_count": inventory_health["missing_estimated_value_count"],
     }
+
+
+def get_deal_cart_quantity():
+    """Return total card quantity represented by active deal-cart records."""
+    return sum((card.quantity or 1) for card in get_deal_cart_cards())
 
 
 # Route modules that depend on helper functions defined above.

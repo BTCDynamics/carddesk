@@ -59,7 +59,6 @@ def is_dashboard_acquisition(card):
     return getattr(card, "acquisition_source", None) in ACQUISITION_DASHBOARD_SOURCES
 
 
-
 def parse_card_date(value):
     """Convert saved card date strings into a date object for reliable range filtering."""
     if not value:
@@ -79,5 +78,3 @@ def parse_card_date(value):
         return date(int(year), int(month), int(day))
     except (ValueError, TypeError):
         return None
-
-
