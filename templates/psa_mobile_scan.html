@@ -756,7 +756,7 @@
                     qrbox: function(viewfinderWidth, viewfinderHeight) {
                         // PSA slab barcodes are short and wide, so use a wide, shallow scan area.
                         const width = Math.floor(viewfinderWidth * 0.72);
-                        const height = Math.max(70, Math.floor(viewfinderHeight * 0.14));
+                        const height = Math.max(60, Math.floor(viewfinderHeight * 0.125));
                         return { width: width, height: height };
                     },
                     aspectRatio: 1.777778,
@@ -805,7 +805,7 @@
                             qrbox: function(viewfinderWidth, viewfinderHeight) {
                                 return {
                                     width: Math.floor(viewfinderWidth * 0.72),
-                                    height: Math.max(70, Math.floor(viewfinderHeight * 0.14))
+                                    height: Math.max(60, Math.floor(viewfinderHeight * 0.125))
                                 };
                             },
                             aspectRatio: 1.777778,
