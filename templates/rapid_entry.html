@@ -9,6 +9,20 @@
     color: #e5e7eb;
 }
 
+/* Constrain width like Inventory Health / Aging / Comp Refresh */
+.rapid-entry-page {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+}
+
+@media (min-width: 1600px) {
+    .rapid-entry-page {
+        max-width: 1600px;
+    }
+}
+
+
 .rapid-entry-hero {
     display: flex;
     justify-content: space-between;
@@ -38,13 +52,13 @@
     background: linear-gradient(135deg, #fbbf24, #38bdf8);
     color: #0f172a;
     font-size: 1.35rem;
-    font-weight: 900;
+    font-weight: 700;
     box-shadow: 0 0 24px rgba(56, 189, 248, .24);
 }
 
 .rapid-entry-page h1 {
     color: #ffffff;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .rapid-entry-page .text-muted {
@@ -76,38 +90,75 @@
     align-items: center !important;
     gap: .75rem !important;
 
-    background-color: #4b5563 !important;
-    background-image: none !important;
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, .12), transparent 40%),
+        linear-gradient(135deg, rgba(30, 41, 59, .96), rgba(15, 23, 42, .98)) !important;
 
-    padding: .85rem 1rem !important;
-    border-radius: 10px !important;
+    padding: .82rem 1rem !important;
+    border-radius: 12px !important;
 
-    border: 1px solid #6b7280 !important;
-    border-bottom: 1px solid #6b7280 !important;
+    border: 1px solid rgba(71, 85, 105, .55) !important;
+    border-bottom: 1px solid rgba(71, 85, 105, .55) !important;
 
-    color: #ffffff !important;
+    color: #e2e8f0 !important;
 
-    font-size: 1.2rem !important;
-    font-weight: 900 !important;
-    letter-spacing: .08em !important;
+    font-size: .92rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .075em !important;
     text-transform: uppercase !important;
 
-    margin-bottom: 1.25rem !important;
+    margin-bottom: 1.15rem !important;
 
     box-shadow:
         inset 0 1px 0 rgba(255,255,255,.08),
-        0 .35rem .9rem rgba(0,0,0,.18) !important;
+        0 .55rem 1.2rem rgba(2,6,23,.24) !important;
 }
 
 .rapid-entry-page .cd-section-title::before {
     content: "";
-    width: .85rem;
-    height: .85rem;
+    width: .7rem;
+    height: .7rem;
     border-radius: 999px;
     background: linear-gradient(135deg, #fbbf24, #38bdf8);
-    box-shadow: 0 0 14px rgba(56, 189, 248, .35);
+    box-shadow: 0 0 14px rgba(56, 189, 248, .28);
     flex: 0 0 auto;
 }
+
+/* Rapid Entry polish */
+.rapid-entry-page .cd-section {
+    border-color: rgba(96, 165, 250, .16);
+    background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, .10), transparent 34%),
+        rgba(8, 18, 33, .62);
+}
+
+.rapid-entry-page .form-label {
+    color: #dbeafe !important;
+    font-weight: 600 !important;
+}
+
+.rapid-entry-page .form-control,
+.rapid-entry-page .form-select,
+.rapid-entry-page input.form-control,
+.rapid-entry-page select.form-select,
+.rapid-entry-page textarea.form-control {
+    background-color: rgba(15, 23, 42, .72) !important;
+    border-color: rgba(148, 163, 184, .22) !important;
+    color: #f9fafb !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+}
+
+.rapid-entry-page .form-control:focus,
+.rapid-entry-page .form-select:focus,
+.rapid-entry-page input.form-control:focus,
+.rapid-entry-page select.form-select:focus,
+.rapid-entry-page textarea.form-control:focus {
+    background-color: #0f172a !important;
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 .2rem rgba(96, 165, 250, .16) !important;
+}
+
 
 /* Keep Raw/Graded boxes dark on page load */
 .cw-form-compact #raw-fields,
@@ -163,7 +214,7 @@
     padding: .65rem .8rem;
     border-radius: .75rem;
     font-size: .84rem;
-    font-weight: 650;
+    font-weight: 500;
 }
 
 .rapid-acquisition-note.existing {
