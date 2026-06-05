@@ -4,10 +4,24 @@
 
 {% block content %}
 <style>
-/* Edit Card page: dark CardDesk form styling */
+/* Edit Card page: polished CardDesk dark theme with teal edit accents */
 .edit-card-page {
     color: #e5e7eb;
 }
+
+/* Constrain width like Inventory Health / Aging / Comp Refresh */
+.edit-card-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+}
+
+@media (min-width: 1600px) {
+    .edit-card-page {
+        max-width: 1500px;
+    }
+}
+
 
 .edit-card-hero {
     display: flex;
@@ -17,9 +31,12 @@
     margin-bottom: 1.25rem;
     padding: 1.15rem 1.25rem;
     border-radius: 1rem;
-    background: linear-gradient(145deg, #111827, #1f2937);
-    border: 1px solid rgba(148, 163, 184, .18);
-    box-shadow: 0 .65rem 1.6rem rgba(0, 0, 0, .22);
+    background:
+        radial-gradient(circle at top left, rgba(20, 184, 166, .16), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, .09), transparent 38%),
+        linear-gradient(145deg, #07111f, #101b2b);
+    border: 1px solid rgba(45, 212, 191, .22);
+    box-shadow: 0 1rem 2.4rem rgba(2, 6, 23, .34);
 }
 
 .edit-card-title-wrap {
@@ -31,20 +48,20 @@
 .edit-card-icon {
     width: 44px;
     height: 44px;
-    border: 1px solid rgba(251, 191, 36, .38);
+    border: 1px solid rgba(45, 212, 191, .42);
     border-radius: 12px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #fbbf24, #38bdf8);
-    color: #0f172a;
+    background: linear-gradient(135deg, #14b8a6, #f59e0b);
+    color: #07111f;
     font-size: 1.35rem;
-    font-weight: 900;
+    font-weight: 750;
     box-shadow: 0 0 24px rgba(56, 189, 248, .24);
 }
 
 .edit-card-page h1 {
     color: #ffffff;
-    font-weight: 900;
+    font-weight: 750;
 }
 
 .edit-card-page .text-muted {
@@ -52,10 +69,12 @@
 }
 
 .edit-card-form-card {
-    background: linear-gradient(145deg, #111827, #1f2937) !important;
-    border: 1px solid rgba(148, 163, 184, .18) !important;
-    border-radius: 14px !important;
-    box-shadow: 0 .65rem 1.6rem rgba(0, 0, 0, .22) !important;
+    background:
+        radial-gradient(circle at top left, rgba(20, 184, 166, .08), transparent 36%),
+        linear-gradient(145deg, #07111f, #101b2b) !important;
+    border: 1px solid rgba(45, 212, 191, .18) !important;
+    border-radius: 1.15rem !important;
+    box-shadow: 0 1rem 2.2rem rgba(2, 6, 23, .30) !important;
     overflow: hidden;
 }
 
@@ -76,50 +95,94 @@
     align-items: center !important;
     gap: .75rem !important;
 
-    background-color: #4b5563 !important;
-    background-image: none !important;
+    background:
+        radial-gradient(circle at top right, rgba(20, 184, 166, .24), transparent 40%),
+        linear-gradient(135deg, rgba(15, 118, 110, .92), rgba(15, 23, 42, .96)) !important;
 
-    padding: .85rem 1rem !important;
-    border-radius: 10px !important;
+    padding: .82rem 1rem !important;
+    border-radius: 12px !important;
 
-    border: 1px solid #6b7280 !important;
-    border-bottom: 1px solid #6b7280 !important;
+    border: 1px solid rgba(45, 212, 191, .34) !important;
+    border-bottom: 1px solid rgba(45, 212, 191, .34) !important;
 
-    color: #ffffff !important;
+    color: #f8fafc !important;
 
-    font-size: 1.2rem !important;
-    font-weight: 900 !important;
-    letter-spacing: .08em !important;
+    font-size: .92rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .075em !important;
     text-transform: uppercase !important;
 
-    margin-bottom: 1.25rem !important;
+    margin-bottom: 1.15rem !important;
 
     box-shadow:
         inset 0 1px 0 rgba(255,255,255,.08),
-        0 .35rem .9rem rgba(0,0,0,.18) !important;
+        0 .55rem 1.2rem rgba(2,6,23,.24) !important;
 }
 
 .edit-card-page .cd-section-title::before {
     content: "";
-    width: .85rem;
-    height: .85rem;
+    width: .7rem;
+    height: .7rem;
     border-radius: 999px;
-    background: linear-gradient(135deg, #fbbf24, #38bdf8);
-    box-shadow: 0 0 14px rgba(56, 189, 248, .35);
+    background: linear-gradient(135deg, #f59e0b, #2dd4bf);
+    box-shadow: 0 0 14px rgba(45, 212, 191, .35);
     flex: 0 0 auto;
 }
+
+/* Edit Card premium polish */
+.edit-card-page .cd-section {
+    border-color: rgba(45, 212, 191, .16);
+    background:
+        radial-gradient(circle at top right, rgba(20, 184, 166, .12), transparent 34%),
+        rgba(8, 18, 33, .62);
+}
+
+.edit-card-page .form-label {
+    color: #ccfbf1 !important;
+    font-weight: 600 !important;
+}
+
+.edit-card-page .form-control,
+.edit-card-page .form-select,
+.edit-card-page input.form-control,
+.edit-card-page select.form-select,
+.edit-card-page textarea.form-control {
+    background-color: rgba(15, 23, 42, .72) !important;
+    border-color: rgba(148, 163, 184, .22) !important;
+    color: #f9fafb !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+}
+
+.edit-card-page .form-control:focus,
+.edit-card-page .form-select:focus,
+.edit-card-page input.form-control:focus,
+.edit-card-page select.form-select:focus,
+.edit-card-page textarea.form-control:focus {
+    background-color: #0f172a !important;
+    border-color: #2dd4bf !important;
+    box-shadow: 0 0 0 .2rem rgba(45, 212, 191, .16) !important;
+}
+
+.edit-card-page select.form-select option {
+    background-color: #111827 !important;
+    color: #f9fafb !important;
+}
+
 
 /* Keep Raw/Graded boxes dark on page load */
 .cw-form-compact #raw-fields,
 .cw-form-compact #graded-fields {
-    background: linear-gradient(145deg, #202b3a, #253246) !important;
-    border-color: rgba(148, 163, 184, .24) !important;
+    background:
+        radial-gradient(circle at top right, rgba(20, 184, 166, .10), transparent 36%),
+        linear-gradient(145deg, #0f172a, #182235) !important;
+    border-color: rgba(45, 212, 191, .20) !important;
 }
 
 .cw-form-compact #raw-fields:hover,
 .cw-form-compact #graded-fields:hover {
-    background: linear-gradient(145deg, #253246, #2c3a50) !important;
-    border-color: rgba(96, 165, 250, .45) !important;
+    background: linear-gradient(145deg, #12263a, #12332f) !important;
+    border-color: rgba(45, 212, 191, .45) !important;
 }
 
 /* Buttons */
@@ -200,13 +263,41 @@
         flex-direction: column;
     }
 }
+
+.edit-card-page .btn-primary {
+    background: linear-gradient(135deg, #0f766e, #14b8a6) !important;
+    border-color: rgba(94, 234, 212, .42) !important;
+    box-shadow: 0 .55rem 1.1rem rgba(20, 184, 166, .20);
+    font-weight: 700;
+}
+
+.edit-card-page .btn-primary:hover,
+.edit-card-page .btn-primary:focus {
+    background: linear-gradient(135deg, #115e59, #0d9488) !important;
+    border-color: rgba(94, 234, 212, .62) !important;
+}
+
+.edit-card-actions {
+    border-color: rgba(45, 212, 191, .24);
+    background: rgba(7, 17, 31, .88);
+}
+
+.edit-card-page .form-check-label,
+.edit-card-page .acquisition-note {
+    font-weight: 500;
+}
+
+.edit-card-page .small.text-muted {
+    color: #94a3b8 !important;
+}
+
 </style>
 <div class="edit-card-page">
 <div class="edit-card-hero">
     <div class="edit-card-title-wrap">
         <div class="edit-card-icon">✎</div>
         <div>
-            <h1 class="h2 mb-1">Edit Card</h1>
+            <h1 class="h2 mb-1">Edit Inventory Record</h1>
             <p class="text-muted mb-0">{{ card.card_code }} · {{ card.player_name }}</p>
         </div>
     </div>
