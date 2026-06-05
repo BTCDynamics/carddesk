@@ -71,7 +71,7 @@
         </li>
         <li class="nav-item">
             <a class="nav-link position-relative {% if health_issue_count %}text-primary fw-bold{% endif %}" href="{{ url_for('inventory_health') }}">
-                Health
+                Inventory Health
                 {% if health_issue_count %}
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
                         {{ health_issue_count }}
@@ -81,30 +81,25 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('inventory_aging') }}">
-                Aging
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('comp_refresh') }}">
-                Comps
-            </a>
-        </li>
-
-
-<li class="nav-item">
-            <a class="nav-link text-warning position-relative fw-bold"
-               href="{{ url_for('deal_cart') }}">
-
+            <a class="nav-link text-warning position-relative fw-bold" href="{{ url_for('deal_cart') }}">
                 Deal Cart
-
                 {% if deal_cart_count %}
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                         {{ deal_cart_count }}
                     </span>
                 {% endif %}
+            </a>
+        </li>
 
+        <li class="nav-item ms-lg-4">
+            <a class="nav-link" href="{{ url_for('inventory_aging') }}">
+                Inventory Aging
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('comp_refresh') }}">
+                Update Comps
             </a>
         </li>
 
