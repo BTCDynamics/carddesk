@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 
 from flask import render_template, request, redirect, url_for, flash
 
-from models import db, Card
+from models import db, Card, CompRefreshQueue
 from helpers.acquisition_helpers import (
     clean_value,
     acquisition_value,
@@ -628,11 +628,21 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
     def delete_card(card_id):
         card = Card.query.get_or_404(card_id)
 
-        delete_image_file(card.image_filename)
-        delete_image_file(getattr(card, "image_back_filename", None))
+        # Save image names first. Delete files only after the database delete succeeds.
+        image_filename = card.image_filename
+        image_back_filename = getattr(card, "image_back_filename", None)
+
+        # Remove staged comp refresh records before deleting the card.
+        # This prevents SQLite/SQLAlchemy from trying to null out comp_refresh_queue.card_id.
+        CompRefreshQueue.query.filter(
+            CompRefreshQueue.card_id == card.id
+        ).delete(synchronize_session=False)
 
         db.session.delete(card)
         db.session.commit()
+
+        delete_image_file(image_filename)
+        delete_image_file(image_back_filename)
 
         flash("Card deleted successfully.")
 
