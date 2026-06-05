@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+
+{% block title %}Comp Refresh | CardDesk{% endblock %}
+
+{% block content %}
+<style>
+.comp-refresh-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+}
+
+.comp-hero-card {
+    overflow: hidden;
+    border: 1px solid rgba(96, 165, 250, .24) !important;
+    border-radius: 1.25rem;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .16), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, .10), transparent 40%),
+        linear-gradient(145deg, #07111f, #101b2b) !important;
+    color: #f8fafc;
+    box-shadow: 0 20px 46px rgba(2, 6, 23, .38) !important;
+}
+
+.comp-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.25rem;
+    align-items: center;
+}
+
+.comp-hero-eyebrow {
+    color: #67e8f9;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.comp-hero-title {
+    margin-top: .2rem;
+    color: #ffffff;
+    font-size: 1.45rem;
+    font-weight: 750;
+    line-height: 1.1;
+}
+
+.comp-hero-subtitle {
+    max-width: 780px;
+    margin-top: .45rem;
+    color: #b8c7dc;
+    font-size: .92rem;
+}
+
+.comp-action-panel {
+    min-width: 270px;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: rgba(2, 6, 23, .46);
+    border: 1px solid rgba(147, 197, 253, .22);
+}
+
+.comp-action-panel .btn {
+    font-weight: 700;
+}
+
+.comp-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+    gap: 1rem;
+}
+
+.comp-tile {
+    border-radius: 1.1rem;
+    padding: 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(96, 165, 250, .10), transparent 42%),
+        linear-gradient(145deg, #0b1220, #101a2c);
+    border: 1px solid rgba(96, 165, 250, .22);
+    color: #f8fafc;
+    box-shadow: 0 14px 30px rgba(2, 6, 23, .24);
+}
+
+.comp-tile-label {
+    color: #94a3b8;
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.comp-tile-value {
+    margin-top: .35rem;
+    color: #ffffff;
+    font-size: 1.7rem;
+    font-weight: 800;
+}
+
+.comp-tile-sub {
+    margin-top: .2rem;
+    color: #94a3b8;
+    font-size: .82rem;
+}
+
+.comp-review-card {
+    border: 1px solid rgba(96, 165, 250, .22) !important;
+    border-radius: 1.2rem;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .08), transparent 36%),
+        linear-gradient(145deg, #07111f, #101b2b) !important;
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .34) !important;
+}
+
+.comp-review-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: .85rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(96, 165, 250, .20);
+}
+
+.comp-review-title {
+    color: #f8fafc;
+    font-weight: 650;
+    font-size: 1.08rem;
+}
+
+.comp-review-subtitle {
+    color: #94a3b8;
+    font-size: .86rem;
+}
+
+.comp-table {
+    color: #e5edf7 !important;
+}
+
+.comp-table thead th {
+    color: #9fb7d4 !important;
+    background: rgba(2, 6, 23, .42) !important;
+    border-color: rgba(96, 165, 250, .18) !important;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.comp-table tbody tr > * {
+    color: #e5edf7 !important;
+    background: rgba(15, 23, 42, .58) !important;
+    border-color: rgba(96, 165, 250, .12) !important;
+}
+
+.comp-table tbody tr:nth-child(even) > * {
+    background: rgba(8, 18, 33, .70) !important;
+}
+
+.comp-table tbody tr:hover > * {
+    background: rgba(14, 165, 233, .12) !important;
+}
+
+.comp-card-link {
+    color: #f8fafc !important;
+    font-weight: 500;
+    font-size: .95rem;
+    text-decoration: none;
+}
+
+.comp-card-link:hover {
+    color: #bfdbfe !important;
+}
+
+.comp-meta {
+    color: #94a3b8;
+    font-size: .82rem;
+}
+
+.comp-value {
+    font-weight: 450;
+    color: #dbe7f5;
+}
+
+.comp-query {
+    max-width: 340px;
+    color: #cbd5e1;
+    font-size: .82rem;
+    line-height: 1.35;
+}
+
+.comp-confidence {
+    display: inline-flex;
+    align-items: center;
+    padding: .32rem .55rem;
+    border-radius: 999px;
+    color: #dbeafe;
+    background: rgba(59, 130, 246, .14);
+    border: 1px solid rgba(96, 165, 250, .28);
+    font-size: .76rem;
+    font-weight: 550;
+}
+
+.comp-confidence.needs-data {
+    color: #fde68a;
+    background: rgba(245, 158, 11, .16);
+    border-color: rgba(251, 191, 36, .28);
+}
+
+.comp-empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.comp-manual-input {
+    width: 105px;
+}
+
+@media (max-width: 991.98px) {
+    .comp-hero-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .comp-action-panel {
+        min-width: 0;
+    }
+}
+</style>
+
+<div class="comp-refresh-shell">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+        <div>
+            <h1 class="h2 mb-1">Comp Refresh</h1>
+            <p class="text-muted mb-0">Prepare active inventory for shows by staging current comp updates for review before touching card records.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-light" href="{{ url_for('cards') }}">Back to Cards</a>
+            <a class="btn btn-primary" href="{{ url_for('inventory_aging') }}">Inventory Aging</a>
+        </div>
+    </div>
+
+    <div class="card page-card comp-hero-card mb-4">
+        <div class="card-body p-4">
+            <div class="comp-hero-grid">
+                <div>
+                    <div class="comp-hero-eyebrow">Show Prep Mode</div>
+                    <div class="comp-hero-title">Stage comp updates before a card show or event</div>
+                    <div class="comp-hero-subtitle">
+                        Phase 1 builds the review workflow and search queries for active inventory. Phase 2 will plug in eBay Sold Listings as the real data source.
+                    </div>
+                </div>
+
+                <div class="comp-action-panel">
+                    <form method="POST" action="{{ url_for('comp_refresh_run') }}" class="mb-2">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" value="1" id="replaceExisting" name="replace_existing">
+                            <label class="form-check-label small text-light" for="replaceExisting">
+                                Replace current pending queue
+                            </label>
+                        </div>
+                        <button class="btn btn-success w-100" type="submit">Build Comp Queue</button>
+                    </form>
+                    <div class="small text-muted">
+                        Uses active inventory available to sell. No card values are updated until you approve them.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="comp-summary-grid mb-4">
+        <div class="comp-tile">
+            <div class="comp-tile-label">Active Inventory</div>
+            <div class="comp-tile-value">{{ active_inventory_count }}</div>
+            <div class="comp-tile-sub">Available to sell.</div>
+        </div>
+        <div class="comp-tile">
+            <div class="comp-tile-label">Pending Review</div>
+            <div class="comp-tile-value">{{ pending_count }}</div>
+            <div class="comp-tile-sub">Comp updates staged.</div>
+        </div>
+        <div class="comp-tile">
+            <div class="comp-tile-label">Ready To Apply</div>
+            <div class="comp-tile-value">{{ ready_count }}</div>
+            <div class="comp-tile-sub">Items with proposed values.</div>
+        </div>
+        <div class="comp-tile">
+            <div class="comp-tile-label">Needs Data</div>
+            <div class="comp-tile-value">{{ needs_data_count }}</div>
+            <div class="comp-tile-sub">Needs eBay source or manual value.</div>
+        </div>
+    </div>
+
+    <div class="card page-card comp-review-card">
+        <div class="card-body p-4">
+            <div class="comp-review-header mb-3">
+                <div>
+                    <div class="comp-review-title">Comp Review Queue</div>
+                    <div class="comp-review-subtitle">
+                        Phase 1 placeholder values are for workflow testing only. Approve carefully or enter a manual value.
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <form method="POST" action="{{ url_for('comp_refresh_apply_all') }}" class="d-inline">
+                        <button class="btn btn-sm btn-success" type="submit">Apply All Ready</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('comp_refresh_clear') }}" class="d-inline">
+                        <button class="btn btn-sm btn-outline-warning" type="submit">Clear Pending</button>
+                    </form>
+                </div>
+            </div>
+
+            {% if pending_items %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 comp-table">
+                        <thead>
+                            <tr>
+                                <th>Card</th>
+                                <th>Search Query</th>
+                                <th>Current</th>
+                                <th>Proposed</th>
+                                <th>Range</th>
+                                <th>Confidence</th>
+                                <th>Manual Value</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pending_items %}
+                                {% set card = item.card if item.card is defined else none %}
+                                {% if not card %}
+                                    {% set card = none %}
+                                {% endif %}
+                                <tr>
+                                    <td>
+                                        {% if item.card_id %}
+                                            <a class="comp-card-link" href="{{ url_for('card_detail', card_id=item.card_id) }}">
+                                                {{ item.card.player_name if item.card is defined and item.card else 'Card #' ~ item.card_id }}
+                                            </a>
+                                            {% if item.card is defined and item.card %}
+                                                <div class="comp-meta">
+                                                    {{ item.card.card_code }} · {{ item.card.year or '' }} {{ item.card.brand or '' }}
+                                                    {% if item.card.card_number %}#{{ item.card.card_number }}{% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Missing Card</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><div class="comp-query">{{ item.search_query or '—' }}</div></td>
+                                    <td>
+                                        {% if item.old_estimated_value %}
+                                            <span class="comp-value">${{ "%.2f"|format(item.old_estimated_value or 0) }}</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.proposed_estimated_value %}
+                                            <span class="comp-value">${{ "%.2f"|format(item.proposed_estimated_value or 0) }}</span>
+                                        {% else %}
+                                            <span class="badge text-bg-warning">Needs Data</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.comp_low and item.comp_high %}
+                                            <span class="comp-value">${{ "%.2f"|format(item.comp_low or 0) }} - ${{ "%.2f"|format(item.comp_high or 0) }}</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="comp-confidence {% if item.confidence == 'Needs Data' %}needs-data{% endif %}">
+                                            {{ item.confidence or '—' }}
+                                        </span>
+                                        <div class="comp-meta">{{ item.source or '' }}</div>
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="{{ url_for('comp_refresh_apply', item_id=item.id) }}" id="applyComp{{ item.id }}">
+                                            <input class="form-control form-control-sm comp-manual-input" type="number" step="0.01" name="manual_value" placeholder="Override">
+                                        </form>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button class="btn btn-sm btn-primary" type="submit" form="applyComp{{ item.id }}">Apply</button>
+                                            <form method="POST" action="{{ url_for('comp_refresh_skip', item_id=item.id) }}">
+                                                <button class="btn btn-sm btn-outline-secondary" type="submit">Skip</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="comp-empty-state">
+                    <div class="h5 text-light mb-2">No comp updates pending.</div>
+                    <div class="small">Build the queue when you're ready to prep current values for a show.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if applied_items %}
+        <div class="card page-card comp-review-card mt-4">
+            <div class="card-body p-4">
+                <div class="comp-review-header mb-3">
+                    <div>
+                        <div class="comp-review-title">Recently Applied</div>
+                        <div class="comp-review-subtitle">Last 25 applied comp value updates.</div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 comp-table">
+                        <thead>
+                            <tr>
+                                <th>Card ID</th>
+                                <th>Old Value</th>
+                                <th>Applied Value</th>
+                                <th>Source</th>
+                                <th>Applied</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in applied_items %}
+                                <tr>
+                                    <td><a class="comp-card-link" href="{{ url_for('card_detail', card_id=item.card_id) }}">Card #{{ item.card_id }}</a></td>
+                                    <td>{% if item.old_estimated_value %}${{ "%.2f"|format(item.old_estimated_value or 0) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                                    <td>${{ "%.2f"|format(item.proposed_estimated_value or 0) }}</td>
+                                    <td>{{ item.source or '—' }}</td>
+                                    <td>{{ item.applied_at or '—' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
