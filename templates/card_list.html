@@ -260,6 +260,7 @@
             AI Import
             {% if pending_import_count %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">{{ pending_import_count }}</span>{% endif %}
         </a>
+        <a class="btn btn-success" href="{{ url_for('comp_refresh') }}">Update Comps</a>
         {% if storage_filter %}
             <a class="btn btn-warning"
                href="{{ url_for('pull_sheet', storage=storage_filter, status=pull_sheet_status_filter, collection_type=pull_sheet_collection_type_filter) }}"
