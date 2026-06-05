@@ -55,7 +55,9 @@ def get_storage_summary():
         if card.estimated_value:
             summary[location]["estimated_value"] += card.estimated_value * quantity
 
-        if card.status == "Ready to Sell":
+        # CardDesk sellable inventory uses Status = Active.
+        # Older versions used "Ready to Sell", so keep it as a fallback.
+        if (card.status or "").strip() in ["Active", "Ready to Sell"]:
             summary[location]["ready_to_sell"] += quantity
 
     return list(summary.values())
