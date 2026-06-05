@@ -245,6 +245,45 @@
     color:#fff !important;
 }
 
+
+/* Refined action buttons */
+.btn-view-card{
+    background:#334155 !important;
+    border-color:#475569 !important;
+    color:#ffffff !important;
+}
+.btn-view-card:hover,
+.btn-view-card:focus{
+    background:#2563eb !important;
+    border-color:#60a5fa !important;
+    color:#ffffff !important;
+}
+
+.btn-edit-card{
+    background:#374151 !important;
+    border-color:#4b5563 !important;
+    color:#ffffff !important;
+}
+.btn-edit-card:hover,
+.btn-edit-card:focus{
+    background:#6b7280 !important;
+    border-color:#9ca3af !important;
+    color:#ffffff !important;
+}
+
+.clone-btn {
+    color:#ffffff !important;
+    background:#0f766e !important;
+    border-color:#14b8a6 !important;
+    font-weight:700 !important;
+}
+.clone-btn:hover,
+.clone-btn:focus{
+    color:#ffffff !important;
+    background:#134e4a !important;
+    border-color:#2dd4bf !important;
+}
+
 </style>
 {% set current_view = request.args.get('view', 'table') %}
 {% set pull_sheet_status_filter = status_filter if status_filter else ('Active' if scope != 'all' else '') %}
@@ -337,7 +376,7 @@
                 <button class="btn btn-outline-dark" type="button" data-bs-toggle="collapse" data-bs-target="#advancedInventoryFilters">
                     Advanced Filters {% if filter_count %}<span class="badge text-bg-warning ms-1">{{ filter_count }}</span>{% endif %}
                 </button>
-                <a class="btn btn-outline-secondary" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', view=current_view) }}{% else %}{{ url_for('cards', view=current_view) }}{% endif %}">Reset Search</a>
+                <a class="btn btn-edit-card" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', view=current_view) }}{% else %}{{ url_for('cards', view=current_view) }}{% endif %}">Reset Search</a>
             </div>
             <div class="inventory-search-help">
                 Current view:
@@ -503,7 +542,7 @@
 
                 <div class="d-flex flex-wrap gap-2 mt-3">
                     <button class="btn btn-dark" type="submit">Apply Advanced Filters</button>
-                    <a class="btn btn-outline-secondary" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', q=search_query, view=current_view) }}{% else %}{{ url_for('cards', q=search_query, view=current_view) }}{% endif %}">Clear Advanced Filters</a>
+                    <a class="btn btn-edit-card" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', q=search_query, view=current_view) }}{% else %}{{ url_for('cards', q=search_query, view=current_view) }}{% endif %}">Clear Advanced Filters</a>
                 </div>
             </div>
         </form>
@@ -526,7 +565,7 @@
                 {% if acquisition_event_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Event: {{ acquisition_event_filter }}</span>{% endif %}
                 {% if min_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Min Cost: {{ min_price }}</span>{% endif %}
                 {% if max_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Max Cost: {{ max_price }}</span>{% endif %}
-                <a class="btn btn-sm btn-outline-secondary" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', view=current_view) }}{% else %}{{ url_for('cards', view=current_view) }}{% endif %}">Clear Search</a>
+                <a class="btn btn-sm btn-edit-card" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', view=current_view) }}{% else %}{{ url_for('cards', view=current_view) }}{% endif %}">Clear Search</a>
             </div>
         {% endif %}
 
@@ -549,7 +588,7 @@
                 <a class="btn btn-sm btn-outline-dark" href="{{ url_for('deal_cart') }}">View Deal Cart</a>
                 {% if deal_cart_count %}
                     <form method="POST" action="{{ url_for('clear_deal_cart') }}" class="d-inline">
-                        <button class="btn btn-sm btn-outline-secondary" type="submit">Clear Cart</button>
+                        <button class="btn btn-sm btn-edit-card" type="submit">Clear Cart</button>
                     </form>
                 {% endif %}
             </div>
@@ -629,8 +668,8 @@
                         </div>
 
                         <div class="mt-auto d-flex flex-wrap gap-2">
-                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('card_detail', card_id=card.id) }}">View</a>
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('edit_card', card_id=card.id) }}">Edit</a>
+                            <a class="btn btn-sm btn-view-card" href="{{ url_for('card_detail', card_id=card.id) }}">View</a>
+                            <a class="btn btn-sm btn-edit-card" href="{{ url_for('edit_card', card_id=card.id) }}">Edit</a>
                             {% if card.status == "Active" %}
                                 <a class="btn btn-sm btn-danger" href="{{ url_for('quick_sell', card_id=card.id) }}">Quick Sell</a>
                             {% endif %}
@@ -766,7 +805,7 @@
                                 <form method="POST" action="{{ url_for('update_card_storage', card_id=card.id) }}" class="quick-storage-form">
                                     <div class="input-group input-group-sm quick-storage-group">
                                         <input class="form-control quick-storage-input" type="text" name="storage_location" value="{{ card.storage_location or '' }}" placeholder="Add location">
-                                        <button class="btn btn-outline-secondary" type="submit">Save</button>
+                                        <button class="btn btn-edit-card" type="submit">Save</button>
                                     </div>
                                     {% if card.storage_location %}
                                         <a class="storage-pill storage-pill-sm mt-1" href="{{ url_for('cards', storage=card.storage_location, view=current_view) }}">{{ card.storage_location }}</a>
@@ -777,8 +816,8 @@
                             </td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <a class="btn btn-outline-primary" href="{{ url_for('card_detail', card_id=card.id) }}">View</a>
-                                    <a class="btn btn-outline-secondary" href="{{ url_for('edit_card', card_id=card.id) }}">Edit</a>
+                                    <a class="btn btn-view-card" href="{{ url_for('card_detail', card_id=card.id) }}">View</a>
+                                    <a class="btn btn-edit-card" href="{{ url_for('edit_card', card_id=card.id) }}">Edit</a>
                                     {% if card.status == "Active" %}
                                         <a class="btn btn-danger" href="{{ url_for('quick_sell', card_id=card.id) }}">Quick Sell</a>
                                     {% endif %}
