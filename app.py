@@ -4,7 +4,7 @@ from urllib.parse import quote
 from flask import Flask, render_template, url_for, send_from_directory
 from sqlalchemy import inspect, text
 
-from models import db, CardImportStaging
+from models import db, CardImportStaging, CompRefreshQueue
 from helpers.card_code_helpers import generate_card_code
 from helpers.image_helpers import (
     save_uploaded_image,
@@ -27,6 +27,7 @@ from modules.psa_routes import register_psa_routes
 from modules.ai_import_routes import register_ai_import_routes
 from modules.capture_routes import register_capture_routes
 from modules.fulfillment_routes import register_fulfillment_routes
+from modules.comp_refresh_routes import register_comp_refresh_routes
 
 
 app = Flask(__name__)
@@ -342,6 +343,7 @@ register_ai_import_routes(
 )
 register_capture_routes(app, save_uploaded_image_with_source, recognize_card_image)
 register_fulfillment_routes(app)
+register_comp_refresh_routes(app)
 
 
 if __name__ == "__main__":

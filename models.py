@@ -151,3 +151,32 @@ class CardImportStaging(db.Model):
     imported_card_id = db.Column(db.Integer, db.ForeignKey("card.id"))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     imported_at = db.Column(db.DateTime)
+
+class CompRefreshQueue(db.Model):
+    """Staging table for manual comp refresh review before updating inventory values."""
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    card_id = db.Column(db.Integer, db.ForeignKey("card.id"), nullable=False)
+
+    card = db.relationship("Card", backref="comp_refresh_items")
+
+    search_query = db.Column(db.String(300))
+
+    old_estimated_value = db.Column(db.Float)
+    proposed_estimated_value = db.Column(db.Float)
+
+    comp_low = db.Column(db.Float)
+    comp_high = db.Column(db.Float)
+    comp_count = db.Column(db.Integer, default=0)
+
+    confidence = db.Column(db.String(20), default="Needs Source")
+    source = db.Column(db.String(50), default="Manual / Test")
+
+    status = db.Column(db.String(20), default="Pending")
+
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    applied_at = db.Column(db.DateTime)
+
