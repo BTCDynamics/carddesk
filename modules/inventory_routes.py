@@ -1,3 +1,4 @@
+from urllib.parse import quote
 from datetime import date, datetime, timedelta
 
 from flask import render_template, request, redirect, url_for, flash
@@ -378,6 +379,53 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             first_item=first_item,
             last_item=last_item,
             record_total=pagination.total
+        )
+
+
+    @app.route("/labels/preview", methods=["POST"])
+    def label_preview():
+        """Demo-only price label preview for selected inventory cards.
+
+        This does not communicate with a printer. It only renders a browser
+        preview showing what CardDesk would print on price labels.
+        """
+        raw_card_ids = request.form.getlist("card_ids")
+        card_ids = []
+
+        for raw_id in raw_card_ids:
+            try:
+                card_ids.append(int(raw_id))
+            except (TypeError, ValueError):
+                continue
+
+        if not card_ids:
+            flash("Select at least one card before previewing price labels.")
+            return redirect(request.referrer or url_for("cards"))
+
+        cards_by_id = {
+            card.id: card
+            for card in Card.query.filter(Card.id.in_(card_ids)).all()
+        }
+
+        selected_cards = [cards_by_id[card_id] for card_id in card_ids if card_id in cards_by_id]
+
+        label_cards = []
+        for card in selected_cards:
+            detail_url = url_for("card_detail", card_id=card.id, _external=True)
+            qr_url = (
+                "https://api.qrserver.com/v1/create-qr-code/"
+                f"?size=140x140&data={quote(detail_url, safe='')}"
+            )
+            label_cards.append({
+                "card": card,
+                "detail_url": detail_url,
+                "qr_url": qr_url,
+            })
+
+        return render_template(
+            "label_preview.html",
+            label_cards=label_cards,
+            label_count=len(label_cards),
         )
 
 

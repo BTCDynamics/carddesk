@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Label Preview | CardDesk{% endblock %}
+
+{% block content %}
+<style>
+.label-preview-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.label-preview-hero {
+    border-radius: 1.2rem;
+    border: 1px solid rgba(96, 165, 250, .24);
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+    color: #f8fafc;
+    box-shadow: 0 16px 36px rgba(2, 6, 23, .28);
+}
+
+.label-preview-hero .text-muted {
+    color: #cbd5e1 !important;
+}
+
+.label-demo-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: .28rem .7rem;
+    background: #f59e0b;
+    color: #111827;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.label-sheet {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.price-label-card {
+    min-height: 178px;
+    border-radius: .85rem;
+    background: #ffffff;
+    color: #111827;
+    border: 1px dashed rgba(15, 23, 42, .32);
+    box-shadow: 0 10px 22px rgba(2, 6, 23, .20);
+    padding: .85rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 82px;
+    gap: .75rem;
+    align-items: stretch;
+}
+
+.price-label-player {
+    font-size: 1rem;
+    line-height: 1.12;
+    font-weight: 950;
+    color: #020617;
+}
+
+.price-label-meta {
+    color: #334155;
+    font-size: .78rem;
+    line-height: 1.25;
+    margin-top: .35rem;
+}
+
+.price-label-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    margin-top: .45rem;
+}
+
+.price-label-badge {
+    border-radius: 999px;
+    padding: .12rem .38rem;
+    background: #e5e7eb;
+    color: #111827;
+    font-size: .62rem;
+    font-weight: 900;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.price-label-price {
+    margin-top: .55rem;
+    font-size: 1.65rem;
+    line-height: 1;
+    font-weight: 950;
+    color: #047857;
+}
+
+.price-label-code {
+    margin-top: .35rem;
+    color: #475569;
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.price-label-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    border-left: 1px solid rgba(15, 23, 42, .10);
+    padding-left: .65rem;
+}
+
+.price-label-qr img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+}
+
+.price-label-qr-text {
+    color: #64748b;
+    font-size: .58rem;
+    font-weight: 900;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.label-print-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .75rem;
+    align-items: center;
+}
+
+@media print {
+    nav,
+    .navbar,
+    .cw-page-title,
+    .label-preview-hero,
+    .label-print-actions,
+    .alert {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff !important;
+    }
+
+    .label-preview-shell {
+        max-width: none;
+        margin: 0;
+    }
+
+    .label-sheet {
+        grid-template-columns: repeat(3, 1fr);
+        gap: .25in;
+    }
+
+    .price-label-card {
+        box-shadow: none;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
+</style>
+
+<div class="label-preview-shell">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+        <div>
+            <h1 class="h2 mb-1">Price Label Preview</h1>
+            <p class="text-muted mb-0">Review what CardDesk would print for selected cards.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-light" href="{{ url_for('cards') }}">Back to Cards</a>
+        </div>
+    </div>
+
+    <div class="card page-card label-preview-hero mb-4">
+        <div class="card-body p-4">
+            <div class="label-print-actions">
+                <div>
+                    <span class="label-demo-badge mb-2">Demo Mode</span>
+                    <h2 class="h4 mb-1">{{ label_count }} label(s) ready to preview</h2>
+                    <p class="text-muted mb-0 small">
+                        This page does not communicate with a label printer. It only displays a printable browser preview for demo purposes.
+                    </p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-warning" type="button" onclick="window.print()">Browser Print Preview</button>
+                    <a class="btn btn-outline-info" href="{{ url_for('cards') }}">Select More Cards</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if label_cards %}
+        <div class="label-sheet mb-4">
+            {% for item in label_cards %}
+                {% set card = item.card %}
+                <div class="price-label-card">
+                    <div>
+                        <div class="price-label-player">{{ card.player_name or 'Unknown Player' }}</div>
+                        <div class="price-label-meta">
+                            {{ card.year or '' }} {{ card.brand or '' }}{% if card.set_name %} · {{ card.set_name }}{% endif %}{% if card.card_number %} #{{ card.card_number }}{% endif %}
+                        </div>
+                        {% if card.variation %}
+                            <div class="price-label-meta">{{ card.variation }}</div>
+                        {% endif %}
+
+                        <div class="price-label-badges">
+                            <span class="price-label-badge">{{ card.card_type or 'Raw' }}</span>
+                            {% if card.is_rookie %}<span class="price-label-badge">RC</span>{% endif %}
+                            {% if card.is_hof %}<span class="price-label-badge">HOF</span>{% endif %}
+                            {% if card.card_type == 'Graded' and (card.grading_company or card.actual_grade) %}
+                                <span class="price-label-badge">{{ card.grading_company or '' }} {{ card.actual_grade or '' }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="price-label-price">
+                            {% if card.asking_price %}
+                                ${{ "%.0f"|format(card.asking_price or 0) }}
+                            {% else %}
+                                ASK
+                            {% endif %}
+                        </div>
+                        <div class="price-label-code">{{ card.card_code }}</div>
+                    </div>
+                    <div class="price-label-qr">
+                        <img src="{{ item.qr_url }}" alt="QR code for {{ card.card_code }}">
+                        <div class="price-label-qr-text">CardDesk<br>Detail</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-warning">No cards were selected for label preview.</div>
+    {% endif %}
+</div>
+{% endblock %}
