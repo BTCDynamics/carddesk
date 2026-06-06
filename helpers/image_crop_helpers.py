@@ -101,16 +101,21 @@ def _detect_and_crop_card(cv2, np, image):
         best_points = best_points / scale
 
     best_points = _clamp_points(np, best_points, original_width, original_height)
-    warped = _four_point_transform(cv2, np, image, best_points)
 
-    if warped is None:
+    # IMPORTANT: keep the saved file as a plain rectangular crop.
+    # Earlier versions used a perspective warp, which can visually shave/round
+    # the physical card corners when the detector locks onto the card face.
+    # For inventory/eBay-style listing photos, square image corners are safer.
+    cropped = _rectangular_crop_from_points(image, best_points, padding_ratio=0.018)
+
+    if cropped is None:
         return None
 
     # Avoid saving tiny or obviously wrong crops.
-    if warped.shape[0] < original_height * 0.35 or warped.shape[1] < original_width * 0.35:
+    if cropped.shape[0] < original_height * 0.35 or cropped.shape[1] < original_width * 0.35:
         return None
 
-    return warped
+    return cropped
 
 
 def _detect_from_background_contrast(cv2, np, working):
@@ -161,6 +166,35 @@ def _looks_like_trading_card(points) -> bool:
 
     # Standard trading cards are portrait, but allow landscape and minor camera skew.
     return 0.45 <= aspect_ratio <= 1.85
+
+
+def _rectangular_crop_from_points(image, points, padding_ratio: float = 0.018):
+    """Return a square-cornered bounding-box crop around detected card points.
+
+    This deliberately does not mask corners and does not perspective-warp the
+    image. A small padding keeps the full physical card edge visible so exports
+    remain suitable for marketplace/listing photos.
+    """
+    height, width = image.shape[:2]
+
+    x_min = int(min(point[0] for point in points))
+    x_max = int(max(point[0] for point in points))
+    y_min = int(min(point[1] for point in points))
+    y_max = int(max(point[1] for point in points))
+
+    crop_width = max(1, x_max - x_min)
+    crop_height = max(1, y_max - y_min)
+    padding = int(max(crop_width, crop_height) * padding_ratio)
+
+    x_min = max(0, x_min - padding)
+    y_min = max(0, y_min - padding)
+    x_max = min(width, x_max + padding)
+    y_max = min(height, y_max + padding)
+
+    if x_max <= x_min or y_max <= y_min:
+        return None
+
+    return image[y_min:y_max, x_min:x_max].copy()
 
 
 def _four_point_transform(cv2, np, image, points):
