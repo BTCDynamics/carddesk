@@ -119,7 +119,7 @@
 </div>
 
 <div class="row g-3 mb-4 intake-secondary-grid">
-    <div class="col-md-6 col-xl-4">
+    <div class="col-md-6 col-xl-3">
         <a class="dashboard-card-link" href="{{ url_for('ai_import_upload') }}">
             <div class="card page-card dashboard-click-card h-100">
                 <div class="card-body">
@@ -131,7 +131,7 @@
         </a>
     </div>
 
-    <div class="col-md-6 col-xl-4">
+    <div class="col-md-6 col-xl-3">
         <a class="dashboard-card-link" href="{{ url_for('rapid_entry') }}">
             <div class="card page-card dashboard-click-card h-100">
                 <div class="card-body">
@@ -143,7 +143,37 @@
         </a>
     </div>
 
-    <div class="col-md-6 col-xl-4">
+    <div class="col-md-6 col-xl-3">
+        <a class="dashboard-card-link" href="{{ url_for('ai_import_review') }}">
+            <div class="card page-card dashboard-click-card h-100 position-relative">
+                {% if ai_import_action_count %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ ai_import_action_count }}
+                    </span>
+                {% endif %}
+                <div class="card-body">
+                    <span class="btn btn-sm {% if ai_import_action_count %}btn-warning{% else %}btn-success{% endif %} mb-3">AI Review</span>
+                    <h3 class="h5 d-flex align-items-center gap-2">
+                        Review Queue
+                        {% if ai_import_action_count %}
+                            <span class="badge bg-danger">{{ ai_import_action_count }}</span>
+                        {% else %}
+                            <span class="badge bg-success">Clear</span>
+                        {% endif %}
+                    </h3>
+                    <p class="text-muted mb-0">
+                        {% if ai_import_action_count %}
+                            {{ ai_import_action_count }} card(s) waiting for review before they become inventory.
+                        {% else %}
+                            No cards waiting for AI Review right now.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
         <a class="dashboard-card-link" href="{{ url_for('add_card') }}">
             <div class="card page-card dashboard-click-card h-100">
                 <div class="card-body">
