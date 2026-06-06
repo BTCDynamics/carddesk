@@ -15,7 +15,6 @@ from helpers.psa_helpers import (
     clean_psa_cert_number,
     find_duplicate_by_cert_number,
 )
-from helpers.image_crop_helpers import crop_card_image_for_inventory
 
 
 def build_reference_search_query(staged_card):
@@ -375,14 +374,14 @@ def register_ai_import_routes(
 
             if staged_card.image_filename and not probable_duplicate.image_filename:
                 probable_duplicate.image_filename = rename_image_for_inventory(
-                    crop_card_image_for_inventory(staged_card.image_filename),
+                    staged_card.image_filename,
                     staged_card
                 )
                 staged_card.image_filename = None
 
             if getattr(staged_card, "image_back_filename", None) and not getattr(probable_duplicate, "image_back_filename", None):
                 probable_duplicate.image_back_filename = rename_image_for_inventory(
-                    crop_card_image_for_inventory(staged_card.image_back_filename),
+                    staged_card.image_back_filename,
                     staged_card
                 )
                 staged_card.image_back_filename = None
@@ -433,8 +432,8 @@ def register_ai_import_routes(
             acquisition_event=staged_card.acquisition_event,
             storage_location=staged_card.storage_location,
             collection_type=staged_card.collection_type or "Inventory",
-            image_filename=rename_image_for_inventory(crop_card_image_for_inventory(staged_card.image_filename), staged_card),
-            image_back_filename=rename_image_for_inventory(crop_card_image_for_inventory(getattr(staged_card, "image_back_filename", None)), staged_card),
+            image_filename=rename_image_for_inventory(staged_card.image_filename, staged_card),
+            image_back_filename=rename_image_for_inventory(getattr(staged_card, "image_back_filename", None), staged_card),
             notes=staged_card.notes,
             status=staged_card.status or "Active",
         )
