@@ -40,6 +40,7 @@ def register_psa_routes(app):
             CardImportStaging.ai_status.in_(["Pending Review", "Needs Manual Review"])
         ).count()
 
+        psa_desktop_scan_url = url_for("psa_desktop_scan", _external=True)
         psa_mobile_scan_url = url_for("psa_mobile_scan", _external=True)
         psa_mobile_scan_qr_url = (
             "https://api.qrserver.com/v1/create-qr-code/"
@@ -50,8 +51,50 @@ def register_psa_routes(app):
             "psa_lookup.html",
             token_configured=bool(psa_access_token()),
             pending_count=pending_count,
+            psa_desktop_scan_url=psa_desktop_scan_url,
             psa_mobile_scan_url=psa_mobile_scan_url,
             psa_mobile_scan_qr_url=psa_mobile_scan_qr_url,
+        )
+
+
+    @app.route("/psa-desktop-scan", methods=["GET", "POST"])
+    def psa_desktop_scan():
+        """Desktop PSA scanner page for USB/Bluetooth handheld scanners.
+
+        Most handheld scanners behave like keyboards. This page keeps focus in a
+        large cert input, submits automatically after scan/Enter, stages the PSA
+        cert, then returns ready for the next slab.
+        """
+        scanned_cert = clean_psa_cert_number(request.form.get("cert_number")) if request.method == "POST" else ""
+        staged_success = False
+        staged_card_id = None
+
+        if request.method == "POST":
+            if not scanned_cert:
+                flash("Scan or enter a PSA cert number.")
+                return redirect(url_for("psa_desktop_scan"))
+
+            try:
+                staged_card = stage_psa_cert_lookup(scanned_cert, request.form)
+                staged_success = True
+                staged_card_id = staged_card.id
+                scanned_cert = clean_value(staged_card.cert_number) or scanned_cert
+                flash(f"PSA cert {scanned_cert} staged for review.")
+            except Exception as error:
+                flash(f"PSA lookup failed: {error}")
+                return redirect(url_for("psa_desktop_scan"))
+
+        pending_count = CardImportStaging.query.filter(
+            CardImportStaging.ai_status.in_(["Pending Review", "Needs Manual Review"])
+        ).count()
+
+        return render_template(
+            "psa_desktop_scan.html",
+            token_configured=bool(psa_access_token()),
+            pending_count=pending_count,
+            scanned_cert=scanned_cert or "",
+            staged_success=staged_success,
+            staged_card_id=staged_card_id,
         )
 
 

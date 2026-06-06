@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}PSA Desktop Scanner | CardDesk{% endblock %}
+
+{% block content %}
+<style>
+.psa-desktop-shell {
+    max-width: 1040px;
+    margin: 0 auto;
+}
+
+.psa-desktop-hero {
+    overflow: hidden;
+    border-radius: 1.35rem;
+    padding: 1.35rem;
+    background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, .24), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, .14), transparent 38%),
+        linear-gradient(145deg, #07111f, #101b2b);
+    border: 1px solid rgba(96, 165, 250, .28);
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .34);
+    color: #ffffff;
+}
+
+.psa-desktop-kicker {
+    color: #67e8f9;
+    font-size: .78rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.psa-desktop-title {
+    color: #ffffff;
+    font-size: clamp(2rem, 4vw, 3.3rem);
+    font-weight: 950;
+    letter-spacing: -.05em;
+    line-height: 1;
+}
+
+.psa-desktop-subtitle {
+    max-width: 760px;
+    color: #cbd5e1;
+    font-weight: 650;
+}
+
+.psa-scan-panel {
+    border-radius: 1.25rem;
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, .12), transparent 38%),
+        linear-gradient(145deg, #0b1220, #111827);
+    border: 1px solid rgba(96, 165, 250, .24);
+    box-shadow: 0 16px 38px rgba(2, 6, 23, .30);
+}
+
+.psa-scan-input {
+    min-height: 86px;
+    border-radius: 1rem !important;
+    font-size: clamp(1.8rem, 5vw, 3.2rem) !important;
+    font-weight: 950 !important;
+    letter-spacing: .08em;
+    text-align: center;
+    color: #ffffff !important;
+    background: rgba(2, 6, 23, .78) !important;
+    border: 2px solid rgba(96, 165, 250, .54) !important;
+    box-shadow: 0 0 0 .25rem rgba(96, 165, 250, .10) !important;
+}
+
+.psa-scan-input::placeholder {
+    color: rgba(203, 213, 225, .45) !important;
+}
+
+.psa-ready-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+    color: #bbf7d0;
+    background: rgba(34, 197, 94, .14);
+    border: 1px solid rgba(74, 222, 128, .28);
+    font-size: .82rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.psa-desktop-help-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .85rem;
+}
+
+.psa-help-card {
+    border-radius: 1rem;
+    padding: .95rem;
+    color: #e5e7eb;
+    background: rgba(15, 23, 42, .72);
+    border: 1px solid rgba(148, 163, 184, .20);
+}
+
+.psa-help-card strong {
+    display: block;
+    color: #ffffff;
+    margin-bottom: .25rem;
+}
+
+.psa-help-card span {
+    color: #94a3b8;
+    font-size: .84rem;
+}
+
+.psa-last-scan {
+    border-radius: 1rem;
+    padding: 1rem;
+    background: rgba(34, 197, 94, .14);
+    border: 1px solid rgba(74, 222, 128, .30);
+    color: #dcfce7;
+}
+
+@media (max-width: 767.98px) {
+    .psa-desktop-help-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="psa-desktop-shell">
+    <div class="psa-desktop-hero mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <div class="psa-desktop-kicker mb-2">Handheld Scanner Mode</div>
+                <h1 class="psa-desktop-title mb-2">PSA Desktop Scanner</h1>
+                <p class="psa-desktop-subtitle mb-0">
+                    Use this page with a USB or Bluetooth barcode scanner. Most scanners type the barcode into the focused box and press Enter automatically.
+                </p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-outline-info" href="{{ url_for('psa_lookup') }}">Manual Lookup</a>
+                <a class="btn btn-outline-light" href="{{ url_for('intake_tools') }}">Intake Tools</a>
+            </div>
+        </div>
+    </div>
+
+    {% if not token_configured %}
+        <div class="alert alert-warning">
+            PSA_ACCESS_TOKEN is not configured. Add it in Render before using PSA Cert Lookup.
+        </div>
+    {% endif %}
+
+    {% if staged_success %}
+        <div class="psa-last-scan mb-3">
+            <div class="fw-bold">Staged successfully</div>
+            <div>PSA cert <strong>{{ scanned_cert }}</strong> was sent to AI Review. Scanner is ready for the next slab.</div>
+            {% if staged_card_id %}
+                <a class="btn btn-sm btn-success mt-2" href="{{ url_for('ai_import_review', status='Pending Review', focus=staged_card_id) }}">Review Last Scan</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="card psa-scan-panel mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <div class="psa-ready-pill">● Ready to Scan</div>
+                    <div class="text-muted small mt-2">Keep this page open. Scan one PSA slab at a time.</div>
+                </div>
+                <div class="text-muted small">
+                    Pending review: <strong>{{ pending_count }}</strong>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('psa_desktop_scan') }}" id="psaDesktopScanForm" autocomplete="off">
+                <label class="form-label fw-bold text-light" for="cert_number">Scanner Input</label>
+                <input
+                    id="cert_number"
+                    class="form-control psa-scan-input"
+                    type="text"
+                    name="cert_number"
+                    placeholder="SCAN PSA CERT"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    autofocus
+                    {% if not token_configured %}disabled{% endif %}
+                >
+
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label">Collection</label>
+                        <select class="form-select" name="collection_type">
+                            <option value="Inventory" selected>Inventory</option>
+                            <option value="Personal Collection">Personal Collection</option>
+                            <option value="Trade Bait">Trade Bait</option>
+                            <option value="Grading Queue">Grading Queue</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="Active" selected>Active</option>
+                            <option value="Holding">Holding</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label">Acquisition Source</label>
+                        <select class="form-select" name="acquisition_source">
+                            {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
+                                <option value="{{ source }}" {% if source == "Existing Inventory" %}selected{% endif %}>{{ source }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label">Default Storage</label>
+                        <input class="form-control" type="text" name="storage_location" placeholder="PSA Box / Row 1">
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label">Acquisition Date</label>
+                        <input class="form-control" type="date" name="acquisition_date">
+                        <input type="hidden" name="purchase_date" value="">
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label">Event / Location</label>
+                        <input class="form-control" type="text" name="acquisition_event" placeholder="Dallas Show">
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button class="btn btn-primary fw-bold" type="submit" {% if not token_configured %}disabled{% endif %}>Submit Scan</button>
+                    <button class="btn btn-outline-light" type="button" onclick="clearAndFocusScanner()">Clear / Refocus</button>
+                    <a class="btn btn-outline-info" href="{{ url_for('ai_import_review') }}">Open AI Review</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="psa-desktop-help-grid">
+        <div class="psa-help-card">
+            <strong>1. Click in the box</strong>
+            <span>The page auto-focuses there, but click it if your scanner does not type.</span>
+        </div>
+        <div class="psa-help-card">
+            <strong>2. Scan the barcode</strong>
+            <span>Most handheld scanners type the PSA cert and send Enter.</span>
+        </div>
+        <div class="psa-help-card">
+            <strong>3. Keep scanning</strong>
+            <span>After a successful lookup, the page returns ready for the next slab.</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const scanInput = document.getElementById("cert_number");
+const scanForm = document.getElementById("psaDesktopScanForm");
+
+function focusScanner() {
+    if (!scanInput || scanInput.disabled) {
+        return;
+    }
+    scanInput.focus();
+    scanInput.select();
+}
+
+function clearAndFocusScanner() {
+    if (!scanInput) {
+        return;
+    }
+    scanInput.value = "";
+    focusScanner();
+}
+
+window.addEventListener("load", function () {
+    focusScanner();
+    setTimeout(focusScanner, 250);
+});
+
+document.addEventListener("click", function () {
+    setTimeout(focusScanner, 50);
+});
+
+if (scanInput && scanForm) {
+    scanInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            const value = scanInput.value.trim();
+            if (value.length >= 5) {
+                scanForm.submit();
+            }
+        }
+    });
+
+    scanInput.addEventListener("input", function () {
+        const value = scanInput.value.trim();
+        if (value.length >= 7) {
+            window.clearTimeout(scanInput.dataset.submitTimer);
+            scanInput.dataset.submitTimer = window.setTimeout(function () {
+                if (scanInput.value.trim().length >= 7) {
+                    scanForm.submit();
+                }
+            }, 350);
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -165,11 +165,11 @@
                         Use the button for a local USB or Bluetooth scanner. Use the QR code when scanning slabs with your phone.
                     </p>
 
-                    <a class="btn btn-info w-100 fw-bold" href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener">
-                        Open Local Browser Scanner
+                    <a class="btn btn-info w-100 fw-bold" href="{{ url_for('psa_desktop_scan') }}">
+                        Open Desktop Scanner
                     </a>
                     <div class="small text-muted mt-2">
-                        Best for desktop, laptop, handheld, or Bluetooth barcode scanners.
+                        Best for desktop, laptop, handheld USB, or Bluetooth barcode scanners.
                     </div>
 
                     <div class="psa-qr-wrap">
@@ -184,6 +184,10 @@
                     </div>
 
                     <div class="small text-muted">Phone option: point your phone camera at the QR code.</div>
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+                        <a class="btn btn-outline-light btn-sm" href="{{ psa_mobile_scan_url }}" target="_blank" rel="noopener">Open Mobile Scanner</a>
+                        <a class="btn btn-outline-light btn-sm" href="{{ url_for('psa_desktop_scan') }}">Desktop Scanner</a>
+                    </div>
                     <div class="psa-url-pill text-break mt-3">{{ psa_mobile_scan_url }}</div>
                 </div>
             </div>
