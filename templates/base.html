@@ -8,19 +8,15 @@
     <link href="{{ url_for('static', filename='css/carddesk.css') }}" rel="stylesheet">
 </head>
 <body>
+{% if request.endpoint != 'home' %}
 <nav class="navbar navbar-expand-lg navbar-dark cw-navbar mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('home') }}">
-            <span class="cw-brand-mark">CD</span>CardDesk
-        </a>
-
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('home') }}"><span class="cw-brand-mark">CD</span>CardDesk</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('home') }}">Home</a>
                 </li>
@@ -45,7 +41,7 @@
                     <a class="nav-link" href="{{ url_for('fulfillment_queue') }}">Fulfillment</a>
                 </li>
 
-                <li class="nav-item">
+                <li class="nav-item ms-lg-3">
                     <a class="nav-link position-relative {% if health_issue_count %}text-primary fw-bold{% endif %}" href="{{ url_for('inventory_health') }}">
                         Inventory Health
                         {% if health_issue_count %}
@@ -75,16 +71,14 @@
                     </a>
                 </li>
 
-                <li class="nav-item ms-lg-4 mt-2 mt-lg-0">
-                    <a class="nav-link fw-bold text-info" href="{{ url_for('intake_tools') }}">
-                        Intake Tools
-                    </a>
+                <li class="nav-item ms-lg-5 mt-2 mt-lg-0">
+                    <a class="nav-link fw-bold text-info" href="{{ url_for('intake_tools') }}">Intake Tools</a>
                 </li>
-
             </ul>
         </div>
     </div>
 </nav>
+{% endif %}
 
 <main class="container-fluid px-3 px-lg-4 pb-5">
     {% with messages = get_flashed_messages() %}
