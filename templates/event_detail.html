@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Event Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+    <div>
+        <h1 class="h2 mb-1">{{ event.event_name }}</h1>
+        <p class="text-muted mb-0">{{ event.location or 'No location' }} · {{ event.start_date or '—' }}{% if event.end_date %} to {{ event.end_date }}{% endif %}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-info" href="{{ url_for('events') }}">Event History</a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('dealer_hub') }}">Dealer Hub</a>
+        {% if event.status == 'Open' %}
+            <form method="POST" action="{{ url_for('close_event', event_id=event.id) }}" onsubmit="return confirm('Close this event?');">
+                <button class="btn btn-warning fw-bold" type="submit">Close Event</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-4">
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-success mb-3">Acquired</span><div class="display-6 fw-bold">{{ stats.acquired_count or 0 }}</div><div class="small text-white-50">Cards tied to this event</div></div></div></div>
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-warning mb-3">Spent</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.acquisition_cost or 0) }}</div><div class="small text-white-50">Acquisition cost</div></div></div></div>
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-info mb-3">Sold</span><div class="display-6 fw-bold">{{ stats.sold_count or 0 }}</div><div class="small text-white-50">Sold during event window</div></div></div></div>
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-primary mb-3">Revenue</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.sales_revenue or 0) }}</div><div class="small text-white-50">Event sales revenue</div></div></div></div>
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-purple mb-3">Profit</span><div class="display-6 fw-bold {% if stats.sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.sales_profit or 0) }}</div><div class="small text-white-50">Margin {{ "%.1f"|format(stats.sales_margin or 0) }}%</div></div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card page-card h-100">
+            <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+                <span>Event Acquisitions</span>
+                <a class="btn btn-sm btn-outline-info" href="{{ url_for('cards', acquisition_event=event.event_name) }}">View Inventory</a>
+            </div>
+            <div class="card-body">
+                {% if recent_acquisitions %}
+                    <div class="recent-sales-list">
+                    {% for card in recent_acquisitions %}
+                        {% set quantity = card.quantity or 1 %}
+                        <a class="recent-sale-row" href="{{ url_for('card_detail', card_id=card.id) }}">
+                            <div class="recent-sale-main">
+                                <div class="recent-sale-player">{{ card.player_name }}</div>
+                                <div class="recent-sale-meta">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} · Acquired {{ card.acquisition_date or '—' }}</div>
+                            </div>
+                            <div class="recent-sale-numbers"><div><span>Qty</span> {{ quantity }}</div><div><span>Cost</span> ${{ "%.2f"|format((card.purchase_price or 0) * quantity) }}</div></div>
+                        </a>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">No acquisitions are tagged to this event yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card page-card h-100">
+            <div class="card-header fw-bold">Event Sales</div>
+            <div class="card-body">
+                {% if recent_sales %}
+                    <div class="recent-sales-list">
+                    {% for card in recent_sales %}
+                        {% set quantity = card.quantity or 1 %}
+                        {% set sale_total = (card.sold_price or 0) * quantity %}
+                        {% set profit_total = sale_total - ((card.purchase_price or 0) * quantity) %}
+                        <a class="recent-sale-row" href="{{ url_for('card_detail', card_id=card.id) }}">
+                            <div class="recent-sale-main">
+                                <div class="recent-sale-player">{{ card.player_name }}</div>
+                                <div class="recent-sale-meta">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }} · Sold {{ card.sold_date or '—' }}</div>
+                            </div>
+                            <div class="recent-sale-numbers"><div><span>Sold</span> ${{ "%.2f"|format(sale_total) }}</div><div class="{% if profit_total >= 0 %}text-success{% else %}text-danger{% endif %}"><span>P/L</span> ${{ "%.2f"|format(profit_total) }}</div></div>
+                        </a>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">No sales fall inside this event window yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

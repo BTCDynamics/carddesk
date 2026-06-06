@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Events{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+    <div>
+        <h1 class="h2 mb-1">Card Show / Event Tracking</h1>
+        <p class="text-muted mb-0">Start, close, and review dealer events without changing your main inventory workflow.</p>
+    </div>
+    <a class="btn btn-outline-info" href="{{ url_for('dealer_hub') }}">Back to Dealer Hub</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="card page-card h-100">
+            <div class="card-header fw-bold">Start New Event</div>
+            <div class="card-body">
+                {% if active_event %}
+                    <div class="alert alert-warning mb-3">
+                        <strong>{{ active_event.event_name }}</strong> is currently open. Close it before starting another event.
+                    </div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('start_event') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Event Name</label>
+                        <input class="form-control" name="event_name" placeholder="Dallas Card Show" {% if active_event %}disabled{% endif %} required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Location</label>
+                        <input class="form-control" name="location" placeholder="Dallas, TX" {% if active_event %}disabled{% endif %}>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input class="form-control" type="date" name="start_date" value="{{ today }}" {% if active_event %}disabled{% endif %}>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="Table number, budget, travel notes..." {% if active_event %}disabled{% endif %}></textarea>
+                    </div>
+                    <button class="btn btn-warning fw-bold" type="submit" {% if active_event %}disabled{% endif %}>Start Event</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card page-card h-100">
+            <div class="card-header fw-bold">Event History</div>
+            <div class="card-body">
+                {% if event_summaries %}
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Event</th>
+                                    <th>Status</th>
+                                    <th>Acquired</th>
+                                    <th>Spent</th>
+                                    <th>Sold</th>
+                                    <th>Revenue</th>
+                                    <th>Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in event_summaries %}
+                                    {% set event = item.event %}
+                                    {% set stats = item.stats %}
+                                    <tr>
+                                        <td>
+                                            <a class="fw-bold" href="{{ url_for('event_detail', event_id=event.id) }}">{{ event.event_name }}</a>
+                                            <div class="small text-muted">{{ event.location or 'No location' }} · {{ event.start_date or '—' }}{% if event.end_date %} to {{ event.end_date }}{% endif %}</div>
+                                        </td>
+                                        <td><span class="badge {% if event.status == 'Open' %}text-bg-success{% else %}text-bg-secondary{% endif %}">{{ event.status }}</span></td>
+                                        <td>{{ stats.acquired_count or 0 }}</td>
+                                        <td>${{ "%.0f"|format(stats.acquisition_cost or 0) }}</td>
+                                        <td>{{ stats.sold_count or 0 }}</td>
+                                        <td>${{ "%.0f"|format(stats.sales_revenue or 0) }}</td>
+                                        <td class="{% if stats.sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.sales_profit or 0) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-5">No events have been created yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

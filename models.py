@@ -104,6 +104,24 @@ class Card(db.Model):
 
 
 
+class DealerEvent(db.Model):
+    """Card show / buying-session tracker for dealer events."""
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    event_name = db.Column(db.String(150), nullable=False)
+    location = db.Column(db.String(150))
+
+    start_date = db.Column(db.String(20))
+    end_date = db.Column(db.String(20))
+
+    status = db.Column(db.String(20), default="Open")
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    closed_at = db.Column(db.DateTime)
+
+
 class CardImportStaging(db.Model):
     """Temporary holding table for AI-recognized cards before they become inventory."""
 

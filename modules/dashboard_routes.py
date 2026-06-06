@@ -1,15 +1,19 @@
 from datetime import date, timedelta
 from urllib.parse import quote
 
-from flask import render_template, request, url_for
+from flask import render_template, request, url_for, redirect, flash
 
-from models import Card, CardImportStaging
+from models import db, Card, CardImportStaging, DealerEvent
 from helpers.acquisition_helpers import is_dashboard_acquisition, parse_card_date
 from helpers.deal_cart_helpers import get_deal_cart_quantity
 
 
 def register_dashboard_routes(app):
     @app.route("/")
+    def home():
+        return render_template("home.html")
+
+    @app.route("/dashboard")
     def dashboard():
         today_value = date.today()
         today = today_value.isoformat()
@@ -426,4 +430,373 @@ def register_dashboard_routes(app):
             ai_action_needed_cards=ai_action_needed_cards,
             mobile_capture_url=mobile_capture_url,
             mobile_capture_qr_url=mobile_capture_qr_url
+        )
+
+
+    def get_active_event():
+        return (
+            DealerEvent.query
+            .filter(DealerEvent.status == "Open")
+            .order_by(DealerEvent.id.desc())
+            .first()
+        )
+
+    def event_date_bounds(event):
+        start_date = parse_card_date(event.start_date) if event else None
+        end_date = parse_card_date(event.end_date) if event and event.end_date else date.today()
+        return start_date, end_date
+
+    def cards_for_event(event, cards):
+        """Return acquisition and sales cards for an event.
+
+        Acquisitions use Card.acquisition_event because that field already exists.
+        Sales use sold_date inside the event date window so we avoid a database
+        migration for sales-event tagging in this first version.
+        """
+        if not event:
+            return [], []
+
+        start_date, end_date = event_date_bounds(event)
+
+        acquisition_cards = [
+            card for card in cards
+            if getattr(card, "acquisition_event", None) == event.event_name
+        ]
+
+        sales_cards = []
+        if start_date:
+            for card in cards:
+                sold_dt = parse_card_date(getattr(card, "sold_date", None))
+                if sold_dt and sold_dt >= start_date and sold_dt <= end_date:
+                    sales_cards.append(card)
+
+        return acquisition_cards, sales_cards
+
+    def event_stats(event, cards):
+        acquisition_cards, sales_cards = cards_for_event(event, cards)
+
+        acquired_count = sum((card.quantity or 1) for card in acquisition_cards)
+        acquisition_cost = sum((card.purchase_price or 0) * (card.quantity or 1) for card in acquisition_cards)
+        acquisition_value = sum((card.estimated_value or 0) * (card.quantity or 1) for card in acquisition_cards)
+        acquisition_potential_profit = sum(
+            ((card.asking_price or 0) - (card.purchase_price or 0)) * (card.quantity or 1)
+            for card in acquisition_cards
+        )
+
+        sold_count = sum((card.quantity or 1) for card in sales_cards)
+        sales_revenue = sum((card.sold_price or 0) * (card.quantity or 1) for card in sales_cards)
+        sales_cost = sum((card.purchase_price or 0) * (card.quantity or 1) for card in sales_cards)
+        sales_profit = sales_revenue - sales_cost
+        sales_margin = (sales_profit / sales_revenue * 100) if sales_revenue else 0
+
+        return {
+            "acquisition_cards": acquisition_cards,
+            "sales_cards": sales_cards,
+            "acquired_count": acquired_count,
+            "acquisition_cost": acquisition_cost,
+            "acquisition_value": acquisition_value,
+            "acquisition_potential_profit": acquisition_potential_profit,
+            "sold_count": sold_count,
+            "sales_revenue": sales_revenue,
+            "sales_profit": sales_profit,
+            "sales_margin": sales_margin,
+            "net_cash": sales_revenue - acquisition_cost,
+        }
+
+    @app.route("/events", methods=["GET"])
+    def events():
+        all_cards = Card.query.all()
+        active_event = get_active_event()
+        events_list = DealerEvent.query.order_by(DealerEvent.id.desc()).all()
+
+        event_summaries = []
+        for event in events_list:
+            event_summaries.append({
+                "event": event,
+                "stats": event_stats(event, all_cards),
+            })
+
+        return render_template(
+            "events.html",
+            today=date.today().isoformat(),
+            active_event=active_event,
+            event_summaries=event_summaries,
+        )
+
+    @app.route("/events/start", methods=["POST"])
+    def start_event():
+        event_name = (request.form.get("event_name") or "").strip()
+        location = (request.form.get("location") or "").strip() or None
+        start_date = request.form.get("start_date") or date.today().isoformat()
+        notes = (request.form.get("notes") or "").strip() or None
+
+        if not event_name:
+            flash("Event name is required.")
+            return redirect(request.referrer or url_for("events"))
+
+        active_event = get_active_event()
+        if active_event:
+            flash(f"Close {active_event.event_name} before starting another event.")
+            return redirect(request.referrer or url_for("dealer_hub"))
+
+        new_event = DealerEvent(
+            event_name=event_name,
+            location=location,
+            start_date=start_date,
+            status="Open",
+            notes=notes,
+        )
+
+        db.session.add(new_event)
+        db.session.commit()
+
+        flash(f"Started event: {new_event.event_name}.")
+        return redirect(url_for("dealer_hub"))
+
+    @app.route("/events/<int:event_id>")
+    def event_detail(event_id):
+        event = DealerEvent.query.get_or_404(event_id)
+        all_cards = Card.query.all()
+        stats = event_stats(event, all_cards)
+
+        recent_acquisitions = sorted(
+            stats["acquisition_cards"],
+            key=lambda card: (
+                parse_card_date(getattr(card, "acquisition_date", None)) or date.min,
+                card.id or 0,
+            ),
+            reverse=True,
+        )
+
+        recent_sales = sorted(
+            stats["sales_cards"],
+            key=lambda card: (
+                parse_card_date(getattr(card, "sold_date", None)) or date.min,
+                card.id or 0,
+            ),
+            reverse=True,
+        )
+
+        return render_template(
+            "event_detail.html",
+            event=event,
+            stats=stats,
+            recent_acquisitions=recent_acquisitions,
+            recent_sales=recent_sales,
+        )
+
+    @app.route("/events/<int:event_id>/close", methods=["POST"])
+    def close_event(event_id):
+        event = DealerEvent.query.get_or_404(event_id)
+
+        event.status = "Closed"
+        event.end_date = request.form.get("end_date") or date.today().isoformat()
+        event.closed_at = db.func.now()
+
+        db.session.commit()
+
+        flash(f"Closed event: {event.event_name}.")
+        return redirect(url_for("event_detail", event_id=event.id))
+
+    @app.route("/dealer-hub")
+    def dealer_hub():
+        """Show Mode / Dealer Hub view with selectable event/show timeframe."""
+        today_value = date.today()
+        today = today_value.isoformat()
+
+        dealer_hub_range = request.args.get("range", "3d")
+
+        dealer_hub_range_days = {
+            "today": 0,
+            "3d": 3,
+            "7d": 6,
+            "30d": 29,
+        }
+
+        dealer_hub_range_labels = {
+            "today": "Today",
+            "3d": "Last 3 Days",
+            "7d": "Last 7 Days",
+            "30d": "Last 30 Days",
+        }
+
+        if dealer_hub_range not in dealer_hub_range_days:
+            dealer_hub_range = "3d"
+
+        dealer_hub_start_date_value = (
+            today_value - timedelta(days=dealer_hub_range_days[dealer_hub_range])
+        )
+        dealer_hub_start_date = dealer_hub_start_date_value.isoformat()
+        dealer_hub_range_label = dealer_hub_range_labels[dealer_hub_range]
+
+        cards = Card.query.all()
+        active_event = get_active_event()
+        active_event_stats = event_stats(active_event, cards) if active_event else None
+
+        active_cards = [
+            card for card in cards
+            if card.status != "Sold"
+        ]
+
+        sold_cards_all_time = [
+            card for card in cards
+            if card.status == "Sold"
+        ]
+
+        sold_cards_range = [
+            card for card in sold_cards_all_time
+            if parse_card_date(card.sold_date)
+            and parse_card_date(card.sold_date) >= dealer_hub_start_date_value
+        ]
+
+        acquired_range_cards = [
+            card for card in active_cards
+            if card.collection_type == "Inventory"
+            and card.status == "Active"
+            and is_dashboard_acquisition(card)
+            and parse_card_date(getattr(card, "acquisition_date", None))
+            and parse_card_date(getattr(card, "acquisition_date", None)) >= dealer_hub_start_date_value
+        ]
+
+        dealer_inventory_active_available = [
+            card for card in active_cards
+            if card.collection_type == "Inventory"
+            and card.status == "Active"
+        ]
+
+        dealer_inventory_holding = [
+            card for card in active_cards
+            if card.collection_type == "Inventory"
+            and card.status == "Holding"
+        ]
+
+        grading_queue = [
+            card for card in active_cards
+            if card.collection_type == "Grading Queue"
+        ]
+
+        fulfillment_queue = [
+            card for card in sold_cards_all_time
+            if getattr(card, "fulfillment_status", None) in ["Needs Pulling", "In Storage"]
+            or (
+                getattr(card, "fulfillment_status", None) is None
+                and card.storage_location
+            )
+        ]
+
+        pulled_not_shipped_queue = [
+            card for card in sold_cards_all_time
+            if getattr(card, "fulfillment_status", None) == "Pulled"
+        ]
+
+        shipped_not_delivered_queue = [
+            card for card in sold_cards_all_time
+            if getattr(card, "fulfillment_status", None) == "Shipped"
+        ]
+
+        available_to_sell_cards = sum((card.quantity or 1) for card in dealer_inventory_active_available)
+        inventory_holding_cards = sum((card.quantity or 1) for card in dealer_inventory_holding)
+        grading_queue_cards = sum((card.quantity or 1) for card in grading_queue)
+        fulfillment_queue_cards = sum((card.quantity or 1) for card in fulfillment_queue)
+        pulled_not_shipped_cards = sum((card.quantity or 1) for card in pulled_not_shipped_queue)
+        shipped_not_delivered_cards = sum((card.quantity or 1) for card in shipped_not_delivered_queue)
+        missing_storage_cards = sum((card.quantity or 1) for card in dealer_inventory_active_available if not card.storage_location)
+
+        dealer_inventory_cost = 0
+        dealer_inventory_value = 0
+        available_asking_price = 0
+        available_potential_profit = 0
+
+        for card in dealer_inventory_active_available:
+            quantity = card.quantity or 1
+            purchase_cost = card.purchase_price or 0
+            estimated_value = card.estimated_value or 0
+            asking_price = card.asking_price or 0
+
+            dealer_inventory_cost += purchase_cost * quantity
+            dealer_inventory_value += estimated_value * quantity
+            available_asking_price += asking_price * quantity
+            available_potential_profit += (asking_price - purchase_cost) * quantity
+
+        range_acquired_count = sum((card.quantity or 1) for card in acquired_range_cards)
+        range_acquisition_cost = sum((card.purchase_price or 0) * (card.quantity or 1) for card in acquired_range_cards)
+        range_acquisition_value = sum((card.estimated_value or 0) * (card.quantity or 1) for card in acquired_range_cards)
+        range_acquisition_potential_profit = sum(((card.asking_price or 0) - (card.purchase_price or 0)) * (card.quantity or 1) for card in acquired_range_cards)
+
+        range_sold_cards = sum((card.quantity or 1) for card in sold_cards_range)
+        range_sold_price = sum((card.sold_price or 0) * (card.quantity or 1) for card in sold_cards_range)
+        range_sold_cost = sum((card.purchase_price or 0) * (card.quantity or 1) for card in sold_cards_range)
+        range_profit = range_sold_price - range_sold_cost
+        range_sales_margin_percent = (range_profit / range_sold_price * 100) if range_sold_price else 0
+
+        ai_pending_review_cards = CardImportStaging.query.filter(CardImportStaging.ai_status == "Pending Review").count()
+        ai_manual_review_cards = CardImportStaging.query.filter(CardImportStaging.ai_status == "Needs Manual Review").count()
+        ai_action_needed_cards = ai_pending_review_cards + ai_manual_review_cards
+
+        action_needed_total = (
+            fulfillment_queue_cards
+            + pulled_not_shipped_cards
+            + shipped_not_delivered_cards
+            + missing_storage_cards
+            + ai_action_needed_cards
+            + inventory_holding_cards
+        )
+
+        recent_sales = sorted(
+            sold_cards_range,
+            key=lambda card: (parse_card_date(card.sold_date) or date.min, card.id or 0),
+            reverse=True
+        )[:6]
+
+        recent_acquisitions = sorted(
+            acquired_range_cards,
+            key=lambda card: (
+                parse_card_date(getattr(card, "acquisition_date", None)) or date.min,
+                card.id or 0
+            ),
+            reverse=True
+        )[:6]
+
+        mobile_capture_url = url_for("mobile_capture", _external=True)
+        mobile_capture_qr_url = (
+            "https://api.qrserver.com/v1/create-qr-code/"
+            f"?size=220x220&data={quote(mobile_capture_url, safe='')}"
+        )
+
+        return render_template(
+            "dealer_hub.html",
+            today=today,
+            active_event=active_event,
+            active_event_stats=active_event_stats,
+            dealer_hub_range=dealer_hub_range,
+            dealer_hub_range_label=dealer_hub_range_label,
+            dealer_hub_start_date=dealer_hub_start_date,
+            available_to_sell_cards=available_to_sell_cards,
+            dealer_inventory_cost=dealer_inventory_cost,
+            dealer_inventory_value=dealer_inventory_value,
+            available_asking_price=available_asking_price,
+            available_potential_profit=available_potential_profit,
+            range_acquired_count=range_acquired_count,
+            range_acquisition_cost=range_acquisition_cost,
+            range_acquisition_value=range_acquisition_value,
+            range_acquisition_potential_profit=range_acquisition_potential_profit,
+            range_sold_cards=range_sold_cards,
+            range_sold_price=range_sold_price,
+            range_profit=range_profit,
+            range_sales_margin_percent=range_sales_margin_percent,
+            fulfillment_queue_cards=fulfillment_queue_cards,
+            pulled_not_shipped_cards=pulled_not_shipped_cards,
+            shipped_not_delivered_cards=shipped_not_delivered_cards,
+            missing_storage_cards=missing_storage_cards,
+            inventory_holding_cards=inventory_holding_cards,
+            grading_queue_cards=grading_queue_cards,
+            ai_action_needed_cards=ai_action_needed_cards,
+            ai_pending_review_cards=ai_pending_review_cards,
+            ai_manual_review_cards=ai_manual_review_cards,
+            action_needed_total=action_needed_total,
+            deal_cart_count=get_deal_cart_quantity(),
+            recent_sales=recent_sales,
+            recent_acquisitions=recent_acquisitions,
+            mobile_capture_url=mobile_capture_url,
+            mobile_capture_qr_url=mobile_capture_qr_url,
         )

@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 
 from flask import render_template, request, redirect, url_for, flash
 
-from models import db, Card, CompRefreshQueue
+from models import db, Card, CompRefreshQueue, DealerEvent
 from helpers.acquisition_helpers import (
     clean_value,
     acquisition_value,
@@ -17,6 +17,20 @@ from helpers.deal_cart_helpers import (
 
 
 def register_inventory_routes(app, generate_card_code, save_uploaded_image, delete_image_file):
+    def get_active_event_name():
+        active_event = (
+            DealerEvent.query
+            .filter(DealerEvent.status == "Open")
+            .order_by(DealerEvent.id.desc())
+            .first()
+        )
+
+        return active_event.event_name if active_event else None
+
+    def event_value_from_form(form_data):
+        manual_event = clean_value(form_data.get("acquisition_event"))
+        return manual_event or get_active_event_name()
+
     @app.route("/cards")
     def cards():
         sold_range = request.args.get("sold_range")
@@ -39,6 +53,14 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         min_price = request.args.get("min_price", "")
         max_price = request.args.get("max_price", "")
         scope = request.args.get("scope", "inventory")
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 50, type=int)
+
+        allowed_per_page = [25, 50, 100]
+        if per_page not in allowed_per_page:
+            per_page = 50
+        if page < 1:
+            page = 1
 
         query = Card.query
 
@@ -202,58 +224,90 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             max_price,
         ])
 
-        query = query.order_by(Card.id.desc())
+        # Keep summary totals tied to the full filtered result set, but only
+        # load one display page of cards. This keeps /cards responsive as the
+        # inventory grows.
+        quantity_expr = db.func.coalesce(Card.quantity, 1)
+        filtered_card_count = query.with_entities(
+            db.func.coalesce(db.func.sum(quantity_expr), 0)
+        ).scalar() or 0
 
-        # Keep the unfiltered All Records view from loading the entire database,
-        # but allow searches/filters inside All Records to search the full dataset.
-        if scope == "all" and not has_active_filter:
-            query = query.limit(250)
+        filtered_total_cost = query.with_entities(
+            db.func.coalesce(db.func.sum(db.func.coalesce(Card.purchase_price, 0) * quantity_expr), 0)
+        ).scalar() or 0
 
-        all_cards = query.all()
+        filtered_total_asking = query.with_entities(
+            db.func.coalesce(db.func.sum(db.func.coalesce(Card.asking_price, 0) * quantity_expr), 0)
+        ).scalar() or 0
 
-        # Results should summarize the cards currently displayed on the inventory page.
-        summary_cards = all_cards
+        filtered_total_sold = query.with_entities(
+            db.func.coalesce(db.func.sum(db.func.coalesce(Card.sold_price, 0) * quantity_expr), 0)
+        ).scalar() or 0
 
-        filtered_card_count = sum(
-            (card.quantity or 1)
-            for card in summary_cards
-        )
+        filtered_total_profit = query.with_entities(
+            db.func.coalesce(
+                db.func.sum(
+                    (db.func.coalesce(Card.sold_price, 0) - db.func.coalesce(Card.purchase_price, 0)) * quantity_expr
+                ),
+                0
+            )
+        ).scalar() or 0
 
-        filtered_total_cost = sum(
-            (card.purchase_price or 0) * (card.quantity or 1)
-            for card in summary_cards
-        )
-
-        filtered_total_asking = sum(
-            (card.asking_price or 0) * (card.quantity or 1)
-            for card in summary_cards
-        )
-
-        filtered_total_sold = sum(
-            (card.sold_price or 0) * (card.quantity or 1)
-            for card in summary_cards
-        )
-
-        filtered_total_profit = sum(
-            ((card.sold_price or 0) - (card.purchase_price or 0)) * (card.quantity or 1)
-            for card in summary_cards
-        )
-        active_inventory_count = sum(
-            (card.quantity or 1)
-            for card in Card.query
+        active_inventory_count = (
+            Card.query
             .filter(Card.status == "Active")
             .filter(Card.collection_type == "Inventory")
-            .all()
+            .with_entities(db.func.coalesce(db.func.sum(db.func.coalesce(Card.quantity, 1)), 0))
+            .scalar()
+            or 0
         )
 
-        missing_storage_count = sum(
-            (card.quantity or 1)
-            for card in Card.query
+        missing_storage_count = (
+            Card.query
             .filter(Card.status == "Active")
             .filter(Card.collection_type == "Inventory")
             .filter(db.or_(Card.storage_location.is_(None), Card.storage_location == ""))
-            .all()
+            .with_entities(db.func.coalesce(db.func.sum(db.func.coalesce(Card.quantity, 1)), 0))
+            .scalar()
+            or 0
         )
+
+        query = query.order_by(Card.id.desc())
+
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        all_cards = pagination.items
+
+        first_item = ((pagination.page - 1) * pagination.per_page + 1) if pagination.total else 0
+        last_item = min(pagination.page * pagination.per_page, pagination.total) if pagination.total else 0
+
+        pagination_args = request.args.to_dict(flat=True)
+        pagination_args.pop("page", None)
+        pagination_args.pop("per_page", None)
+
+        def pagination_url(page_number, per_page_value=None):
+            args = dict(pagination_args)
+            args["page"] = page_number
+            args["per_page"] = per_page_value or per_page
+            return url_for("cards", **args)
+
+        prev_url = pagination_url(pagination.prev_num) if pagination.has_prev else None
+        next_url = pagination_url(pagination.next_num) if pagination.has_next else None
+
+        page_links = [
+            {"page": page_number, "url": pagination_url(page_number)}
+            if page_number else None
+            for page_number in pagination.iter_pages(
+                left_edge=1,
+                right_edge=1,
+                left_current=2,
+                right_current=2,
+            )
+        ]
+
+        per_page_links = [
+            {"value": value, "url": pagination_url(1, value)}
+            for value in allowed_per_page
+        ]
 
         storage_locations = get_storage_locations()
 
@@ -313,7 +367,17 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             deal_cart_count=deal_cart_count,
             active_inventory_count=active_inventory_count,
             missing_storage_count=missing_storage_count,
-            scope=scope
+            scope=scope,
+            pagination=pagination,
+            page_links=page_links,
+            per_page_links=per_page_links,
+            prev_url=prev_url,
+            next_url=next_url,
+            current_page=pagination.page,
+            per_page=per_page,
+            first_item=first_item,
+            last_item=last_item,
+            record_total=pagination.total
         )
 
 
@@ -755,7 +819,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
                 existing_card.collection_type = collection_type
                 existing_card.acquisition_source = existing_card.acquisition_source or acquisition_value(request.form.get("acquisition_source"))
                 existing_card.acquisition_date = existing_card.acquisition_date or acquisition_date_value(request.form)
-                existing_card.acquisition_event = existing_card.acquisition_event or clean_value(request.form.get("acquisition_event"))
+                existing_card.acquisition_event = existing_card.acquisition_event or event_value_from_form(request.form)
                 db.session.commit()
                 flash(f"Duplicate found. Quantity updated from {old_quantity} to {existing_card.quantity}.")
                 saved_card_id = existing_card.id
@@ -786,7 +850,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
                     purchase_date=purchase_date_value(request.form),
                     acquisition_source=acquisition_value(request.form.get("acquisition_source")),
                     acquisition_date=acquisition_date_value(request.form),
-                    acquisition_event=clean_value(request.form.get("acquisition_event")),
+                    acquisition_event=event_value_from_form(request.form),
                     storage_location=clean_value(request.form.get("storage_location")),
                     collection_type=collection_type,
                     notes=request.form.get("notes"),
@@ -882,6 +946,9 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
                 existing_card.quantity = old_quantity + quantity_to_add
                 existing_card.collection_type = collection_type
                 existing_card.status = card_status
+                existing_card.acquisition_source = existing_card.acquisition_source or acquisition_value(request.form.get("acquisition_source"))
+                existing_card.acquisition_date = existing_card.acquisition_date or acquisition_date_value(request.form)
+                existing_card.acquisition_event = existing_card.acquisition_event or event_value_from_form(request.form)
 
                 if uploaded_image:
                     if existing_card.image_filename:
@@ -936,7 +1003,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
                 purchase_date=purchase_date_value(request.form),
                 acquisition_source=acquisition_value(request.form.get("acquisition_source")),
                 acquisition_date=acquisition_date_value(request.form),
-                acquisition_event=clean_value(request.form.get("acquisition_event")),
+                acquisition_event=event_value_from_form(request.form),
                 storage_location=clean_value(
                     request.form.get("storage_location")
                 ),

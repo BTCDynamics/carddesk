@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}CardDesk Home{% endblock %}
+
+{% block content %}
+<style>
+.carddesk-home-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.carddesk-home-title {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.carddesk-home-title .home-eyebrow {
+    color: #fbbf24;
+    font-size: .8rem;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.carddesk-home-title h1 {
+    color: #ffffff;
+    font-size: clamp(2.4rem, 5vw, 4.75rem);
+    font-weight: 950;
+    letter-spacing: -.06em;
+    text-shadow: 0 1.2rem 2.4rem rgba(0,0,0,.38);
+    margin: .2rem 0 .3rem;
+}
+
+.carddesk-home-title p {
+    color: rgba(226,232,240,.84);
+    font-size: 1.05rem;
+    font-weight: 650;
+    margin: 0;
+}
+
+.carddesk-launch-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, .82fr) minmax(0, 1fr);
+    gap: 1.2rem;
+    align-items: stretch;
+}
+
+.carddesk-launch-card {
+    min-height: 390px;
+    border-radius: 1.35rem;
+    padding: 1.35rem;
+    color: #f8fafc !important;
+    text-decoration: none !important;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 1.3rem 3rem rgba(0,0,0,.34);
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.carddesk-launch-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1.8rem 3.6rem rgba(0,0,0,.42);
+    border-color: rgba(147,197,253,.55);
+}
+
+.carddesk-launch-card::after {
+    content: "";
+    position: absolute;
+    width: 16rem;
+    height: 16rem;
+    right: -6rem;
+    bottom: -7rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.10);
+}
+
+.launch-dealer {
+    background:
+        radial-gradient(circle at top left, rgba(34,211,238,.20), transparent 38%),
+        linear-gradient(145deg, #0f3b67, #111827);
+}
+
+.launch-dashboard {
+    background:
+        radial-gradient(circle at top right, rgba(251,191,36,.20), transparent 38%),
+        linear-gradient(145deg, #4a2d0b, #111827);
+}
+
+.launch-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.launch-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 1.2rem;
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+    background: rgba(15,23,42,.45);
+    border: 1px solid rgba(255,255,255,.12);
+    margin-bottom: 1rem;
+}
+
+.launch-label {
+    color: #fbbf24;
+    font-size: .76rem;
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: .3rem;
+}
+
+.carddesk-launch-card h2 {
+    color: #ffffff;
+    font-size: clamp(2rem, 3vw, 3rem);
+    font-weight: 950;
+    letter-spacing: -.04em;
+    line-height: .98;
+    margin-bottom: .75rem;
+}
+
+.launch-subtitle {
+    color: rgba(226,232,240,.86);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    max-width: 25rem;
+}
+
+.launch-list {
+    display: grid;
+    gap: .5rem;
+    margin-top: auto;
+    padding-top: 1.25rem;
+}
+
+.launch-list span {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: .4rem .7rem;
+    border-radius: 999px;
+    color: #e5e7eb;
+    background: rgba(15,23,42,.42);
+    border: 1px solid rgba(255,255,255,.10);
+    font-size: .82rem;
+    font-weight: 800;
+}
+
+.home-brand-card {
+    min-height: 390px;
+    border-radius: 1.35rem;
+    background:
+        radial-gradient(circle at top left, rgba(59,130,246,.18), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(245,158,11,.18), transparent 35%),
+        linear-gradient(145deg, #0b1120, #1e293b);
+    border: 1px solid rgba(148,163,184,.22);
+    box-shadow: 0 1.3rem 3rem rgba(0,0,0,.34);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.home-brand-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 30px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 1.25rem;
+    color: #111827;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    font-size: 3rem;
+    font-weight: 950;
+    box-shadow: 0 1.25rem 2rem rgba(245,158,11,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+
+.home-brand-name {
+    color: #ffffff;
+    font-size: 2.15rem;
+    font-weight: 950;
+    letter-spacing: -.05em;
+}
+
+.home-brand-subtitle {
+    color: #cbd5e1;
+    font-size: .92rem;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-top: .25rem;
+}
+
+.home-brand-divider {
+    width: 84px;
+    height: 4px;
+    margin: 1rem auto;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f59e0b, #60a5fa);
+}
+
+.home-brand-note {
+    color: #94a3b8;
+    font-size: .9rem;
+    font-weight: 700;
+}
+
+@media (max-width: 991.98px) {
+    .carddesk-launch-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .carddesk-launch-card,
+    .home-brand-card {
+        min-height: 285px;
+    }
+
+    .home-brand-card {
+        order: -1;
+    }
+}
+</style>
+
+<div class="carddesk-home-shell">
+    <div class="carddesk-home-title">
+        <div class="home-eyebrow">Choose Your Workspace</div>
+        <h1>CardDesk</h1>
+        <p>Dealer Inventory Command Center</p>
+    </div>
+
+    <div class="carddesk-launch-grid">
+        <a class="carddesk-launch-card launch-dealer" href="{{ url_for('dealer_hub') }}">
+            <div class="launch-content">
+                <div class="launch-icon">⚡</div>
+                <div class="launch-label">Daily Operations</div>
+                <h2>Dealer Hub</h2>
+                <div class="launch-subtitle">Use this when you are actively working cards, prepping for a show, buying, selling, pulling, or reviewing intake.</div>
+                <div class="launch-list">
+                    <span>Intake • AI Review • Deal Cart</span>
+                    <span>Fulfillment • Storage • Comps</span>
+                </div>
+            </div>
+        </a>
+
+        <div class="home-brand-card">
+            <div>
+                <div class="home-brand-logo">CD</div>
+                <div class="home-brand-name">CardDesk</div>
+                <div class="home-brand-subtitle">Inventory • Deals • Fulfillment</div>
+                <div class="home-brand-divider"></div>
+                <div class="home-brand-note">Pick the workspace that matches what you are doing right now.</div>
+            </div>
+        </div>
+
+        <a class="carddesk-launch-card launch-dashboard" href="{{ url_for('dashboard') }}">
+            <div class="launch-content">
+                <div class="launch-icon">📊</div>
+                <div class="launch-label">Analytics & Performance</div>
+                <h2>Business Dashboard</h2>
+                <div class="launch-subtitle">Use this when you want the bigger picture: sales, acquisitions, inventory value, profit, and business health.</div>
+                <div class="launch-list">
+                    <span>Sales • Acquisitions • Profit</span>
+                    <span>Inventory Health • Aging • Value</span>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}
