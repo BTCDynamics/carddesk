@@ -10,108 +10,79 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark cw-navbar mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('dashboard') }}"><span class="cw-brand-mark">CD</span>CardDesk</a>
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('home') }}">
+            <span class="cw-brand-mark">CD</span>CardDesk
+        </a>
+
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="mainNav">
-    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('dashboard') }}">
-                Dashboard
-            </a>
-        </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+                </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('cards') }}">
-                Cards
-            </a>
-        </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-bold text-warning" href="{{ url_for('dealer_hub') }}">Dealer Hub</a>
+                </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('storage_explorer') }}">
-                Storage
-            </a>
-        </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}">Business Dashboard</a>
+                </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('fulfillment_queue') }}">
-                Fulfillment
-            </a>
-        </li>
+                <li class="nav-item ms-lg-3">
+                    <a class="nav-link" href="{{ url_for('cards') }}">Cards</a>
+                </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('add_card') }}">
-                Add Card
-            </a>
-        </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('storage_explorer') }}">Storage</a>
+                </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('rapid_entry') }}">
-                Rapid Entry
-            </a>
-        </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('fulfillment_queue') }}">Fulfillment</a>
+                </li>
 
-        <li class="nav-item">
-            <a class="nav-link position-relative {% if ai_import_action_count %}text-info fw-bold{% endif %}" href="{{ url_for('ai_import_review') }}">
-                AI Review
-                {% if ai_import_action_count %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger ai-nav-badge">
-                        {{ ai_import_action_count }}
-                    </span>
-                {% endif %}
-            </a>
-        </li>
+                <li class="nav-item">
+                    <a class="nav-link position-relative {% if health_issue_count %}text-primary fw-bold{% endif %}" href="{{ url_for('inventory_health') }}">
+                        Inventory Health
+                        {% if health_issue_count %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                                {{ health_issue_count }}
+                            </span>
+                        {% endif %}
+                    </a>
+                </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('ai_import_upload') }}">
-                AI Upload
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link position-relative {% if health_issue_count %}text-primary fw-bold{% endif %}" href="{{ url_for('inventory_health') }}">
-                Inventory Health
-                {% if health_issue_count %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
-                        {{ health_issue_count }}
-                    </span>
-                {% endif %}
-            </a>
-        </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('inventory_aging') }}">Inventory Aging</a>
+                </li>
 
-        <li class="nav-item">
-            <a class="nav-link text-warning position-relative fw-bold" href="{{ url_for('deal_cart') }}">
-                Deal Cart
-                {% if deal_cart_count %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        {{ deal_cart_count }}
-                    </span>
-                {% endif %}
-            </a>
-        </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('comp_refresh') }}">Update Comps</a>
+                </li>
 
-        <li class="nav-item ms-lg-4">
-            <a class="nav-link" href="{{ url_for('inventory_aging') }}">
-                Inventory Aging
-            </a>
-        </li>
+                <li class="nav-item ms-lg-3">
+                    <a class="nav-link text-warning position-relative fw-bold" href="{{ url_for('deal_cart') }}">
+                        Deal Cart
+                        {% if deal_cart_count %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ deal_cart_count }}
+                            </span>
+                        {% endif %}
+                    </a>
+                </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('comp_refresh') }}">
-                Update Comps
-            </a>
-        </li>
+                <li class="nav-item ms-lg-4 mt-2 mt-lg-0">
+                    <a class="nav-link fw-bold text-info" href="{{ url_for('intake_tools') }}">
+                        Intake Tools
+                    </a>
+                </li>
 
-
-        <li class="nav-item ms-lg-5 mt-2 mt-lg-0">
-            <a class="nav-link fw-bold text-info" href="{{ url_for('intake_tools') }}">
-                Intake Tools
-            </a>
-        </li>
-
-    </ul>
-</div>
+            </ul>
+        </div>
     </div>
 </nav>
 
