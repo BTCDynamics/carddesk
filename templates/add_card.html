@@ -785,7 +785,16 @@
                     <div class="row g-3">
                         <div class="col-lg-4 col-md-6">
                             <label class="form-label">Player / Subject</label>
-                            <input class="form-control" type="text" name="player_name" required placeholder="e.g. Mike Trout" value="{{ clone_source.player_name if clone_source else '' }}">
+                            <input class="form-control" type="text" name="player_name" required placeholder="e.g. Mike Trout, Charizard" value="{{ clone_source.player_name if clone_source else '' }}">
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label">Sport / Category</label>
+                            <select class="form-select" name="sport" required>
+                                <option value="">Select category...</option>
+                                {% for sport in ["Baseball", "Football", "Basketball", "Hockey", "Soccer", "Golf", "Racing", "Wrestling", "Boxing", "UFC", "Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Other"] %}
+                                    <option value="{{ sport }}" {% if clone_source and clone_source.sport == sport %}selected{% endif %}>{{ sport }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
 
