@@ -15,6 +15,7 @@ from helpers.psa_helpers import (
     clean_psa_cert_number,
     find_duplicate_by_cert_number,
 )
+from helpers.image_crop_helpers import straighten_card_image_for_inventory
 
 
 def build_reference_search_query(staged_card):
@@ -367,6 +368,13 @@ def register_ai_import_routes(
         duplicate_action = request.form.get("duplicate_action") or "create_new"
         probable_duplicate = find_probable_duplicate_from_staging(staged_card)
         next_card = next_staged_review_card(staged_card.id)
+
+        # Straighten/plumb staged images before moving them into permanent inventory.
+        # This does not crop the image and fails safe if no reliable card edge is detected.
+        staged_card.image_filename = straighten_card_image_for_inventory(staged_card.image_filename)
+        staged_card.image_back_filename = straighten_card_image_for_inventory(
+            getattr(staged_card, "image_back_filename", None)
+        )
 
         if probable_duplicate and duplicate_action == "increase_quantity":
             old_quantity = probable_duplicate.quantity or 1

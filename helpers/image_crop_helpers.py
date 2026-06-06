@@ -1,16 +1,20 @@
 import os
-from typing import Optional, Tuple
+from typing import Optional
 
 from flask import current_app
 
 
-def crop_card_image_for_inventory(image_filename: Optional[str]) -> Optional[str]:
-    """Crop a staged card image down to the outside card borders.
+def straighten_card_image_for_inventory(image_filename: Optional[str]) -> Optional[str]:
+    """Auto-rotate a staged card image so the card is upright/plumb.
 
-    The import workflow calls this right before the image is renamed and attached
-    to the permanent inventory record. It intentionally fails safe: if OpenCV is
-    unavailable, the file is missing, or the card border cannot be detected with
-    enough confidence, the original filename is returned unchanged.
+    This intentionally does NOT crop the image and does NOT mask or round the
+    card corners. The full photo canvas is preserved with a little added border
+    if rotation needs extra space.
+
+    The workflow calls this before the staged image is renamed and attached to
+    the permanent inventory record. It fails safe: if OpenCV is unavailable, the
+    file is missing, or the card angle cannot be detected confidently, the
+    original filename is returned unchanged.
     """
     if not image_filename:
         return image_filename
@@ -34,29 +38,58 @@ def crop_card_image_for_inventory(image_filename: Optional[str]) -> Optional[str
         return image_filename
 
     try:
-        warped = _detect_and_crop_card(cv2, np, image)
-        if warped is None:
+        corrected = _detect_and_straighten_card(cv2, np, image)
+        if corrected is None:
             return image_filename
 
         extension = image_filename.rsplit(".", 1)[-1].lower() if "." in image_filename else "jpg"
         if extension in {"jpg", "jpeg"}:
-            cv2.imwrite(image_path, warped, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+            cv2.imwrite(image_path, corrected, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
         elif extension == "png":
-            cv2.imwrite(image_path, warped, [int(cv2.IMWRITE_PNG_COMPRESSION), 3])
+            cv2.imwrite(image_path, corrected, [int(cv2.IMWRITE_PNG_COMPRESSION), 3])
         else:
-            cv2.imwrite(image_path, warped)
+            cv2.imwrite(image_path, corrected)
 
         return image_filename
     except Exception:
         return image_filename
 
 
-def _detect_and_crop_card(cv2, np, image):
+def crop_card_image_for_inventory(image_filename: Optional[str]) -> Optional[str]:
+    """Backward-compatible name kept for older imports.
+
+    Cropping is currently disabled. This now performs only the safe
+    straighten/plumb step and leaves the full image canvas intact.
+    """
+    return straighten_card_image_for_inventory(image_filename)
+
+
+def _detect_and_straighten_card(cv2, np, image):
     original_height, original_width = image.shape[:2]
     max_dimension = 1200
     scale = min(1.0, max_dimension / float(max(original_height, original_width)))
     working = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA) if scale < 1.0 else image.copy()
 
+    points = _detect_card_points(cv2, np, working)
+    if points is None:
+        return None
+
+    if scale < 1.0:
+        points = points / scale
+
+    points = _clamp_points(np, points, original_width, original_height)
+    angle = _rotation_angle_from_points(np, points)
+
+    # Avoid unnecessary re-encoding and avoid wild corrections from bad detection.
+    if abs(angle) < 0.75:
+        return None
+    if abs(angle) > 18:
+        return None
+
+    return _rotate_image_keep_full_canvas(cv2, np, image, angle)
+
+
+def _detect_card_points(cv2, np, working):
     gray = cv2.cvtColor(working, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
@@ -92,30 +125,10 @@ def _detect_and_crop_card(cv2, np, image):
             best_points = points
             best_area = area
 
-    if best_points is None:
-        best_points = _detect_from_background_contrast(cv2, np, working)
-        if best_points is None:
-            return None
+    if best_points is not None:
+        return best_points
 
-    if scale < 1.0:
-        best_points = best_points / scale
-
-    best_points = _clamp_points(np, best_points, original_width, original_height)
-
-    # IMPORTANT: keep the saved file as a plain rectangular crop.
-    # Earlier versions used a perspective warp, which can visually shave/round
-    # the physical card corners when the detector locks onto the card face.
-    # For inventory/eBay-style listing photos, square image corners are safer.
-    cropped = _rectangular_crop_from_points(image, best_points, padding_ratio=0.018)
-
-    if cropped is None:
-        return None
-
-    # Avoid saving tiny or obviously wrong crops.
-    if cropped.shape[0] < original_height * 0.35 or cropped.shape[1] < original_width * 0.35:
-        return None
-
-    return cropped
+    return _detect_from_background_contrast(cv2, np, working)
 
 
 def _detect_from_background_contrast(cv2, np, working):
@@ -123,8 +136,6 @@ def _detect_from_background_contrast(cv2, np, working):
     hsv = cv2.cvtColor(working, cv2.COLOR_BGR2HSV)
     saturation = hsv[:, :, 1]
 
-    # Card photos usually have a lower-detail tabletop/background around the
-    # outside and a high-saturation card area inside.
     _, mask = cv2.threshold(saturation, 45, 255, cv2.THRESH_BINARY)
     kernel = np.ones((9, 9), np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
@@ -149,6 +160,56 @@ def _detect_from_background_contrast(cv2, np, working):
     return None
 
 
+def _rotation_angle_from_points(np, points) -> float:
+    """Return degrees needed to make the card's vertical edge plumb."""
+    rect = _order_points(np, points)
+    top_left, top_right, bottom_right, bottom_left = rect
+
+    left_edge = bottom_left - top_left
+    right_edge = bottom_right - top_right
+    vertical_edge = left_edge if np.linalg.norm(left_edge) >= np.linalg.norm(right_edge) else right_edge
+
+    # Angle is relative to the vertical axis. Negative sign rotates image back.
+    edge_angle_from_vertical = np.degrees(np.arctan2(vertical_edge[0], vertical_edge[1]))
+    return -float(edge_angle_from_vertical)
+
+
+def _rotate_image_keep_full_canvas(cv2, np, image, angle_degrees: float):
+    height, width = image.shape[:2]
+    center = (width / 2.0, height / 2.0)
+
+    matrix = cv2.getRotationMatrix2D(center, angle_degrees, 1.0)
+    cos = abs(matrix[0, 0])
+    sin = abs(matrix[0, 1])
+
+    new_width = int((height * sin) + (width * cos))
+    new_height = int((height * cos) + (width * sin))
+
+    matrix[0, 2] += (new_width / 2.0) - center[0]
+    matrix[1, 2] += (new_height / 2.0) - center[1]
+
+    border_color = _estimate_border_color(np, image)
+    return cv2.warpAffine(
+        image,
+        matrix,
+        (new_width, new_height),
+        flags=cv2.INTER_CUBIC,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=border_color,
+    )
+
+
+def _estimate_border_color(np, image):
+    """Use image edge pixels for any added canvas after rotation."""
+    top = image[0, :, :]
+    bottom = image[-1, :, :]
+    left = image[:, 0, :]
+    right = image[:, -1, :]
+    edge_pixels = np.concatenate([top, bottom, left, right], axis=0)
+    median = np.median(edge_pixels, axis=0)
+    return tuple(int(channel) for channel in median.tolist())
+
+
 def _looks_like_trading_card(points) -> bool:
     ordered = _order_points_for_math(points)
     top_width = _distance(ordered[0], ordered[1])
@@ -163,67 +224,7 @@ def _looks_like_trading_card(points) -> bool:
         return False
 
     aspect_ratio = width / height
-
-    # Standard trading cards are portrait, but allow landscape and minor camera skew.
     return 0.45 <= aspect_ratio <= 1.85
-
-
-def _rectangular_crop_from_points(image, points, padding_ratio: float = 0.018):
-    """Return a square-cornered bounding-box crop around detected card points.
-
-    This deliberately does not mask corners and does not perspective-warp the
-    image. A small padding keeps the full physical card edge visible so exports
-    remain suitable for marketplace/listing photos.
-    """
-    height, width = image.shape[:2]
-
-    x_min = int(min(point[0] for point in points))
-    x_max = int(max(point[0] for point in points))
-    y_min = int(min(point[1] for point in points))
-    y_max = int(max(point[1] for point in points))
-
-    crop_width = max(1, x_max - x_min)
-    crop_height = max(1, y_max - y_min)
-    padding = int(max(crop_width, crop_height) * padding_ratio)
-
-    x_min = max(0, x_min - padding)
-    y_min = max(0, y_min - padding)
-    x_max = min(width, x_max + padding)
-    y_max = min(height, y_max + padding)
-
-    if x_max <= x_min or y_max <= y_min:
-        return None
-
-    return image[y_min:y_max, x_min:x_max].copy()
-
-
-def _four_point_transform(cv2, np, image, points):
-    rect = _order_points(np, points)
-    top_left, top_right, bottom_right, bottom_left = rect
-
-    width_a = np.linalg.norm(bottom_right - bottom_left)
-    width_b = np.linalg.norm(top_right - top_left)
-    max_width = int(max(width_a, width_b))
-
-    height_a = np.linalg.norm(top_right - bottom_right)
-    height_b = np.linalg.norm(top_left - bottom_left)
-    max_height = int(max(height_a, height_b))
-
-    if max_width <= 0 or max_height <= 0:
-        return None
-
-    destination = np.array(
-        [
-            [0, 0],
-            [max_width - 1, 0],
-            [max_width - 1, max_height - 1],
-            [0, max_height - 1],
-        ],
-        dtype="float32",
-    )
-
-    matrix = cv2.getPerspectiveTransform(rect, destination)
-    return cv2.warpPerspective(image, matrix, (max_width, max_height))
 
 
 def _order_points(np, points):
@@ -240,7 +241,6 @@ def _order_points(np, points):
 
 
 def _order_points_for_math(points):
-    # This version avoids requiring numpy in the small aspect-ratio helper.
     ordered = sorted(points, key=lambda p: (p[1], p[0]))
     top = sorted(ordered[:2], key=lambda p: p[0])
     bottom = sorted(ordered[2:], key=lambda p: p[0])
