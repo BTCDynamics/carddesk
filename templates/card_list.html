@@ -284,7 +284,97 @@
     border-color:#2dd4bf !important;
 }
 
+
+
+/* Inventory pagination */
+.inventory-pagination-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    padding: .8rem 1rem;
+    border-radius: .95rem;
+    background: linear-gradient(145deg, #172033, #202b3a);
+    border: 1px solid rgba(147, 197, 253, .22);
+}
+
+.inventory-pagination-summary {
+    color: #cbd5e1;
+    font-size: .84rem;
+    font-weight: 700;
+}
+
+.inventory-pagination-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    align-items: center;
+}
+
+.inventory-pagination-controls .btn {
+    min-width: 2.4rem;
+    font-weight: 800;
+    border-radius: 999px;
+}
+
+.inventory-per-page {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem;
+}
+
+.inventory-per-page-label {
+    color: #94a3b8;
+    font-size: .76rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
 </style>
+
+{% macro render_inventory_pagination(pagination, page_links, per_page_links, prev_url, next_url, first_item, last_item, record_total, per_page) %}
+    {% if pagination %}
+        <div class="inventory-pagination-wrap my-3">
+            <div class="inventory-pagination-summary">
+                Showing <strong>{{ first_item or 0 }}</strong>-<strong>{{ last_item or 0 }}</strong>
+                of <strong>{{ record_total or 0 }}</strong> matching record(s)
+            </div>
+
+            <div class="inventory-pagination-controls" aria-label="Inventory pagination">
+                {% if prev_url %}
+                    <a class="btn btn-sm btn-outline-info" href="{{ prev_url }}">Previous</a>
+                {% else %}
+                    <span class="btn btn-sm btn-outline-secondary disabled">Previous</span>
+                {% endif %}
+
+                {% for link in page_links %}
+                    {% if link %}
+                        <a class="btn btn-sm {% if link.page == pagination.page %}btn-primary{% else %}btn-outline-info{% endif %}" href="{{ link.url }}">{{ link.page }}</a>
+                    {% else %}
+                        <span class="px-1 text-muted">…</span>
+                    {% endif %}
+                {% endfor %}
+
+                {% if next_url %}
+                    <a class="btn btn-sm btn-outline-info" href="{{ next_url }}">Next</a>
+                {% else %}
+                    <span class="btn btn-sm btn-outline-secondary disabled">Next</span>
+                {% endif %}
+            </div>
+
+            <div class="inventory-per-page">
+                <span class="inventory-per-page-label">Show</span>
+                {% for link in per_page_links %}
+                    <a class="btn btn-sm {% if link.value == per_page %}btn-primary{% else %}btn-outline-info{% endif %}" href="{{ link.url }}">{{ link.value }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endmacro %}
+
 {% set current_view = request.args.get('view', 'table') %}
 {% set pull_sheet_status_filter = status_filter if status_filter else ('Active' if scope != 'all' else '') %}
 {% set pull_sheet_collection_type_filter = collection_type_filter if collection_type_filter else ('Inventory' if scope != 'all' else '') %}
@@ -372,6 +462,7 @@
 
         <form method="GET" action="{{ url_for('cards') }}" id="inventoryFilterForm">
             <input type="hidden" name="view" value="{{ current_view }}">
+            <input type="hidden" name="per_page" value="{{ per_page or 50 }}">
             {% if scope == 'all' %}<input type="hidden" name="scope" value="all">{% endif %}
 
             <div class="inventory-search-main">
@@ -388,7 +479,8 @@
                 {% elif status_filter %}<strong>{{ status_filter }}</strong>
                 {% elif scope == 'all' %}<strong>All Records</strong>
                 {% else %}<strong>For Sale</strong>{% endif %}
-                · {{ filtered_card_count or 0 }} card(s) shown
+                · {{ filtered_card_count or 0 }} card(s) match filters
+                · page {{ current_page or 1 }}
                 {% if filter_count %}
                     · <strong>{{ filter_count }}</strong> advanced filter(s) active — open Advanced Filters to edit them.
                 {% endif %}
@@ -599,6 +691,8 @@
         </div>
     </div>
 </div>
+
+{{ render_inventory_pagination(pagination, page_links, per_page_links, prev_url, next_url, first_item, last_item, record_total, per_page) }}
 
 {% if current_view == 'gallery' %}
     <div class="row g-4">
@@ -840,4 +934,6 @@
         </div>
     </div>
 {% endif %}
+
+{{ render_inventory_pagination(pagination, page_links, per_page_links, prev_url, next_url, first_item, last_item, record_total, per_page) }}
 {% endblock %}
