@@ -686,12 +686,28 @@
 
                             {% if duplicate %}
                                 <div class="ai-duplicate-panel">
-                                    <div class="ai-duplicate-title">⚠ Possible Duplicate Found</div>
+                                    <div class="ai-duplicate-title">⚠ Possible Existing Inventory Match</div>
                                     <div class="ai-duplicate-body">
-                                        <strong>{{ duplicate.card_code }}</strong> · {{ duplicate.player_name }}{% if duplicate.year %} · {{ duplicate.year }}{% endif %}
+                                        <div class="mb-1">
+                                            This warning is pointing to an <strong>existing inventory card</strong>, not the staged review code.
+                                        </div>
+                                        <div>
+                                            <strong>Existing card:</strong>
+                                            <a class="text-warning fw-bold" href="{{ url_for('card_detail', card_id=duplicate.id) }}" target="_blank" rel="noopener">
+                                                {{ duplicate.card_code }}
+                                            </a>
+                                            · {{ duplicate.player_name }}{% if duplicate.year %} · {{ duplicate.year }}{% endif %}{% if duplicate.brand %} · {{ duplicate.brand }}{% endif %}{% if duplicate.card_number %} · #{{ duplicate.card_number }}{% endif %}
+                                        </div>
+                                        <div class="mt-1">
+                                            <strong>Staged review item:</strong> {{ staged.player_name or "Unidentified Card" }}{% if staged.year %} · {{ staged.year }}{% endif %}{% if staged.brand %} · {{ staged.brand }}{% endif %}{% if staged.card_number %} · #{{ staged.card_number }}{% endif %}
+                                        </div>
                                         {% if duplicate_reason_map is defined and duplicate_reason_map.get(staged.id) %}
-                                            <div class="mt-1">{{ duplicate_reason_map.get(staged.id) }}</div>
+                                            <div class="mt-2">{{ duplicate_reason_map.get(staged.id) }}</div>
                                         {% endif %}
+                                        <div class="mt-2 d-flex flex-wrap gap-2">
+                                            <a class="btn btn-sm btn-warning fw-bold" href="{{ url_for('card_detail', card_id=duplicate.id) }}" target="_blank" rel="noopener">View Existing Card</a>
+                                            <a class="btn btn-sm btn-outline-light" href="{{ url_for('cards', q=duplicate.card_code, scope='all') }}" target="_blank" rel="noopener">Search Inventory Code</a>
+                                        </div>
                                     </div>
                                 </div>
                             {% endif %}
