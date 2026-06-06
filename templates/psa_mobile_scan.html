@@ -1,1124 +1,301 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PSA Mobile Scanner | CardDesk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/html5-qrcode" defer></script>
-    <style>
-        :root {
-            --cd-bg: #020617;
-            --cd-panel: #07111f;
-            --cd-panel-2: #101b2b;
-            --cd-line: rgba(96, 165, 250, .24);
-            --cd-line-soft: rgba(148, 163, 184, .18);
-            --cd-text: #f8fafc;
-            --cd-muted: #b8c7dc;
-            --cd-soft: #94a3b8;
-            --cd-info: #22d3ee;
-            --cd-green: #22c55e;
-            --cd-gold: #f59e0b;
-        }
+{% extends "base.html" %}
 
-        body {
-            min-height: 100vh;
-            background:
-                radial-gradient(circle at top left, rgba(14, 165, 233, .12), transparent 34%),
-                radial-gradient(circle at bottom right, rgba(34, 197, 94, .08), transparent 36%),
-                linear-gradient(145deg, #020617, #0f172a 45%, #111827);
-            color: var(--cd-text);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
+{% block title %}PSA Mobile Scanner | CardDesk{% endblock %}
 
-        .mobile-shell {
-            max-width: 760px;
-            margin: 0 auto;
-            padding: 1rem;
-        }
+{% block content %}
+<style>
+.psa-mobile-shell {
+    max-width: 780px;
+    margin: 0 auto;
+}
 
-        .scanner-card {
-            background:
-                radial-gradient(circle at top left, rgba(59, 130, 246, .10), transparent 36%),
-                linear-gradient(145deg, var(--cd-panel), var(--cd-panel-2));
-            border: 1px solid var(--cd-line);
-            border-radius: 1.25rem;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
-            overflow: hidden;
-        }
+.psa-mobile-hero {
+    border-radius: 1.35rem;
+    padding: 1.25rem;
+    color: #f8fafc;
+    background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, .24), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, .16), transparent 38%),
+        linear-gradient(145deg, #07111f, #172033);
+    border: 1px solid rgba(96, 165, 250, .28);
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .34);
+}
 
-        .scanner-header {
-            padding: 1.25rem;
-            border-bottom: 1px solid rgba(96, 165, 250, .20);
-            background:
-                radial-gradient(circle at top left, rgba(14, 165, 233, .16), transparent 38%),
-                linear-gradient(145deg, #0a182a, #050d1a);
-        }
+.psa-mobile-kicker {
+    color: #67e8f9;
+    font-size: .78rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
 
-        .scanner-eyebrow {
-            color: #67e8f9;
-            font-size: .74rem;
-            font-weight: 700;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-        }
+.psa-scanner-panel {
+    border-radius: 1.2rem;
+    overflow: hidden;
+    border: 1px solid rgba(96, 165, 250, .24);
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, .12), transparent 36%),
+        linear-gradient(145deg, #07111f, #101b2b);
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .30);
+}
 
-        .scanner-title {
-            font-size: 1.28rem;
-            font-weight: 750;
-            margin: .2rem 0 0;
-            letter-spacing: -.015em;
-        }
+.psa-camera-box {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    min-height: 300px;
+    background: #020617;
+    border: 1px solid rgba(148, 163, 184, .25);
+}
 
-        .scanner-subtitle {
-            color: var(--cd-muted);
-            margin: .35rem 0 0;
-            font-size: .93rem;
-            line-height: 1.35;
-        }
+#psaScanVideo {
+    width: 100%;
+    min-height: 300px;
+    max-height: 58vh;
+    object-fit: cover;
+    display: none;
+}
 
-        .scanner-body {
-            padding: 1.25rem;
-        }
+.psa-camera-placeholder {
+    min-height: 300px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    color: #94a3b8;
+    padding: 1.25rem;
+}
 
-        .scanner-status-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(150px, 1fr));
-            gap: .75rem;
-            margin-bottom: 1rem;
-        }
+.psa-scan-line {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    top: 50%;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+    box-shadow: 0 0 22px rgba(34, 211, 238, .8);
+    display: none;
+}
 
-        .scanner-status-tile {
-            padding: .75rem;
-            border-radius: .95rem;
-            color: var(--cd-text);
-            background:
-                radial-gradient(circle at top right, rgba(14, 165, 233, .12), transparent 42%),
-                linear-gradient(145deg, #0b1220, #101a2c);
-            border: 1px solid rgba(96, 165, 250, .20);
-        }
+.psa-mobile-shell .form-control,
+.psa-mobile-shell .form-select {
+    background-color: rgba(15, 23, 42, .78) !important;
+    border-color: rgba(148, 163, 184, .28) !important;
+    color: #f8fafc !important;
+}
 
-        .scanner-status-label {
-            color: var(--cd-soft);
-            font-size: .67rem;
-            font-weight: 700;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-        }
+.psa-mobile-shell .form-label {
+    color: #dbeafe;
+    font-weight: 750;
+}
 
-        .scanner-status-value {
-            margin-top: .25rem;
-            color: #f8fafc;
-            font-size: 1.05rem;
-            font-weight: 700;
-        }
+.psa-success-panel {
+    border-radius: 1rem;
+    padding: 1rem;
+    background: rgba(34, 197, 94, .16);
+    border: 1px solid rgba(74, 222, 128, .35);
+    color: #bbf7d0;
+}
+</style>
 
-        .scanner-section {
-            border-radius: 1rem;
-            padding: .95rem;
-            background:
-                radial-gradient(circle at top left, rgba(14, 165, 233, .08), transparent 38%),
-                linear-gradient(145deg, #0b1220, #101a2c);
-            border: 1px solid rgba(96, 165, 250, .18);
-            margin-bottom: 1rem;
-        }
-
-        .scanner-section-title {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            color: #f8fafc;
-            font-size: .8rem;
-            font-weight: 750;
-            letter-spacing: .055em;
-            text-transform: uppercase;
-            margin-bottom: .75rem;
-        }
-
-        .scanner-section-title::before {
-            content: "";
-            display: inline-block;
-            width: .4rem;
-            height: 1.1rem;
-            border-radius: 999px;
-            background: var(--cd-info);
-            box-shadow: 0 0 18px rgba(13, 202, 240, .30);
-        }
-
-        #psa-mobile-reader {
-            width: 100%;
-            min-height: 330px;
-            overflow: hidden;
-            border-radius: 1rem;
-            background: #000000;
-            border: 1px solid rgba(96, 165, 250, .32);
-            box-shadow:
-                inset 0 0 0 1px rgba(255, 255, 255, .03),
-                0 0 34px rgba(14, 165, 233, .12);
-        }
-
-        #psa-mobile-reader video {
-            object-fit: cover !important;
-        }
-
-        .scanner-status {
-            font-weight: 650;
-            margin-top: .85rem;
-            min-height: 1.5rem;
-        }
-
-        .scanner-tools {
-            display: none;
-            gap: .75rem;
-            margin-top: .85rem;
-            padding: .85rem;
-            border-radius: 1rem;
-            background: rgba(2, 6, 23, .42);
-            border: 1px solid rgba(148, 163, 184, .18);
-        }
-
-        .scanner-tools.active {
-            display: grid;
-        }
-
-        .zoom-row {
-            display: none;
-            grid-template-columns: 76px 1fr 46px;
-            gap: .65rem;
-            align-items: center;
-        }
-
-        .zoom-row.active {
-            display: grid;
-        }
-
-        .form-control,
-        .form-select {
-            min-height: 48px;
-            font-weight: 650;
-            color: #f8fafc !important;
-            background-color: rgba(2, 6, 23, .48) !important;
-            border: 1px solid rgba(96, 165, 250, .28) !important;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: rgba(14, 165, 233, .70) !important;
-            box-shadow: 0 0 0 .18rem rgba(14, 165, 233, .14) !important;
-        }
-
-        .form-control::placeholder {
-            color: #94a3b8 !important;
-        }
-
-        .form-label {
-            font-weight: 650;
-        }
-
-        .btn-lg {
-            min-height: 50px;
-            font-weight: 750;
-        }
-
-        .btn {
-            font-weight: 650;
-        }
-
-        .small-help {
-            color: var(--cd-muted);
-            font-size: .87rem;
-            line-height: 1.35;
-        }
-
-        .success-card,
-        .warning-card,
-        .autosave-control-card,
-        .scan-tip-card {
-            border-radius: 1rem;
-            padding: .9rem;
-        }
-
-        .success-card {
-            background: rgba(22, 163, 74, .15);
-            border: 1px solid rgba(74, 222, 128, .34);
-            color: #dcfce7;
-        }
-
-        .live-save-success {
-            display: none;
-        }
-
-        .live-save-success.active {
-            display: block;
-        }
-
-        .live-save-success-title {
-            font-weight: 650;
-        }
-
-        .success-card.post-submit-focus {
-            animation: post-submit-focus-pulse 1.05s ease-in-out 2;
-            box-shadow: 0 0 28px rgba(34, 197, 94, .36);
-        }
-
-        @keyframes post-submit-focus-pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
-            50% { transform: scale(1.018); box-shadow: 0 0 30px rgba(34, 197, 94, .55); }
-            100% { transform: scale(1); box-shadow: 0 0 22px rgba(34, 197, 94, .35); }
-        }
-
-        .warning-card {
-            background: rgba(245, 158, 11, .14);
-            border: 1px solid rgba(251, 191, 36, .38);
-            color: #fef3c7;
-        }
-
-        .autosave-control-card {
-            background: rgba(34, 197, 94, .10);
-            border: 1px solid rgba(74, 222, 128, .30);
-            color: #dcfce7;
-        }
-
-        .autosave-control-card .form-check-label {
-            font-weight: 650 !important;
-        }
-
-        .autosave-control-card .form-check-input {
-            transform: scale(1.18);
-            margin-right: .35rem;
-        }
-
-        .scan-tip-card {
-            background: rgba(96, 165, 250, .09);
-            border: 1px solid rgba(96, 165, 250, .24);
-            color: #dbeafe;
-        }
-
-        .scan-success-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 1.25rem;
-            background: rgba(2, 6, 23, .72);
-            backdrop-filter: blur(4px);
-        }
-
-        .scan-success-overlay.active {
-            display: flex;
-        }
-
-        .scan-success-box {
-            width: min(92vw, 420px);
-            padding: 1.35rem;
-            border-radius: 1.35rem;
-            text-align: center;
-            color: #ffffff;
-            background:
-                radial-gradient(circle at top left, rgba(187, 247, 208, .18), transparent 40%),
-                linear-gradient(145deg, #16a34a, #15803d);
-            border: 1px solid rgba(187, 247, 208, .65);
-            box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, .42), 0 0 32px rgba(34, 197, 94, .34);
-            animation: scan-success-pop .22s ease-out;
-        }
-
-        .scan-success-check {
-            display: grid;
-            place-items: center;
-            width: 66px;
-            height: 66px;
-            margin: 0 auto .85rem;
-            border-radius: 999px;
-            color: #166534;
-            background: #dcfce7;
-            font-size: 2.25rem;
-            font-weight: 800;
-            line-height: 1;
-        }
-
-        .scan-success-title {
-            font-size: 1.18rem;
-            font-weight: 750;
-            letter-spacing: .035em;
-            text-transform: uppercase;
-        }
-
-        .scan-success-cert {
-            margin-top: .35rem;
-            font-size: 1rem;
-            font-weight: 650;
-            color: #dcfce7;
-            word-break: break-word;
-        }
-
-        .scan-success-hint {
-            margin-top: .5rem;
-            color: #bbf7d0;
-            font-size: .9rem;
-            font-weight: 550;
-        }
-
-        .scan-success-field {
-            animation: scan-field-pulse .75s ease-in-out 2;
-        }
-
-        @keyframes scan-success-pop {
-            from { transform: scale(.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        @keyframes scan-field-pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
-            50% { transform: scale(1.018); box-shadow: 0 0 22px rgba(34, 197, 94, .75); }
-            100% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
-        }
-
-        .stage-submit-attention {
-            animation: stage-submit-pulse .85s ease-in-out 5;
-            box-shadow: 0 0 24px rgba(34, 197, 94, .72) !important;
-            border-color: #bbf7d0 !important;
-        }
-
-        @keyframes stage-submit-pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
-            50% { transform: scale(1.03); box-shadow: 0 0 28px rgba(34, 197, 94, .82); }
-            100% { transform: scale(1); box-shadow: 0 0 12px rgba(34, 197, 94, .42); }
-        }
-
-        @media (max-width: 575.98px) {
-            .mobile-shell {
-                padding: .75rem;
-            }
-
-            .scanner-header,
-            .scanner-body {
-                padding: 1rem;
-            }
-
-            .scanner-status-grid {
-                grid-template-columns: 1fr;
-            }
-
-            #psa-mobile-reader {
-                min-height: 300px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="scan-success-overlay" id="scanSuccessOverlay" aria-live="polite" aria-hidden="true">
-        <div class="scan-success-box">
-            <div class="scan-success-check">✓</div>
-            <div class="scan-success-title" id="scanSuccessTitle">Cert Captured</div>
-            <div class="scan-success-cert" id="scanSuccessCert">Cert found</div>
-            <div class="scan-success-hint" id="scanSuccessHint">Ready to stage for review</div>
-        </div>
+<div class="psa-mobile-shell">
+    <div class="psa-mobile-hero mb-4">
+        <div class="psa-mobile-kicker mb-2">CardDesk PSA Tool</div>
+        <h1 class="h2 mb-2">PSA Barcode Scanner</h1>
+        <p class="mb-0 text-muted">
+            Scan a PSA slab barcode or type the cert number manually. CardDesk will stage the PSA card for AI Review.
+        </p>
     </div>
 
-    <main class="mobile-shell">
-        <div class="scanner-card">
-            <div class="scanner-header">
-                <div class="scanner-eyebrow">Scan → Stage → Review</div>
-                <h1 class="scanner-title">PSA Mobile Scanner</h1>
-                <p class="scanner-subtitle">Scan PSA slab barcodes, stage certs for review, and keep moving through a stack of slabs.</p>
-            </div>
-
-            <div class="scanner-body">
-<div class="scanner-status-grid">
-                    <div class="scanner-status-tile">
-                        <div class="scanner-status-label">Auto Save</div>
-                        <div class="scanner-status-value" id="autoSaveStatusTile">Off</div>
-                    </div>
-                    <div class="scanner-status-tile">
-                        <div class="scanner-status-label">Scanner</div>
-                        <div class="scanner-status-value" id="scannerStateTile">Ready</div>
-                    </div>
-                </div>
-
-                                <div class="autosave-control-card mb-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="autoSaveAfterScan">
-                        <label class="form-check-label fw-bold" for="autoSaveAfterScan">
-                            Auto-save after successful scan
-                        </label>
-                    </div>
-                    <div class="small-help mt-1">
-                        Batch mode: scan → stage in background → scan next slab. Turn this off if you want to review before saving.
-                    </div>
-                </div>
-
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-warning">{{ message }}</div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <div class="success-card live-save-success mb-3" id="liveSaveSuccessBanner" aria-live="polite">
-                    <div class="live-save-success-title" id="liveSaveSuccessTitle">PSA cert was staged for review.</div>
-                    <div class="small-help">Saved successfully. Ready for the next scan.</div>
-                </div>
-
-                {% if staged_success %}
-                    <div class="success-card mb-3" id="stagedSuccessBanner">
-                        <div style="font-weight:650;">PSA cert {{ scanned_cert }} was staged for review.</div>
-                        <div class="small-help">Saved successfully. Scan another slab, or open the review queue from your desktop.</div>
-                    </div>
-                {% endif %}
-
-                {% if not token_configured %}
-                    <div class="warning-card mb-3">
-                        <div style="font-weight:650;">PSA API token is not configured.</div>
-                        <div class="small-help">Add PSA_ACCESS_TOKEN in Render before using this scanner.</div>
-                    </div>
-                {% endif %}
-
-                <div class="scanner-section">
-                    <div class="scanner-section-title">Scanner Controls</div>
-                    <div class="d-grid gap-2 mb-3">
-                        <button class="btn btn-success btn-lg" type="button" id="startScannerBtn">Start Barcode Scanner</button>
-                        <button class="btn btn-outline-light" type="button" id="stopScannerBtn">Stop Scanner</button>
-                    </div>
-
-                    <div id="psa-mobile-reader" class="mb-2"></div>
-                <div class="scanner-status text-info" id="scannerStatus">Camera not started.</div>
-
-                <div class="scanner-tools" id="scannerTools">
-                    <div class="zoom-row" id="zoomRow">
-                        <label class="small-help mb-0" for="zoomSlider">Zoom</label>
-                        <input class="form-range" id="zoomSlider" type="range" min="1" max="1" step="0.1" value="1">
-                        <span class="small-help" id="zoomValue">1x</span>
-                    </div>
-                    <button class="btn btn-outline-warning" type="button" id="torchButton" style="display:none;">Toggle Light</button>
-                    <div class="small-help">Tip: PSA slab barcodes usually scan best around 4.2x zoom. Hold the phone steady, keep the slab flat, and use bright light.</div>
-                </div>
-
-                    <div class="scan-tip-card mt-3 small">
-                        For tiny PSA barcodes, CardDesk starts the camera near 4.2x zoom when supported. Use bright light, keep the slab flat, and hold steady while the phone focuses.
-                    </div>
-                </div>
-
-                <form method="POST" action="{{ url_for('psa_mobile_scan') }}" class="scanner-section" id="psaMobileForm">
-                    <div class="scanner-section-title">Card Staging</div>
-                    <label class="form-label">PSA Cert Number</label>
-                    <input class="form-control form-control-lg mb-3" id="mobileCertNumber" type="text" name="cert_number" value="{{ '' if staged_success else scanned_cert }}" placeholder="Scan or enter cert #" inputmode="numeric" autocomplete="off" required>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-7">
-                            <label class="form-label small-help">Collection</label>
-                            <select class="form-select" name="collection_type">
-                                <option value="Inventory" selected>Inventory</option>
-                                <option value="Personal Collection">Personal Collection</option>
-                                <option value="Trade Bait">Trade Bait</option>
-                                <option value="Grading Queue">Grading Queue</option>
-                            </select>
-                        </div>
-                        <div class="col-5">
-                            <label class="form-label small-help">Status</label>
-                            <select class="form-select" name="status">
-                                <option value="Active" selected>Active</option>
-                                <option value="Holding">Holding</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small-help">Storage Location</label>
-                        <input class="form-control" type="text" name="storage_location" placeholder="PSA Box / Slab Case / Row">
-                    </div>
-
-                    <input type="hidden" name="acquisition_source" value="Existing Inventory">
-                    <input type="hidden" name="acquisition_date" value="">
-                    <input type="hidden" name="purchase_date" value="">
-                    <input type="hidden" name="acquisition_event" value="">
-
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success btn-lg" type="submit" id="stageReviewButton" {% if not token_configured %}disabled{% endif %}>Stage PSA Cert for Review</button>
-                        <a class="btn btn-outline-light" href="{{ url_for('ai_import_review') }}">Review Queue ({{ pending_count }})</a>
-                    </div>
-                </form>
-            </div>
+    {% if not token_configured %}
+        <div class="alert alert-warning">
+            PSA_ACCESS_TOKEN is not configured. Add it in Render before using PSA Cert Lookup.
         </div>
-    </main>
+    {% endif %}
 
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const certInput = document.getElementById("mobileCertNumber");
-        const startButton = document.getElementById("startScannerBtn");
-        const stopButton = document.getElementById("stopScannerBtn");
-        const status = document.getElementById("scannerStatus");
-        const scannerTools = document.getElementById("scannerTools");
-        const zoomRow = document.getElementById("zoomRow");
-        const zoomSlider = document.getElementById("zoomSlider");
-        const zoomValue = document.getElementById("zoomValue");
-        const torchButton = document.getElementById("torchButton");
-        const scanSuccessOverlay = document.getElementById("scanSuccessOverlay");
-        const scanSuccessTitle = document.getElementById("scanSuccessTitle");
-        const scanSuccessCert = document.getElementById("scanSuccessCert");
-        const scanSuccessHint = document.getElementById("scanSuccessHint");
-        const stageReviewButton = document.getElementById("stageReviewButton");
-        const psaMobileForm = document.getElementById("psaMobileForm");
-        const autoSaveAfterScan = document.getElementById("autoSaveAfterScan");
-        const autoSaveStatusTile = document.getElementById("autoSaveStatusTile");
-        const scannerStateTile = document.getElementById("scannerStateTile");
-        const liveSaveSuccessBanner = document.getElementById("liveSaveSuccessBanner");
-        const liveSaveSuccessTitle = document.getElementById("liveSaveSuccessTitle");
+    {% if staged_success %}
+        <div class="psa-success-panel mb-4">
+            <div class="fw-bold">PSA cert {{ scanned_cert }} staged for review.</div>
+            <div class="small mt-1">Open AI Review to confirm details, add cost, storage, and import it into inventory.</div>
+            <a class="btn btn-success btn-sm mt-3" href="{{ url_for('ai_import_review') }}">Open AI Review</a>
+        </div>
+    {% endif %}
 
-        let scanner = null;
-        let scannerRunning = false;
-        let activeTrack = null;
-        let torchOn = false;
-        let autoSaveInProgress = false;
-        let lastSavedCert = "";
-        let lastSavedAt = 0;
+    <div class="card page-card psa-scanner-panel">
+        <div class="card-body p-4">
+            <div class="psa-camera-box mb-3">
+                <video id="psaScanVideo" playsinline></video>
+                <div id="psaCameraPlaceholder" class="psa-camera-placeholder">
+                    <div>
+                        <div class="display-5 mb-2">🏷️</div>
+                        <div class="fw-bold">Camera scanner ready</div>
+                        <div class="small mt-2">Tap Start Camera Scan, then point your phone at the PSA barcode.</div>
+                    </div>
+                </div>
+                <div id="psaScanLine" class="psa-scan-line"></div>
+            </div>
 
-        function updateAutoSaveStatusTile() {
-            if (autoSaveStatusTile && autoSaveAfterScan) {
-                autoSaveStatusTile.textContent = autoSaveAfterScan.checked ? "On" : "Off";
-            }
-        }
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <button class="btn btn-info fw-bold" type="button" id="startPsaScannerBtn">Start Camera Scan</button>
+                <button class="btn btn-outline-light" type="button" id="stopPsaScannerBtn" disabled>Stop</button>
+                <a class="btn btn-outline-secondary" href="{{ url_for('psa_lookup') }}">Manual PSA Lookup Page</a>
+            </div>
 
-        function updateScannerStateTile(value) {
-            if (scannerStateTile) {
-                scannerStateTile.textContent = value;
-            }
-        }
+            <form method="POST" action="{{ url_for('psa_mobile_scan') }}" id="psaScanForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">PSA Cert Number</label>
+                        <input id="psaCertInput" class="form-control form-control-lg" type="text" name="cert_number" inputmode="numeric" autocomplete="off" placeholder="Scan or type cert number" value="{{ scanned_cert or '' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Collection</label>
+                        <select class="form-select form-select-lg" name="collection_type">
+                            <option value="Inventory" selected>Inventory</option>
+                            <option value="Personal Collection">Personal Collection</option>
+                            <option value="Trade Bait">Trade Bait</option>
+                            <option value="Grading Queue">Grading Queue</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="Active" selected>Active</option>
+                            <option value="Holding">Holding</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Acquisition Source</label>
+                        <select class="form-select" name="acquisition_source">
+                            {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
+                                <option value="{{ source }}" {% if source == "Existing Inventory" %}selected{% endif %}>{{ source }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Acquisition Date</label>
+                        <input class="form-control" type="date" name="acquisition_date">
+                        <input type="hidden" name="purchase_date" value="">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Acquisition Event / Location</label>
+                        <input class="form-control" type="text" name="acquisition_event" placeholder="Card show, eBay, trade...">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Default Storage Location</label>
+                        <input class="form-control" type="text" name="storage_location" placeholder="Box A / PSA Slabs / Row 1">
+                    </div>
+                </div>
 
-        function showLiveSaveSuccessBanner(certNumber) {
-            if (!liveSaveSuccessBanner || !liveSaveSuccessTitle) {
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button class="btn btn-primary btn-lg" type="submit" {% if not token_configured %}disabled{% endif %}>Stage PSA Card</button>
+                    <a class="btn btn-outline-info btn-lg" href="{{ url_for('ai_import_review') }}">AI Review Queue {% if pending_count %}({{ pending_count }}){% endif %}</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let psaScannerStream = null;
+let psaScannerInterval = null;
+let psaDetector = null;
+
+function cleanPsaCert(rawValue) {
+    if (!rawValue) {
+        return "";
+    }
+
+    const text = String(rawValue).trim();
+    const digits = text.replace(/\D/g, "");
+
+    // PSA certs are usually numeric. If a barcode includes extra data, prefer
+    // the longest digit run rather than the whole raw barcode payload.
+    const runs = text.match(/\d{5,}/g);
+    if (runs && runs.length) {
+        return runs.sort((a, b) => b.length - a.length)[0];
+    }
+
+    return digits || text;
+}
+
+function setScannerRunning(isRunning) {
+    document.getElementById("startPsaScannerBtn").disabled = isRunning;
+    document.getElementById("stopPsaScannerBtn").disabled = !isRunning;
+    document.getElementById("psaScanVideo").style.display = isRunning ? "block" : "none";
+    document.getElementById("psaCameraPlaceholder").style.display = isRunning ? "none" : "grid";
+    document.getElementById("psaScanLine").style.display = isRunning ? "block" : "none";
+}
+
+async function startPsaScanner() {
+    if (!("BarcodeDetector" in window)) {
+        alert("This browser does not support camera barcode detection. Use your phone camera QR flow, a Bluetooth/USB scanner, or type the PSA cert manually.");
+        return;
+    }
+
+    try {
+        psaDetector = new BarcodeDetector({
+            formats: ["code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e", "qr_code"]
+        });
+
+        const video = document.getElementById("psaScanVideo");
+        psaScannerStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: { ideal: "environment" }
+            },
+            audio: false
+        });
+
+        video.srcObject = psaScannerStream;
+        await video.play();
+        setScannerRunning(true);
+
+        psaScannerInterval = window.setInterval(async () => {
+            if (!psaDetector || !video.videoWidth) {
                 return;
             }
 
-            liveSaveSuccessTitle.textContent = "PSA cert " + certNumber + " was staged for review.";
-            liveSaveSuccessBanner.classList.add("active", "post-submit-focus");
-
-            setTimeout(function () {
-                liveSaveSuccessBanner.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 150);
-
-            setTimeout(function () {
-                liveSaveSuccessBanner.classList.remove("post-submit-focus");
-            }, 2600);
-        }
-
-        function restoreAutoSavePreference() {
-            if (!autoSaveAfterScan) {
-                return;
-            }
-
-            // Keep autosave OFF by default on every page load.
-            // User can turn it on manually for testing/batch mode.
-            autoSaveAfterScan.checked = false;
-            updateAutoSaveStatusTile();
-
-            autoSaveAfterScan.addEventListener("change", function () {
-                localStorage.setItem(
-                    "carddeskPsaAutoSaveAfterScan",
-                    autoSaveAfterScan.checked ? "on" : "off"
-                );
-                updateAutoSaveStatusTile();
-            });
-        }
-
-        function isLikelyCompletePsaCert(certNumber) {
-            return /^\d{7,12}$/.test(String(certNumber || "").trim());
-        }
-
-        function cleanCertValue(rawValue) {
-            const value = String(rawValue || "").trim();
-            const digitGroups = value.match(/\d{6,}/g);
-
-            if (digitGroups && digitGroups.length) {
-                return digitGroups[digitGroups.length - 1];
-            }
-
-            return value.replace(/[^A-Za-z0-9]/g, "");
-        }
-
-        function setStatus(message, cssClass) {
-            status.className = "scanner-status " + (cssClass || "text-info");
-            status.textContent = message;
-
-            if (/active|starting/i.test(message)) {
-                updateScannerStateTile("Active");
-            } else if (/stopped/i.test(message)) {
-                updateScannerStateTile("Stopped");
-            } else if (/scanned|captured|staged/i.test(message)) {
-                updateScannerStateTile("Captured");
-            } else if (/not started|ready/i.test(message)) {
-                updateScannerStateTile("Ready");
-            }
-        }
-
-        function playConfirmationChime() {
             try {
-                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-
-                if (!AudioContextClass) {
+                const barcodes = await psaDetector.detect(video);
+                if (!barcodes || !barcodes.length) {
                     return;
                 }
 
-                const audioContext = new AudioContextClass();
-                const gainNode = audioContext.createGain();
-                gainNode.connect(audioContext.destination);
-
-                const notes = [
-                    { frequency: 659, start: 0.00, duration: 0.11 },
-                    { frequency: 880, start: 0.11, duration: 0.13 },
-                    { frequency: 1175, start: 0.24, duration: 0.18 }
-                ];
-
-                notes.forEach(function(note) {
-                    const oscillator = audioContext.createOscillator();
-                    oscillator.type = "sine";
-                    oscillator.frequency.setValueAtTime(note.frequency, audioContext.currentTime + note.start);
-                    oscillator.connect(gainNode);
-                    oscillator.start(audioContext.currentTime + note.start);
-                    oscillator.stop(audioContext.currentTime + note.start + note.duration);
-                });
-
-                gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.48);
-            } catch (error) {
-                // Some mobile browsers block audio until the next user gesture.
-            }
-        }
-
-        function focusStagedSuccessBanner() {
-            const successBanner = document.getElementById("stagedSuccessBanner");
-
-            if (!successBanner) {
-                return;
-            }
-
-            setStatus("✅ PSA cert staged for review. Ready for the next scan.", "text-success");
-            successBanner.classList.add("post-submit-focus");
-
-            setTimeout(function () {
-                successBanner.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 250);
-
-            if (navigator.vibrate) {
-                navigator.vibrate([120, 70, 120]);
-            }
-
-            // Browsers may block autoplay audio on page load. This works where allowed;
-            // the visual scroll/highlight still confirms success everywhere.
-            setTimeout(playConfirmationChime, 350);
-        }
-
-        function playScanSuccessSound() {
-            try {
-                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-
-                if (!AudioContextClass) {
-                    return;
-                }
-
-                const audioContext = new AudioContextClass();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.type = "sine";
-                oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-                oscillator.frequency.setValueAtTime(1175, audioContext.currentTime + 0.08);
-
-                gainNode.gain.setValueAtTime(0.001, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.2, audioContext.currentTime + 0.015);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.18);
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.2);
-            } catch (error) {
-                // Some mobile browsers block audio until the next user gesture.
-            }
-        }
-
-        function guideUserToStageButton() {
-            if (!stageReviewButton) {
-                return;
-            }
-
-            stageReviewButton.scrollIntoView({ behavior: "smooth", block: "center" });
-            stageReviewButton.classList.remove("stage-submit-attention");
-
-            // Restart the animation even if the same button was highlighted recently.
-            void stageReviewButton.offsetWidth;
-
-            stageReviewButton.classList.add("stage-submit-attention");
-            setStatus("✅ Cert captured. Tap the green Stage PSA Cert for Review button.", "text-success");
-
-            setTimeout(function () {
-                stageReviewButton.classList.remove("stage-submit-attention");
-            }, 4500);
-        }
-
-        function showScanSuccessFeedback(certNumber) {
-            if (navigator.vibrate) {
-                navigator.vibrate([140, 70, 140]);
-            }
-
-            playScanSuccessSound();
-
-            certInput.classList.add("border-success", "scan-success-field");
-            certInput.style.boxShadow = "0 0 22px rgba(34, 197, 94, .95)";
-
-            setTimeout(function () {
-                certInput.classList.remove("scan-success-field");
-                certInput.style.boxShadow = "";
-            }, 3000);
-
-            if (scanSuccessOverlay && scanSuccessCert) {
-                const autoSaveOn = !!(autoSaveAfterScan && autoSaveAfterScan.checked);
-
-                if (scanSuccessTitle) {
-                    scanSuccessTitle.textContent = "Cert Captured";
-                }
-
-                if (scanSuccessHint) {
-                    scanSuccessHint.textContent = autoSaveOn
-                        ? "Auto-save is starting..."
-                        : "Tap Stage PSA Cert for Review to save";
-                }
-
-                scanSuccessCert.textContent = "Cert #" + certNumber;
-                scanSuccessOverlay.classList.add("active");
-                scanSuccessOverlay.setAttribute("aria-hidden", "false");
-
-                setTimeout(function () {
-                    scanSuccessOverlay.classList.remove("active");
-                    scanSuccessOverlay.setAttribute("aria-hidden", "true");
-
-                    if (!autoSaveOn) {
-                        setTimeout(guideUserToStageButton, 150);
-                    }
-                }, 2200);
-            }
-        }
-
-        function autoSubmitScannedCertIfEnabled(certNumber) {
-            if (!autoSaveAfterScan || !autoSaveAfterScan.checked || !psaMobileForm) {
-                return false;
-            }
-
-            if (!isLikelyCompletePsaCert(certNumber)) {
-                setStatus("Auto-save blocked: possible partial PSA cert scan.", "text-warning");
-                return false;
-            }
-
-            const now = Date.now();
-
-            if (autoSaveInProgress) {
-                return true;
-            }
-
-            if (certNumber === lastSavedCert && (now - lastSavedAt) < 4500) {
-                setStatus("Duplicate scan ignored: " + certNumber, "text-warning");
-                return true;
-            }
-
-            autoSaveInProgress = true;
-            lastSavedCert = certNumber;
-            lastSavedAt = now;
-
-            setStatus("✅ Cert captured. Staging in background...", "text-success");
-
-            setTimeout(async function () {
-                if (stageReviewButton && stageReviewButton.disabled) {
-                    autoSaveInProgress = false;
-                    setStatus("Auto-save is unavailable because the PSA API token is not configured.", "text-warning");
-                    return;
-                }
-
-                try {
-                    const formData = new FormData(psaMobileForm);
-                    formData.set("cert_number", certNumber);
-
-                    const response = await fetch(psaMobileForm.action, {
-                        method: "POST",
-                        body: formData,
-                        headers: {
-                            "X-Requested-With": "fetch"
-                        }
-                    });
-
-                    if (!response.ok) {
-                        throw new Error("Save failed");
-                    }
-
-                    certInput.value = "";
-                    showLiveSaveSuccessBanner(certNumber);
-                    setStatus("✅ PSA cert " + certNumber + " staged. Ready for next scan.", "text-success");
-
+                const cert = cleanPsaCert(barcodes[0].rawValue);
+                if (cert) {
+                    document.getElementById("psaCertInput").value = cert;
+                    stopPsaScanner();
                     if (navigator.vibrate) {
-                        navigator.vibrate([80, 50, 80]);
+                        navigator.vibrate(120);
                     }
-
-                    setTimeout(function () {
-                        autoSaveInProgress = false;
-                    }, 900);
-                } catch (error) {
-                    autoSaveInProgress = false;
-                    setStatus("Auto-save failed. Tap Stage PSA Cert for Review or try again.", "text-warning");
-                    guideUserToStageButton();
                 }
-            }, 650);
-
-            return true;
-        }
-
-        async function handleSuccessfulCertScan(certNumber) {
-            if (autoSaveInProgress) {
-                return;
+            } catch (scanError) {
+                console.warn("PSA scan error", scanError);
             }
+        }, 450);
+    } catch (error) {
+        alert("Could not open camera. Check browser permissions or type the cert manually.");
+        stopPsaScanner();
+    }
+}
 
-            certInput.value = certNumber;
-            showScanSuccessFeedback(certNumber);
+function stopPsaScanner() {
+    if (psaScannerInterval) {
+        window.clearInterval(psaScannerInterval);
+        psaScannerInterval = null;
+    }
 
-            const autoSaving = autoSubmitScannedCertIfEnabled(certNumber);
+    if (psaScannerStream) {
+        psaScannerStream.getTracks().forEach(track => track.stop());
+        psaScannerStream = null;
+    }
 
-            if (autoSaving) {
-                setStatus("✅ PSA cert " + certNumber + " scanned. Auto-saving...", "text-success");
-                certInput.focus();
-                return;
-            }
+    setScannerRunning(false);
+}
 
-            setStatus("✅ PSA cert " + certNumber + " scanned. Tap Stage PSA Cert for Review.", "text-success");
-            await stopScanner();
-            certInput.focus();
-        }
-
-        function barcodeFormats() {
-            if (!window.Html5QrcodeSupportedFormats) {
-                return undefined;
-            }
-
-            return [
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.QR_CODE
-            ].filter(Boolean);
-        }
-
-        function currentVideoTrack() {
-            const video = document.querySelector("#psa-mobile-reader video");
-            if (!video || !video.srcObject) {
-                return null;
-            }
-
-            const tracks = video.srcObject.getVideoTracks();
-            return tracks && tracks.length ? tracks[0] : null;
-        }
-
-        async function configureCameraControls() {
-            activeTrack = currentVideoTrack();
-
-            if (!activeTrack) {
-                return;
-            }
-
-            scannerTools.classList.add("active");
-
-            const capabilities = activeTrack.getCapabilities ? activeTrack.getCapabilities() : {};
-
-            // Ask for continuous focus where the browser/camera supports it.
-            try {
-                const constraints = { advanced: [] };
-
-                if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
-                    constraints.advanced.push({ focusMode: "continuous" });
-                }
-
-                if (constraints.advanced.length) {
-                    await activeTrack.applyConstraints(constraints);
-                }
-            } catch (error) {}
-
-            if (capabilities.zoom) {
-                zoomSlider.min = capabilities.zoom.min || 1;
-                zoomSlider.max = capabilities.zoom.max || 1;
-                zoomSlider.step = capabilities.zoom.step || 0.1;
-
-                const preferredZoom = 4.2;
-                const startingZoom = Math.min(
-                    Math.max(preferredZoom, Number(zoomSlider.min)),
-                    Number(zoomSlider.max)
-                );
-                zoomSlider.value = startingZoom;
-                zoomValue.textContent = Number(startingZoom).toFixed(1) + "x";
-                zoomRow.classList.add("active");
-
-                try {
-                    await activeTrack.applyConstraints({ advanced: [{ zoom: Number(startingZoom) }] });
-                } catch (error) {}
-            }
-
-            if (capabilities.torch) {
-                torchButton.style.display = "block";
-            }
-        }
-
-        async function stopScanner() {
-            if (scanner && scannerRunning) {
-                try {
-                    await scanner.stop();
-                } catch (error) {}
-            }
-
-            scannerRunning = false;
-            activeTrack = null;
-            torchOn = false;
-            scannerTools.classList.remove("active");
-            setStatus("Camera stopped.", "text-secondary");
-        }
-
-        async function startScanner() {
-            if (!window.Html5Qrcode) {
-                setStatus("Scanner library did not load. Check internet access and reload.", "text-warning");
-                return;
-            }
-
-            if (!scanner) {
-                scanner = new Html5Qrcode("psa-mobile-reader");
-            }
-
-            setStatus("Starting camera...", "text-info");
-
-            try {
-                scannerRunning = true;
-
-                const config = {
-                    fps: 18,
-                    qrbox: function(viewfinderWidth, viewfinderHeight) {
-                        // PSA slab barcodes are short and wide, so use a wide, shallow scan area.
-                        const width = Math.floor(viewfinderWidth * 0.72);
-                        const height = Math.max(60, Math.floor(viewfinderHeight * 0.125));
-                        return { width: width, height: height };
-                    },
-                    aspectRatio: 1.777778,
-                    rememberLastUsedCamera: true,
-                    experimentalFeatures: {
-                        useBarCodeDetectorIfSupported: true
-                    }
-                };
-
-                const formats = barcodeFormats();
-                if (formats) {
-                    config.formatsToSupport = formats;
-                }
-
-                await scanner.start(
-                    { facingMode: { exact: "environment" } },
-                    config,
-                    async function(decodedText) {
-                        const certNumber = cleanCertValue(decodedText);
-
-                        if (!certNumber) {
-                            setStatus("Barcode found, but no cert number was detected.", "text-warning");
-                            return;
-                        }
-
-                        if (autoSaveInProgress) {
-                            return;
-                        }
-
-                        await handleSuccessfulCertScan(certNumber);
-                    },
-                    function() {}
-                );
-
-                setStatus("Camera active. Center the PSA barcode inside the smaller rectangle.", "text-info");
-                setTimeout(configureCameraControls, 650);
-            } catch (error) {
-                scannerRunning = false;
-
-                // Some browsers reject exact environment mode. Fall back to ideal mode.
-                try {
-                    await scanner.start(
-                        { facingMode: "environment" },
-                        {
-                            fps: 18,
-                            qrbox: function(viewfinderWidth, viewfinderHeight) {
-                                return {
-                                    width: Math.floor(viewfinderWidth * 0.72),
-                                    height: Math.max(60, Math.floor(viewfinderHeight * 0.125))
-                                };
-                            },
-                            aspectRatio: 1.777778,
-                            rememberLastUsedCamera: true,
-                            experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-                            formatsToSupport: barcodeFormats()
-                        },
-                        async function(decodedText) {
-                            const certNumber = cleanCertValue(decodedText);
-                            if (certNumber) {
-                                await handleSuccessfulCertScan(certNumber);
-                            }
-                        },
-                        function() {}
-                    );
-
-                    scannerRunning = true;
-                    setStatus("Camera active. Center the PSA barcode inside the smaller rectangle.", "text-info");
-                    setTimeout(configureCameraControls, 650);
-                } catch (fallbackError) {
-                    setStatus("Could not start camera: " + fallbackError, "text-warning");
-                }
-            }
-        }
-
-        zoomSlider.addEventListener("input", async function () {
-            if (!activeTrack) {
-                return;
-            }
-
-            const zoom = Number(zoomSlider.value);
-            zoomValue.textContent = zoom.toFixed(1) + "x";
-
-            try {
-                await activeTrack.applyConstraints({ advanced: [{ zoom: zoom }] });
-            } catch (error) {}
-        });
-
-        torchButton.addEventListener("click", async function () {
-            if (!activeTrack) {
-                return;
-            }
-
-            torchOn = !torchOn;
-
-            try {
-                await activeTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
-                torchButton.textContent = torchOn ? "Turn Light Off" : "Toggle Light";
-            } catch (error) {
-                setStatus("Torch is not available on this camera/browser.", "text-warning");
-            }
-        });
-
-        restoreAutoSavePreference();
-
-        focusStagedSuccessBanner();
-
-        startButton.addEventListener("click", startScanner);
-        stopButton.addEventListener("click", stopScanner);
-
-        window.addEventListener("beforeunload", function () {
-            if (scanner && scannerRunning) {
-                scanner.stop().catch(function () {});
-            }
-        });
-    });
-    </script>
-</body>
-</html>
+document.getElementById("startPsaScannerBtn").addEventListener("click", startPsaScanner);
+document.getElementById("stopPsaScannerBtn").addEventListener("click", stopPsaScanner);
+window.addEventListener("beforeunload", stopPsaScanner);
+</script>
+{% endblock %}

@@ -200,6 +200,30 @@
     object-fit: contain;
 }
 
+.psa-intake-card {
+    background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, .22), transparent 42%),
+        linear-gradient(145deg, rgba(15, 23, 42, .98), rgba(30, 41, 59, .92)) !important;
+}
+
+.psa-intake-card .text-muted {
+    color: #cbd5e1 !important;
+}
+
+.psa-qr-frame {
+    border-radius: 1.25rem;
+    padding: .85rem;
+    background: #ffffff;
+    display: inline-flex;
+    box-shadow: 0 14px 28px rgba(2, 6, 23, .3);
+}
+
+.psa-qr-frame img {
+    width: 168px;
+    height: 168px;
+    object-fit: contain;
+}
+
 .intake-new-user {
     border-radius: 1.2rem;
     padding: 1rem 1.15rem;
@@ -345,20 +369,31 @@
     </div>
 
     <div class="col-md-6 col-xl-4">
-        <a class="dashboard-card-link" href="{{ url_for('psa_lookup') }}">
-            <div class="card page-card dashboard-click-card intake-card h-100">
-                <div class="card-body p-4">
-                    <div class="intake-icon">🏷️</div>
-                    <div class="intake-badge-row">
-                        <span class="intake-tool-tag">Graded Slabs</span>
-                    </div>
-                    <h3 class="h4 mb-2">PSA Lookup</h3>
-                    <p class="text-muted mb-0">
-                        Enter PSA Cert or scan slab barcode and stage graded cards for Review and Inventory Import.
-                    </p>
+        {% set psa_mobile_scan_url = url_for('psa_mobile_scan', _external=True) %}
+        {% set psa_mobile_scan_qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' ~ (psa_mobile_scan_url|urlencode) %}
+        <div class="card page-card intake-card psa-intake-card h-100">
+            <div class="card-body p-4 text-center">
+                <div class="intake-badge-row justify-content-center">
+                    <span class="intake-tool-tag">Graded Slabs</span>
+                    <span class="intake-tool-tag">PSA Cert Scan</span>
+                </div>
+                <h3 class="h4 mb-2">PSA Lookup</h3>
+                <p class="text-muted small mb-3">
+                    Scan this QR code with your phone to open the PSA barcode scanner, or open the lookup page directly.
+                </p>
+
+                <div class="psa-qr-frame my-2">
+                    <img src="{{ psa_mobile_scan_qr_url }}" alt="QR code for PSA Barcode Scanner">
+                </div>
+
+                <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a class="btn btn-info btn-sm fw-bold" href="{{ url_for('psa_mobile_scan') }}">Open Scanner</a>
+                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('psa_lookup') }}">Manual Lookup</a>
+                    <button class="btn btn-outline-light btn-sm" type="button" onclick="copyPsaScannerUrl()">Copy URL</button>
+                    <span id="psaScannerUrlText" class="visually-hidden">{{ psa_mobile_scan_url }}</span>
                 </div>
             </div>
-        </a>
+        </div>
     </div>
 </div>
 
@@ -419,6 +454,14 @@
 <script>
 function copyMobileCaptureUrl() {
     const text = document.getElementById("mobileCaptureUrlText")?.textContent?.trim();
+    if (!text) {
+        return;
+    }
+    navigator.clipboard.writeText(text);
+}
+
+function copyPsaScannerUrl() {
+    const text = document.getElementById("psaScannerUrlText")?.textContent?.trim();
     if (!text) {
         return;
     }
