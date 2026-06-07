@@ -60,7 +60,7 @@
 </div>
 
 <div class="row g-3 mb-4 intake-primary-grid">
-    <div class="col-md-6 col-xl-6">
+    <div class="col-md-6 col-xl-4">
         <div class="card page-card h-100">
             <div class="card-body">
                 <span class="btn btn-sm btn-success mb-3">Phone Capture</span>
@@ -84,7 +84,7 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-xl-6">
+    <div class="col-md-6 col-xl-4">
         {% set psa_mobile_scan_url = url_for('psa_mobile_scan', _external=True) %}
         {% set psa_mobile_scan_qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' ~ (psa_mobile_scan_url|urlencode) %}
         <div class="card page-card h-100">
@@ -111,39 +111,8 @@
             </div>
         </div>
     </div>
-</div>
 
-<div class="mb-3 intake-section-intro intake-secondary-intro">
-    <div class="cw-section-label mb-2">Other Intake Tools</div>
-    <p class="text-muted small mb-0">Use these when you already have images, need fast no-photo entry, or need a manual fallback.</p>
-</div>
-
-<div class="row g-3 mb-4 intake-secondary-grid">
-    <div class="col-md-6 col-xl-3">
-        <a class="dashboard-card-link" href="{{ url_for('ai_import_upload') }}">
-            <div class="card page-card dashboard-click-card h-100">
-                <div class="card-body">
-                    <span class="btn btn-sm btn-info mb-3">Existing Images</span>
-                    <h3 class="h5">Upload Images</h3>
-                    <p class="text-muted mb-0">Upload saved scans or image files from your computer and send them to AI Review.</p>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-md-6 col-xl-3">
-        <a class="dashboard-card-link" href="{{ url_for('rapid_entry') }}">
-            <div class="card page-card dashboard-click-card h-100">
-                <div class="card-body">
-                    <span class="btn btn-sm btn-dark mb-3">Fast No-Photo Entry</span>
-                    <h3 class="h5">Rapid Entry</h3>
-                    <p class="text-muted mb-0">Quickly batch enter many cards with common data like (Topps 2021 Baseball).</p>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-md-6 col-xl-3">
+    <div class="col-md-6 col-xl-4">
         <a class="dashboard-card-link" href="{{ url_for('ai_import_review') }}">
             <div class="card page-card dashboard-click-card h-100 position-relative">
                 {% if ai_import_action_count %}
@@ -161,7 +130,7 @@
                             <span class="badge bg-success">Clear</span>
                         {% endif %}
                     </h3>
-                    <p class="text-muted mb-0">
+                    <p class="text-muted small mb-0">
                         {% if ai_import_action_count %}
                             {{ ai_import_action_count }} card(s) waiting for review before they become inventory.
                         {% else %}
@@ -172,8 +141,39 @@
             </div>
         </a>
     </div>
+</div>
 
-    <div class="col-md-6 col-xl-3">
+<div class="mb-3 intake-section-intro intake-secondary-intro">
+    <div class="cw-section-label mb-2">Other Intake Tools</div>
+    <p class="text-muted small mb-0">Use these when you already have images, need fast no-photo entry, or need a manual fallback.</p>
+</div>
+
+<div class="row g-3 mb-4 intake-secondary-grid">
+    <div class="col-md-6 col-xl-4">
+        <a class="dashboard-card-link" href="{{ url_for('ai_import_upload') }}">
+            <div class="card page-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-info mb-3">Existing Images</span>
+                    <h3 class="h5">Upload Images</h3>
+                    <p class="text-muted mb-0">Upload saved scans or image files from your computer and send them to AI Review.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <a class="dashboard-card-link" href="{{ url_for('rapid_entry') }}">
+            <div class="card page-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-dark mb-3">Fast No-Photo Entry</span>
+                    <h3 class="h5">Rapid Entry</h3>
+                    <p class="text-muted mb-0">Quickly batch enter many cards with common data like (Topps 2021 Baseball).</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
         <a class="dashboard-card-link" href="{{ url_for('add_card') }}">
             <div class="card page-card dashboard-click-card h-100">
                 <div class="card-body">
