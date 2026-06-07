@@ -1,6 +1,5 @@
 import os
 import re
-from math import atan2, degrees
 from uuid import uuid4
 
 from flask import current_app, flash
@@ -8,12 +7,6 @@ from werkzeug.utils import secure_filename
 
 
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-
-# Straighten-only image cleanup for AI intake and Mobile Capture.
-# Set CARD_DESK_AUTO_STRAIGHTEN=0 in Render/local env to disable instantly.
-AUTO_STRAIGHTEN_IMAGES = os.environ.get("CARD_DESK_AUTO_STRAIGHTEN", "1") == "1"
-MAX_STRAIGHTEN_ANGLE = 10.0
-MIN_STRAIGHTEN_ANGLE = 0.7
 
 
 def allowed_image(filename):
@@ -25,127 +18,7 @@ def allowed_image(filename):
     return extension in ALLOWED_IMAGE_EXTENSIONS
 
 
-def _rotate_image_without_cropping(cv2, image, angle_degrees):
-    """Rotate an OpenCV image while expanding the canvas so edges are not cropped."""
-    height, width = image.shape[:2]
-    center_x = width / 2
-    center_y = height / 2
-
-    rotation_matrix = cv2.getRotationMatrix2D((center_x, center_y), angle_degrees, 1.0)
-
-    absolute_cos = abs(rotation_matrix[0, 0])
-    absolute_sin = abs(rotation_matrix[0, 1])
-
-    new_width = int((height * absolute_sin) + (width * absolute_cos))
-    new_height = int((height * absolute_cos) + (width * absolute_sin))
-
-    rotation_matrix[0, 2] += (new_width / 2) - center_x
-    rotation_matrix[1, 2] += (new_height / 2) - center_y
-
-    return cv2.warpAffine(
-        image,
-        rotation_matrix,
-        (new_width, new_height),
-        flags=cv2.INTER_CUBIC,
-        borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(255, 255, 255),
-    )
-
-
-def auto_straighten_image(image_path):
-    """Straighten a slightly tilted card photo without cropping or perspective warping.
-
-    This is intentionally conservative. If OpenCV is unavailable, the file type
-    is not a good candidate, or the detected angle looks risky, the image is
-    left untouched.
-    """
-    if not AUTO_STRAIGHTEN_IMAGES:
-        return False
-
-    extension = image_path.rsplit(".", 1)[-1].lower() if "." in image_path else ""
-
-    # Animated/transparent formats are better left untouched for now.
-    if extension not in {"jpg", "jpeg", "png", "webp"}:
-        return False
-
-    try:
-        import cv2
-        import numpy as np
-    except Exception:
-        return False
-
-    try:
-        image = cv2.imread(image_path)
-
-        if image is None:
-            return False
-
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (5, 5), 0)
-        edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-
-        min_line_length = max(80, min(image.shape[0], image.shape[1]) // 4)
-        lines = cv2.HoughLinesP(
-            edges,
-            rho=1,
-            theta=np.pi / 180,
-            threshold=80,
-            minLineLength=min_line_length,
-            maxLineGap=20,
-        )
-
-        if lines is None:
-            return False
-
-        angles = []
-
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            dx = x2 - x1
-            dy = y2 - y1
-            line_length = (dx * dx + dy * dy) ** 0.5
-
-            if line_length < min_line_length:
-                continue
-
-            angle = degrees(atan2(dy, dx))
-
-            # Normalize vertical and horizontal card edges to the same small
-            # deskew angle range.
-            while angle <= -45:
-                angle += 90
-            while angle > 45:
-                angle -= 90
-
-            if abs(angle) <= MAX_STRAIGHTEN_ANGLE:
-                angles.append(angle)
-
-        if len(angles) < 3:
-            return False
-
-        detected_angle = float(np.median(angles))
-
-        if abs(detected_angle) < MIN_STRAIGHTEN_ANGLE:
-            return False
-
-        if abs(detected_angle) > MAX_STRAIGHTEN_ANGLE:
-            return False
-
-        straightened = _rotate_image_without_cropping(cv2, image, -detected_angle)
-
-        if extension in {"jpg", "jpeg"}:
-            cv2.imwrite(image_path, straightened, [cv2.IMWRITE_JPEG_QUALITY, 95])
-        elif extension == "png":
-            cv2.imwrite(image_path, straightened, [cv2.IMWRITE_PNG_COMPRESSION, 3])
-        else:
-            cv2.imwrite(image_path, straightened)
-
-        return True
-    except Exception:
-        return False
-
-
-def save_uploaded_image(file_storage, straighten=False):
+def save_uploaded_image(file_storage):
     if not file_storage or not file_storage.filename:
         return None
 
@@ -161,9 +34,6 @@ def save_uploaded_image(file_storage, straighten=False):
     save_path = os.path.join(current_app.config["UPLOAD_FOLDER"], unique_filename)
 
     file_storage.save(save_path)
-
-    if straighten:
-        auto_straighten_image(save_path)
 
     return unique_filename
 
@@ -181,7 +51,7 @@ def delete_image_file(filename):
 def save_uploaded_image_with_source(file_storage):
     """Save an uploaded image and also return the browser/client filename."""
     source_filename = secure_filename(file_storage.filename) if file_storage and file_storage.filename else None
-    image_filename = save_uploaded_image(file_storage, straighten=True)
+    image_filename = save_uploaded_image(file_storage)
     return image_filename, source_filename
 
 def slugify_image_part(value):
