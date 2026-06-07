@@ -32,31 +32,31 @@
 </div>
 
 <div class="analytics-kpi-grid mb-4">
-    <a class="analytics-kpi-card" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
+    <a class="analytics-kpi-card analytics-card-acquisition" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
         <div class="analytics-kpi-label">Inventory Cost</div>
         <div class="analytics-kpi-value">${{ "%.0f"|format(dealer_inventory_cost or 0) }}</div>
         <div class="analytics-kpi-note">Capital currently tied up</div>
     </a>
 
-    <a class="analytics-kpi-card" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
+    <a class="analytics-kpi-card analytics-card-acquisition" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
         <div class="analytics-kpi-label">Comp Value</div>
         <div class="analytics-kpi-value">${{ "%.0f"|format(dealer_inventory_value or 0) }}</div>
         <div class="analytics-kpi-note">{{ "%.1f"|format(inventory_roi_percent or 0) }}% vs cost basis</div>
     </a>
 
-    <a class="analytics-kpi-card" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
+    <a class="analytics-kpi-card analytics-card-sales" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
         <div class="analytics-kpi-label">Current Asking</div>
         <div class="analytics-kpi-value">${{ "%.0f"|format(available_asking_price or 0) }}</div>
         <div class="analytics-kpi-note">{{ "%.1f"|format(asking_roi_percent or 0) }}% asking upside</div>
     </a>
 
-    <a class="analytics-kpi-card" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
+    <a class="analytics-kpi-card analytics-card-profit" href="{{ url_for('cards', status='Active', collection_type='Inventory') }}">
         <div class="analytics-kpi-label">Potential Profit</div>
         <div class="analytics-kpi-value {% if available_potential_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(available_potential_profit or 0) }}</div>
         <div class="analytics-kpi-note">Ask minus active inventory cost</div>
     </a>
 
-    <a class="analytics-kpi-card" href="{{ url_for('inventory_health') }}">
+    <a class="analytics-kpi-card analytics-card-health" href="{{ url_for('inventory_health') }}">
         <div class="analytics-kpi-label">Health Flags</div>
         <div class="analytics-kpi-value {% if inventory_health_flags %}text-warning{% else %}text-success{% endif %}">{{ inventory_health_flags or 0 }}</div>
         <div class="analytics-kpi-note">Missing cost, comps, ask, or storage</div>
@@ -72,7 +72,7 @@
 
 <div class="analytics-period-grid mb-4">
     {% for period in sales_periods %}
-        <a class="analytics-period-card" href="{{ url_for('cards', status='Sold', sold_range='30d' if period.key == 'ytd' else period.key) }}">
+        <a class="analytics-period-card analytics-card-sales" href="{{ url_for('cards', status='Sold', sold_range='30d' if period.key == 'ytd' else period.key) }}">
             <div class="analytics-period-topline">
                 <span>{{ period.label }}</span>
                 <span>{{ period.cards }} sold</span>
@@ -103,7 +103,7 @@
 
 <div class="analytics-period-grid mb-4">
     {% for period in acquisition_periods %}
-        <a class="analytics-period-card" href="{{ url_for('cards', acquisition_range='30d' if period.key == 'ytd' else period.key, status='Active', collection_type='Inventory') }}">
+        <a class="analytics-period-card analytics-card-acquisition" href="{{ url_for('cards', acquisition_range='30d' if period.key == 'ytd' else period.key, status='Active', collection_type='Inventory') }}">
             <div class="analytics-period-topline">
                 <span>{{ period.label }}</span>
                 <span>{{ period.cards }} acquired</span>

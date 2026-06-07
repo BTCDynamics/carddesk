@@ -2666,3 +2666,86 @@ textarea.form-control {
         flex-direction: column;
     }
 }
+
+/* =========================================================
+   Business Analytics color bars
+   Purpose: visually separates acquisition, sales, profit, and
+   health cards without changing dashboard calculations.
+   ========================================================= */
+.analytics-kpi-card,
+.analytics-period-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.analytics-kpi-card::before,
+.analytics-period-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: .42rem;
+    background: rgba(148, 163, 184, .65);
+    box-shadow: 0 0 24px rgba(148, 163, 184, .28);
+}
+
+.analytics-card-acquisition::before {
+    background: linear-gradient(180deg, #38bdf8, #2563eb);
+    box-shadow: 0 0 26px rgba(56, 189, 248, .34);
+}
+
+.analytics-card-sales::before {
+    background: linear-gradient(180deg, #22c55e, #15803d);
+    box-shadow: 0 0 26px rgba(34, 197, 94, .34);
+}
+
+.analytics-card-profit::before {
+    background: linear-gradient(180deg, #f59e0b, #ef4444);
+    box-shadow: 0 0 28px rgba(245, 158, 11, .36);
+}
+
+.analytics-card-health::before {
+    background: linear-gradient(180deg, #a855f7, #7c3aed);
+    box-shadow: 0 0 26px rgba(168, 85, 247, .34);
+}
+
+.analytics-card-acquisition {
+    border-color: rgba(56, 189, 248, .34) !important;
+}
+
+.analytics-card-sales {
+    border-color: rgba(34, 197, 94, .32) !important;
+}
+
+.analytics-card-profit {
+    border-color: rgba(245, 158, 11, .35) !important;
+}
+
+.analytics-card-health {
+    border-color: rgba(168, 85, 247, .32) !important;
+}
+
+.analytics-card-acquisition .analytics-kpi-label,
+.analytics-card-acquisition .analytics-period-topline span:first-child {
+    color: #bae6fd;
+}
+
+.analytics-card-sales .analytics-kpi-label,
+.analytics-card-sales .analytics-period-topline span:first-child {
+    color: #bbf7d0;
+}
+
+.analytics-card-profit .analytics-kpi-label {
+    color: #fed7aa;
+}
+
+.analytics-card-health .analytics-kpi-label {
+    color: #ddd6fe;
+}
+
+@media (max-width: 575.98px) {
+    .analytics-kpi-card::before,
+    .analytics-period-card::before {
+        width: .35rem;
+    }
+}
+
