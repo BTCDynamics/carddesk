@@ -391,13 +391,13 @@
                             class="form-range capture-frame-range"
                             id="captureFrameScale"
                             type="range"
-                            min="70"
-                            max="120"
+                            min="50"
+                            max="100"
                             step="5"
                             value="100"
                             aria-label="Adjust capture area size"
                         >
-                        <div class="text-muted small mt-1">Smaller saves a tighter crop. Larger includes more of the holder.</div>
+                        <div class="text-muted small mt-1">50% saves the tightest crop. 100% uses the normal full guide size.</div>
                     </div>
                     <div class="row g-2 align-items-center">
                         <div class="col-md-4">
@@ -483,7 +483,7 @@ function getCaptureFrameScale() {
 
     const rawValue = parseInt(captureFrameScale.value || "100", 10);
     const safeValue = Number.isFinite(rawValue) ? rawValue : 100;
-    return Math.max(70, Math.min(120, safeValue)) / 100;
+    return Math.max(50, Math.min(100, safeValue)) / 100;
 }
 
 function updateCaptureFrameUi() {
