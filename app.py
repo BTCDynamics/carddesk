@@ -28,6 +28,7 @@ from modules.ai_import_routes import register_ai_import_routes
 from modules.capture_routes import register_capture_routes
 from modules.fulfillment_routes import register_fulfillment_routes
 from modules.comp_refresh_routes import register_comp_refresh_routes
+from modules.show_prep_routes import register_show_prep_routes
 
 
 app = Flask(__name__)
@@ -344,6 +345,7 @@ register_ai_import_routes(
 register_capture_routes(app, save_uploaded_image_with_source, recognize_card_image)
 register_fulfillment_routes(app)
 register_comp_refresh_routes(app)
+register_show_prep_routes(app)
 
 
 if __name__ == "__main__":
