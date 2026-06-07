@@ -516,7 +516,16 @@
         <div class="row g-3 align-items-end cw-form-row cw-row-b">
             <div class="col-12 col-md-auto cw-field-storage">
                 <label class="form-label">Storage Location</label>
-                <input class="form-control" type="text" name="storage_location" value="{{ card.storage_location or '' }}">
+                <select class="form-select" name="storage_location">
+                    <option value="">Select storage location</option>
+                    {% if card.storage_location and card.storage_location not in all_storage_location_choices %}
+                        <option value="{{ card.storage_location }}" selected>{{ card.storage_location }}</option>
+                    {% endif %}
+                    {% for location in all_storage_location_choices %}
+                        <option value="{{ location }}" {% if card.storage_location == location %}selected{% endif %}>{{ location }}</option>
+                    {% endfor %}
+                </select>
+                <div class="small text-muted mt-1">Manage standard locations from Storage Explorer.</div>
             </div>
             <div class="col-12">
                 <label class="form-label">Notes</label>

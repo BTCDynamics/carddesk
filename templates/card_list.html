@@ -463,7 +463,7 @@
                             <select class="form-select {% if storage_filter %}filter-active-field{% endif %}" name="storage">
                                 <option value="">All Storage</option>
                                 <option value="__missing__" {% if storage_filter == "__missing__" %}selected{% endif %}>Missing Location</option>
-                                {% for location in storage_locations %}
+                                {% for location in all_storage_location_choices %}
                                     <option value="{{ location }}" {% if storage_filter == location %}selected{% endif %}>{{ location }}</option>
                                 {% endfor %}
                             </select>
@@ -809,7 +809,15 @@
                             <td>
                                 <form method="POST" action="{{ url_for('update_card_storage', card_id=card.id) }}" class="quick-storage-form">
                                     <div class="input-group input-group-sm quick-storage-group">
-                                        <input class="form-control quick-storage-input" type="text" name="storage_location" value="{{ card.storage_location or '' }}" placeholder="Add location">
+                                        <select class="form-select quick-storage-input" name="storage_location">
+                                            <option value="">Select location</option>
+                                            {% if card.storage_location and card.storage_location not in all_storage_location_choices %}
+                                                <option value="{{ card.storage_location }}" selected>{{ card.storage_location }}</option>
+                                            {% endif %}
+                                            {% for location in all_storage_location_choices %}
+                                                <option value="{{ location }}" {% if card.storage_location == location %}selected{% endif %}>{{ location }}</option>
+                                            {% endfor %}
+                                        </select>
                                         <button class="btn btn-edit-card" type="submit">Save</button>
                                     </div>
                                     {% if card.storage_location %}

@@ -860,7 +860,16 @@
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Storage Location</label>
-                                        <input class="form-control" type="text" name="storage_location" value="{{ staged.storage_location or '' }}">
+                                        {% set selected_storage = staged.storage_location or '' %}
+                                        <select class="form-select" name="storage_location">
+                                            <option value="">Select Storage Location</option>
+                                            {% if selected_storage and selected_storage not in all_storage_location_choices %}
+                                                <option value="{{ selected_storage }}" selected>{{ selected_storage }}</option>
+                                            {% endif %}
+                                            {% for location in all_storage_location_choices %}
+                                                <option value="{{ location }}" {% if selected_storage == location %}selected{% endif %}>{{ location }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                     <div class="col-md-8">
                                         <label class="form-label">Notes</label>

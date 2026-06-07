@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import date
 
@@ -12,7 +13,82 @@ from helpers.storage_helpers import (
 )
 
 
+
+def _storage_registry_path(app):
+    """Return the local JSON file used for managed storage locations."""
+    os.makedirs(app.instance_path, exist_ok=True)
+    return os.path.join(app.instance_path, "storage_locations.json")
+
+
+def _normalize_location(value):
+    """Normalize spacing around location parts while preserving the user's labels."""
+    value = (value or "").strip()
+    parts = [part.strip() for part in value.split("/") if part.strip()]
+    return " / ".join(parts)
+
+
+def _load_managed_storage_locations(app):
+    """Load user-created storage location names from the JSON registry."""
+    path = _storage_registry_path(app)
+    if not os.path.exists(path):
+        return []
+
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return []
+
+    locations = payload.get("locations", []) if isinstance(payload, dict) else []
+    cleaned = [_normalize_location(location) for location in locations]
+    return sorted({location for location in cleaned if location})
+
+
+def _save_managed_storage_locations(app, locations):
+    """Persist the managed storage location registry."""
+    path = _storage_registry_path(app)
+    cleaned = sorted({_normalize_location(location) for location in locations if _normalize_location(location)})
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump({"locations": cleaned}, handle, indent=2)
+    return cleaned
+
+
+def _get_existing_card_storage_locations():
+    """Return distinct storage values already present on card records."""
+    rows = (
+        db.session.query(Card.storage_location)
+        .filter(Card.storage_location.isnot(None))
+        .filter(db.func.trim(Card.storage_location) != "")
+        .distinct()
+        .all()
+    )
+    cleaned = [_normalize_location(row[0]) for row in rows]
+    return sorted({location for location in cleaned if location})
+
+
+def _get_all_storage_location_choices(app):
+    """Combine managed locations with existing card locations for dropdowns."""
+    return sorted(set(_load_managed_storage_locations(app)) | set(_get_existing_card_storage_locations()))
+
+
+
+
 def register_storage_routes(app):
+    @app.context_processor
+    def inject_storage_location_choices():
+        """Make managed storage choices available to card templates without route rewrites."""
+        try:
+            choices = _get_all_storage_location_choices(app)
+            managed = _load_managed_storage_locations(app)
+        except Exception:
+            choices = []
+            managed = []
+
+        return {
+            "managed_storage_locations": managed,
+            "all_storage_location_choices": choices,
+        }
+
     @app.route("/health")
     def health():
         """Render health check endpoint."""
@@ -219,14 +295,43 @@ def register_storage_routes(app):
         total_purchase_cost = sum(item["purchase_cost"] for item in storage_summary)
         total_estimated_value = sum(item["estimated_value"] for item in storage_summary)
 
+        managed_storage_locations = _load_managed_storage_locations(app)
+        all_storage_location_choices = _get_all_storage_location_choices(app)
+
         return render_template(
             "storage.html",
             storage_summary=storage_summary,
             total_locations=total_locations,
             total_cards=total_cards,
             total_purchase_cost=total_purchase_cost,
-            total_estimated_value=total_estimated_value
+            total_estimated_value=total_estimated_value,
+            managed_storage_locations=managed_storage_locations,
+            all_storage_location_choices=all_storage_location_choices,
         )
+
+
+    @app.route("/storage/add-location", methods=["POST"])
+    def add_storage_location():
+        """Add one managed storage location manually."""
+        location = _normalize_location(request.form.get("storage_location", ""))
+        existing_locations = _load_managed_storage_locations(app)
+        if location:
+            _save_managed_storage_locations(app, existing_locations + [location])
+        return redirect(url_for("storage_explorer"))
+
+
+    @app.route("/storage/delete-location", methods=["POST"])
+    def delete_storage_location():
+        """Remove a managed storage location from the dropdown list only.
+
+        This does not edit any existing card records. If cards already use this
+        location, it will continue to appear through existing card storage values.
+        """
+        location = _normalize_location(request.form.get("storage_location", ""))
+        existing_locations = _load_managed_storage_locations(app)
+        if location:
+            _save_managed_storage_locations(app, [item for item in existing_locations if item != location])
+        return redirect(url_for("storage_explorer"))
 
 
     @app.route("/pull-sheet")

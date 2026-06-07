@@ -489,6 +489,61 @@
     font-weight: 500 !important;
 }
 
+
+.storage-manager-card {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(20, 184, 166, .26);
+    background:
+        radial-gradient(circle at top left, rgba(20, 184, 166, .14), transparent 36%),
+        linear-gradient(145deg, #07111f, #101b2b);
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .26);
+}
+
+.storage-manager-title {
+    color: #f8fafc;
+    font-weight: 700;
+}
+
+.storage-manager-help {
+    color: #b8c7dc;
+    font-size: .86rem;
+}
+
+.storage-manager-card .form-label {
+    color: #ccfbf1 !important;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.storage-manager-card .form-control {
+    color: #f8fafc !important;
+    background: rgba(2, 6, 23, .55) !important;
+    border-color: rgba(45, 212, 191, .24) !important;
+}
+
+.storage-managed-list {
+    max-height: 170px;
+    overflow: auto;
+    padding: .75rem;
+    border-radius: .9rem;
+    background: rgba(2, 6, 23, .42);
+    border: 1px solid rgba(148, 163, 184, .16);
+}
+
+.storage-managed-pill {
+    display: inline-flex;
+    margin: .18rem;
+    padding: .28rem .58rem;
+    border-radius: 999px;
+    color: #d1fae5;
+    background: rgba(20, 184, 166, .18);
+    border: 1px solid rgba(45, 212, 191, .26);
+    font-size: .74rem;
+    font-weight: 650;
+}
+
 </style>
 
 <div class="storage-shell">
@@ -540,6 +595,51 @@
                     <div class="storage-stat-description">Comp value estimate across stored cards.</div>
                 </a>
             </div>
+        </div>
+    </div>
+
+    <div class="card storage-manager-card mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <div class="storage-manager-title h5 mb-1">Managed Storage Locations</div>
+                    <div class="storage-manager-help">
+                        Add each physical storage location one time. After that, cards can use a dropdown instead of free-typing the location over and over.
+                    </div>
+                </div>
+                <span class="badge text-bg-success rounded-pill px-3 py-2">{{ managed_storage_locations|length if managed_storage_locations else 0 }} managed</span>
+            </div>
+
+            <form method="POST" action="{{ url_for('add_storage_location') }}" class="row g-3 align-items-end mb-3">
+                <div class="col-12 col-lg-8">
+                    <label class="form-label">Add New Storage Location</label>
+                    <input class="form-control" name="storage_location" placeholder="Type a location once, then choose it from dropdowns" required>
+                    <div class="small text-muted mt-2">
+                        Examples: BSB-01 / A / SEC-03 · Case 2 / Row 1 · Showcase Left · Dollar Box 3 · Slab Box Red / Section 5
+                    </div>
+                </div>
+                <div class="col-12 col-lg-4">
+                    <button class="btn btn-outline-info w-100 fw-bold" type="submit">Add Location</button>
+                </div>
+            </form>
+
+            {% if managed_storage_locations %}
+                <div class="storage-managed-list">
+                    {% for location in managed_storage_locations %}
+                        <span class="storage-managed-pill">
+                            {{ location }}
+                            <form method="POST" action="{{ url_for('delete_storage_location') }}" class="d-inline ms-2" onsubmit="return confirm('Remove this location from the managed dropdown list? Existing cards will not be changed.');">
+                                <input type="hidden" name="storage_location" value="{{ location }}">
+                                <button class="btn btn-sm btn-outline-light py-0 px-1" type="submit" title="Remove managed location">×</button>
+                            </form>
+                        </span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted small">
+                    No managed storage locations yet. Add the names that match your own storage system. CardDesk will keep them consistent from then on.
+                </div>
+            {% endif %}
         </div>
     </div>
 

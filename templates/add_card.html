@@ -951,7 +951,17 @@
                     <div class="row g-3">
                         <div class="col-lg-4 col-md-6">
                             <label class="form-label">Storage Location</label>
-                            <input class="form-control" type="text" name="storage_location" placeholder="Binder-1 / Page-3 / Pocket-2" value="{{ clone_source.storage_location if clone_source else '' }}">
+                            {% set selected_storage = clone_source.storage_location if clone_source else '' %}
+                            <select class="form-select" name="storage_location">
+                                <option value="">Select Storage Location</option>
+                                {% if selected_storage and selected_storage not in all_storage_location_choices %}
+                                    <option value="{{ selected_storage }}" selected>{{ selected_storage }}</option>
+                                {% endif %}
+                                {% for location in all_storage_location_choices %}
+                                    <option value="{{ location }}" {% if selected_storage == location %}selected{% endif %}>{{ location }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="cd-small-help mt-1">Add new locations from Storage Explorer first. Examples: BSB-01 / A / SEC-03, Showcase Left, Dollar Box 3.</div>
                         </div>
                         <div class="col-lg-4 col-md-6">
                             <label class="form-label">Notes</label>

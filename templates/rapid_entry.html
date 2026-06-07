@@ -453,7 +453,17 @@
         <div class="row g-3 align-items-end cw-form-row cw-row-b">
             <div class="col-12 col-md-auto cw-field-storage">
                 <label class="form-label">Storage Location</label>
-                <input class="form-control" type="text" name="storage_location" placeholder="Binder-1 / Page-3 / Pocket-2" value="{{ request.args.get('storage_location', '') }}">
+                {% set selected_storage = request.args.get('storage_location', '') %}
+                <select class="form-select" name="storage_location">
+                    <option value="">Select Storage Location</option>
+                    {% if selected_storage and selected_storage not in all_storage_location_choices %}
+                        <option value="{{ selected_storage }}" selected>{{ selected_storage }}</option>
+                    {% endif %}
+                    {% for location in all_storage_location_choices %}
+                        <option value="{{ location }}" {% if selected_storage == location %}selected{% endif %}>{{ location }}</option>
+                    {% endfor %}
+                </select>
+                <div class="small text-muted mt-1">Create new locations from Storage Explorer once, then select them here.</div>
             </div>
 
             <div class="col-6 col-md-auto cw-field-select-md">
