@@ -68,6 +68,46 @@
     box-shadow: 0 .75rem 1.6rem rgba(0, 0, 0, .22);
 }
 
+
+/* Dealer Hub stat category bars */
+.dealer-hub-stat {
+    position: relative;
+    overflow: hidden;
+    padding-left: 1.15rem;
+}
+
+.dealer-hub-stat::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 7px;
+    border-radius: 1.05rem 0 0 1.05rem;
+    background: rgba(148, 163, 184, .55);
+    box-shadow: 0 0 18px rgba(148, 163, 184, .28);
+}
+
+.dealer-hub-stat-acquisition::before {
+    background: linear-gradient(180deg, #38bdf8, #2563eb);
+    box-shadow: 0 0 18px rgba(56, 189, 248, .45);
+}
+
+.dealer-hub-stat-sales::before {
+    background: linear-gradient(180deg, #f59e0b, #fbbf24);
+    box-shadow: 0 0 18px rgba(245, 158, 11, .45);
+}
+
+.dealer-hub-stat-profit::before {
+    background: linear-gradient(180deg, #22c55e, #16a34a);
+    box-shadow: 0 0 18px rgba(34, 197, 94, .45);
+}
+
+.dealer-hub-stat-inventory::before {
+    background: linear-gradient(180deg, #a78bfa, #7c3aed);
+    box-shadow: 0 0 18px rgba(167, 139, 250, .40);
+}
+
 .dealer-hub-stat-label {
     color: #cbd5e1;
     font-size: .76rem;
@@ -368,27 +408,27 @@
 
     {% if active_event_stats %}
     <div class="dealer-hub-stat-grid mt-3">
-        <div class="dealer-hub-stat">
+        <div class="dealer-hub-stat dealer-hub-stat-acquisition">
             <div class="dealer-hub-stat-label">Event Acquired</div>
             <div class="dealer-hub-stat-value">{{ active_event_stats.acquired_count or 0 }}</div>
             <div class="dealer-hub-stat-note">Cards tied to event</div>
         </div>
-        <div class="dealer-hub-stat">
+        <div class="dealer-hub-stat dealer-hub-stat-acquisition">
             <div class="dealer-hub-stat-label">Event Cost</div>
             <div class="dealer-hub-stat-value">${{ "%.0f"|format(active_event_stats.acquisition_cost or 0) }}</div>
             <div class="dealer-hub-stat-note">Buying spend</div>
         </div>
-        <div class="dealer-hub-stat">
+        <div class="dealer-hub-stat dealer-hub-stat-sales">
             <div class="dealer-hub-stat-label">Event Sold</div>
             <div class="dealer-hub-stat-value">{{ active_event_stats.sold_count or 0 }}</div>
             <div class="dealer-hub-stat-note">Sales in event window</div>
         </div>
-        <div class="dealer-hub-stat">
+        <div class="dealer-hub-stat dealer-hub-stat-sales">
             <div class="dealer-hub-stat-label">Event Revenue</div>
             <div class="dealer-hub-stat-value">${{ "%.0f"|format(active_event_stats.sales_revenue or 0) }}</div>
             <div class="dealer-hub-stat-note">Sold during event</div>
         </div>
-        <div class="dealer-hub-stat">
+        <div class="dealer-hub-stat dealer-hub-stat-profit">
             <div class="dealer-hub-stat-label">Event Profit</div>
             <div class="dealer-hub-stat-value {% if active_event_stats.sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(active_event_stats.sales_profit or 0) }}</div>
             <div class="dealer-hub-stat-note">Sales minus cost</div>
@@ -429,31 +469,31 @@
 {% endif %}
 
 <div class="dealer-hub-stat-grid mb-4">
-    <a class="dealer-hub-stat text-decoration-none" href="{{ url_for('cards', acquisition_range=dealer_hub_range, status='Active', collection_type='Inventory') }}">
+    <a class="dealer-hub-stat dealer-hub-stat-acquisition text-decoration-none" href="{{ url_for('cards', acquisition_range=dealer_hub_range, status='Active', collection_type='Inventory') }}">
         <div class="dealer-hub-stat-label">Cards Acquired · {{ dealer_hub_range_label }}</div>
         <div class="dealer-hub-stat-value">{{ range_acquired_count or 0 }}</div>
         <div class="dealer-hub-stat-note">New inventory bought in selected range</div>
     </a>
 
-    <a class="dealer-hub-stat text-decoration-none" href="{{ url_for('cards', acquisition_range=dealer_hub_range, status='Active', collection_type='Inventory') }}">
+    <a class="dealer-hub-stat dealer-hub-stat-acquisition text-decoration-none" href="{{ url_for('cards', acquisition_range=dealer_hub_range, status='Active', collection_type='Inventory') }}">
         <div class="dealer-hub-stat-label">Acquisition Cost · {{ dealer_hub_range_label }}</div>
         <div class="dealer-hub-stat-value">${{ "%.0f"|format(range_acquisition_cost or 0) }}</div>
         <div class="dealer-hub-stat-note">Cost basis added in selected range</div>
     </a>
 
-    <a class="dealer-hub-stat text-decoration-none" href="{{ url_for('cards', status='Sold', sold_range=dealer_hub_range) }}">
+    <a class="dealer-hub-stat dealer-hub-stat-sales text-decoration-none" href="{{ url_for('cards', status='Sold', sold_range=dealer_hub_range) }}">
         <div class="dealer-hub-stat-label">Cards Sold · {{ dealer_hub_range_label }}</div>
         <div class="dealer-hub-stat-value">{{ range_sold_cards or 0 }}</div>
         <div class="dealer-hub-stat-note">Quantity marked sold in selected range</div>
     </a>
 
-    <a class="dealer-hub-stat text-decoration-none" href="{{ url_for('cards', status='Sold', sold_range=dealer_hub_range) }}">
+    <a class="dealer-hub-stat dealer-hub-stat-sales text-decoration-none" href="{{ url_for('cards', status='Sold', sold_range=dealer_hub_range) }}">
         <div class="dealer-hub-stat-label">Sales · {{ dealer_hub_range_label }}</div>
         <div class="dealer-hub-stat-value">${{ "%.0f"|format(range_sold_price or 0) }}</div>
         <div class="dealer-hub-stat-note">Revenue marked sold in selected range</div>
     </a>
 
-    <a class="dealer-hub-stat text-decoration-none" href="{{ url_for('cards', status='Sold', sold_range=dealer_hub_range) }}">
+    <a class="dealer-hub-stat dealer-hub-stat-profit text-decoration-none" href="{{ url_for('cards', status='Sold', sold_range=dealer_hub_range) }}">
         <div class="dealer-hub-stat-label">Profit · {{ dealer_hub_range_label }}</div>
         <div class="dealer-hub-stat-value {% if range_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(range_profit or 0) }}</div>
         <div class="dealer-hub-stat-note">Margin {{ "%.1f"|format(range_sales_margin_percent or 0) }}%</div>
@@ -598,22 +638,22 @@
         <div class="card-header fw-bold">Inventory Snapshot</div>
         <div class="card-body">
             <div class="dealer-hub-stat-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
-                <div class="dealer-hub-stat">
+                <div class="dealer-hub-stat dealer-hub-stat-inventory">
                     <div class="dealer-hub-stat-label">Available</div>
                     <div class="dealer-hub-stat-value">{{ available_to_sell_cards or 0 }}</div>
                     <div class="dealer-hub-stat-note">Active inventory</div>
                 </div>
-                <div class="dealer-hub-stat">
+                <div class="dealer-hub-stat dealer-hub-stat-inventory">
                     <div class="dealer-hub-stat-label">Cost</div>
                     <div class="dealer-hub-stat-value">${{ "%.0f"|format(dealer_inventory_cost or 0) }}</div>
                     <div class="dealer-hub-stat-note">Capital in inventory</div>
                 </div>
-                <div class="dealer-hub-stat">
+                <div class="dealer-hub-stat dealer-hub-stat-inventory">
                     <div class="dealer-hub-stat-label">Comp Value</div>
                     <div class="dealer-hub-stat-value">${{ "%.0f"|format(dealer_inventory_value or 0) }}</div>
                     <div class="dealer-hub-stat-note">Estimated value</div>
                 </div>
-                <div class="dealer-hub-stat">
+                <div class="dealer-hub-stat dealer-hub-stat-profit">
                     <div class="dealer-hub-stat-label">Potential P/L</div>
                     <div class="dealer-hub-stat-value {% if available_potential_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(available_potential_profit or 0) }}</div>
                     <div class="dealer-hub-stat-note">Ask minus cost</div>
