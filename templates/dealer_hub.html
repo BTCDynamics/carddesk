@@ -5,6 +5,40 @@
 {% block content %}
 <style>
 
+.dealer-hub-range-wrap {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+}
+
+.dealer-hub-range-link {
+    padding: .35rem .7rem;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 800;
+    color: #cbd5e1;
+    background: rgba(15, 23, 42, .45);
+    border: 1px solid rgba(148, 163, 184, .25);
+}
+
+.dealer-hub-range-link:hover {
+    color: #ffffff;
+    border-color: rgba(147, 197, 253, .6);
+}
+
+.dealer-hub-range-link.active {
+    color: #ffffff;
+    background: #2563eb;
+    border-color: #3b82f6;
+}
+
+
+
+.dealer-event-panel {
+    max-width: 900px;
+}
+
 .dealer-storage-setup-card {
     margin-bottom: 1.25rem;
     padding: 1rem 1.1rem;
@@ -420,17 +454,7 @@
                 <span>{{ dealer_hub_range_label or 'Last 3 Days' }}</span>
                 <span>Since {{ dealer_hub_start_date }}</span>
             </div>
-            <div class="dealer-hub-range-label mb-1">Show / Event Range</div>
-            <div class="dealer-hub-range-wrap">
-                <a class="dealer-hub-range-link {% if dealer_hub_range == 'today' %}active{% endif %}"
-                   href="{{ url_for('dealer_hub', range='today') }}">Today</a>
-                <a class="dealer-hub-range-link {% if dealer_hub_range == '3d' %}active{% endif %}"
-                   href="{{ url_for('dealer_hub', range='3d') }}">3D</a>
-                <a class="dealer-hub-range-link {% if dealer_hub_range == '7d' %}active{% endif %}"
-                   href="{{ url_for('dealer_hub', range='7d') }}">7D</a>
-                <a class="dealer-hub-range-link {% if dealer_hub_range == '30d' %}active{% endif %}"
-                   href="{{ url_for('dealer_hub', range='30d') }}">30D</a>
-            </div>
+            
         </div>
     </div>
 </div>
@@ -534,6 +558,25 @@
     </form>
 </div>
 {% endif %}
+
+
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="dealer-hub-section-title">
+        Show / Event Metrics
+    </div>
+
+    <div class="dealer-hub-range-wrap">
+        <a class="dealer-hub-range-link {% if dealer_hub_range == 'today' %}active{% endif %}"
+           href="{{ url_for('dealer_hub', range='today') }}">Today</a>
+        <a class="dealer-hub-range-link {% if dealer_hub_range == '3d' %}active{% endif %}"
+           href="{{ url_for('dealer_hub', range='3d') }}">3D</a>
+        <a class="dealer-hub-range-link {% if dealer_hub_range == '7d' %}active{% endif %}"
+           href="{{ url_for('dealer_hub', range='7d') }}">7D</a>
+        <a class="dealer-hub-range-link {% if dealer_hub_range == '30d' %}active{% endif %}"
+           href="{{ url_for('dealer_hub', range='30d') }}">30D</a>
+    </div>
+</div>
 
 <div class="dealer-hub-stat-grid mb-4">
     <a class="dealer-hub-stat text-decoration-none" href="{{ url_for('cards', acquisition_range=dealer_hub_range, status='Active', collection_type='Inventory') }}">
