@@ -4,6 +4,11 @@
 
 {% block content %}
 <style>
+.dealer-health-badge {
+    background-color: #14b8a6 !important;
+    color: #ffffff !important;
+}
+
 .dealer-hub-hero {
     position: relative;
     overflow: hidden;
@@ -569,13 +574,15 @@
         <span class="badge text-bg-success dealer-action-badge">{{ available_to_sell_cards or 0 }} available</span>
     </a>
 
-    <a class="dealer-action-card" href="{{ url_for('deal_cart') }}">
+    <a class="dealer-action-card" href="{{ url_for('inventory_health') }}">
         <div>
-            <div class="dealer-action-icon">🛒</div>
-            <div class="dealer-action-title">Deal Cart</div>
-            <div class="dealer-action-copy">Build lots, discount groups, and close multi-card deals.</div>
+            <div class="dealer-action-icon">📈</div>
+            <div class="dealer-action-title">Inventory Health</div>
+            <div class="dealer-action-copy">Review stale inventory, missing data, pricing gaps, and cleanup opportunities.</div>
         </div>
-        <span class="badge {% if deal_cart_count %}text-bg-warning{% else %}text-bg-secondary{% endif %} dealer-action-badge">{{ deal_cart_count or 0 }} selected</span>
+        <span class="badge {% if health_issue_count %}dealer-health-badge{% else %}text-bg-success{% endif %} dealer-action-badge">
+            {% if health_issue_count %}{{ health_issue_count }} issues{% else %}Healthy{% endif %}
+        </span>
     </a>
 
     <a class="dealer-action-card" href="{{ url_for('fulfillment_queue') }}">
