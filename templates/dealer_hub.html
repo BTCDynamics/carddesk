@@ -315,52 +315,59 @@
 }
 
 
-/* Force compact 4-across Fast Dealer Actions layout */
-.dealer-hub-fast-actions {
+
+/* FORCE FAST DEALER ACTIONS COMPACT - OVERRIDE */
+/* This section intentionally sits at the very bottom of this page's style block. */
+.dealer-action-grid,
+.dealer-action-grid.mb-4 {
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: .65rem !important;
+    gap: .7rem !important;
+    width: 100% !important;
 }
 
-.dealer-hub-fast-actions .dealer-action-card {
+.dealer-action-grid > .dealer-action-card,
+.dealer-action-grid > a.dealer-action-card {
     min-height: 108px !important;
-    padding: .7rem .75rem !important;
+    padding: .72rem .78rem !important;
     border-radius: .95rem !important;
 }
 
-.dealer-hub-fast-actions .dealer-action-icon {
+.dealer-action-grid .dealer-action-icon {
     width: 2.35rem !important;
     height: 2.35rem !important;
     border-radius: .75rem !important;
-    font-size: 1.1rem !important;
+    font-size: 1.08rem !important;
 }
 
-.dealer-hub-fast-actions .dealer-action-title {
+.dealer-action-grid .dealer-action-title {
     margin-top: .45rem !important;
-    font-size: .95rem !important;
+    font-size: .92rem !important;
     line-height: 1.05 !important;
 }
 
-.dealer-hub-fast-actions .dealer-action-copy {
-    font-size: .74rem !important;
-    line-height: 1.15 !important;
-    margin-top: .2rem !important;
+.dealer-action-grid .dealer-action-copy {
+    margin-top: .25rem !important;
+    font-size: .72rem !important;
+    line-height: 1.18 !important;
 }
 
-.dealer-hub-fast-actions .dealer-action-badge {
+.dealer-action-grid .dealer-action-badge {
     margin-top: .45rem !important;
     font-size: .68rem !important;
     padding: .28rem .45rem !important;
 }
 
 @media (max-width: 991.98px) {
-    .dealer-hub-fast-actions {
+    .dealer-action-grid,
+    .dealer-action-grid.mb-4 {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 }
 
 @media (max-width: 575.98px) {
-    .dealer-hub-fast-actions {
+    .dealer-action-grid,
+    .dealer-action-grid.mb-4 {
         grid-template-columns: 1fr !important;
     }
 }
@@ -520,11 +527,11 @@
     {% endif %}
 </div>
 
-<div class="dealer-action-grid dealer-hub-fast-actions mb-4">
+<div class="dealer-action-grid mb-4">
     <a class="dealer-action-card" href="{{ url_for('intake_tools') }}">
         <div>
             <div class="dealer-action-icon">📥</div>
-            <div class="dealer-action-title">Intake Tools</div>
+            <div class="dealer-action-title">Card Intake</div>
             <div class="dealer-action-copy">Capture, upload, scan slabs, or use rapid/manual entry.</div>
         </div>
         <span class="badge text-bg-info dealer-action-badge">Start Here</span>
@@ -542,14 +549,7 @@
         </span>
     </a>
 
-    <a class="dealer-action-card" href="{{ url_for('mobile_capture') }}">
-        <div>
-            <div class="dealer-action-icon">📱</div>
-            <div class="dealer-action-title">Mobile Capture</div>
-            <div class="dealer-action-copy">Open phone capture directly for show-floor image intake.</div>
-        </div>
-        <span class="badge text-bg-primary dealer-action-badge">Phone</span>
-    </a>
+    
 
     <a class="dealer-action-card" href="{{ url_for('ai_import_review') }}">
         <div>
