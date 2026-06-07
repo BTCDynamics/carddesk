@@ -449,13 +449,7 @@
                 A fast operational screen for buying, selling, pulling, reviewing, and moving cards while you are working a show or processing inventory.
             </p>
         </div>
-        <div class="text-end">
-            <div class="dealer-hub-mode-pill mb-2">
-                <span>{{ dealer_hub_range_label or 'Last 3 Days' }}</span>
-                <span>Since {{ dealer_hub_start_date }}</span>
-            </div>
-            
-        </div>
+        
     </div>
 </div>
 
@@ -561,20 +555,27 @@
 
 
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-end mb-3">
     <div class="dealer-hub-section-title">
         Show / Event Metrics
     </div>
 
-    <div class="dealer-hub-range-wrap">
-        <a class="dealer-hub-range-link {% if dealer_hub_range == 'today' %}active{% endif %}"
-           href="{{ url_for('dealer_hub', range='today') }}">Today</a>
-        <a class="dealer-hub-range-link {% if dealer_hub_range == '3d' %}active{% endif %}"
-           href="{{ url_for('dealer_hub', range='3d') }}">3D</a>
-        <a class="dealer-hub-range-link {% if dealer_hub_range == '7d' %}active{% endif %}"
-           href="{{ url_for('dealer_hub', range='7d') }}">7D</a>
-        <a class="dealer-hub-range-link {% if dealer_hub_range == '30d' %}active{% endif %}"
-           href="{{ url_for('dealer_hub', range='30d') }}">30D</a>
+    <div class="text-end">
+        <div class="dealer-hub-mode-pill mb-2">
+            <span>{{ dealer_hub_range_label or 'Last 3 Days' }}</span>
+            <span>Since {{ dealer_hub_start_date }}</span>
+        </div>
+
+        <div class="dealer-hub-range-wrap justify-content-end">
+            <a class="dealer-hub-range-link {% if dealer_hub_range == 'today' %}active{% endif %}"
+               href="{{ url_for('dealer_hub', range='today') }}">Today</a>
+            <a class="dealer-hub-range-link {% if dealer_hub_range == '3d' %}active{% endif %}"
+               href="{{ url_for('dealer_hub', range='3d') }}">3D</a>
+            <a class="dealer-hub-range-link {% if dealer_hub_range == '7d' %}active{% endif %}"
+               href="{{ url_for('dealer_hub', range='7d') }}">7D</a>
+            <a class="dealer-hub-range-link {% if dealer_hub_range == '30d' %}active{% endif %}"
+               href="{{ url_for('dealer_hub', range='30d') }}">30D</a>
+        </div>
     </div>
 </div>
 
