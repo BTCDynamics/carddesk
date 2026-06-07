@@ -4,6 +4,15 @@
 
 {% block content %}
 <style>
+
+.dealer-health-badge {
+    background-color: #14b8a6 !important;
+    color: #ffffff !important;
+}
+
+
+
+
 .dealer-hub-hero {
     position: relative;
     overflow: hidden;
@@ -525,7 +534,7 @@
             <div class="dealer-action-title">Inventory Health</div>
             <div class="dealer-action-copy">Review stale inventory, missing data, pricing gaps, and cleanup signals.</div>
         </div>
-        <span class="badge {% if health_issue_count %}text-bg-info{% else %}text-bg-success{% endif %} dealer-action-badge">{% if health_issue_count %}{{ health_issue_count }} issues{% else %}Healthy{% endif %}</span>
+        <span class="badge {% if health_issue_count %}dealer-health-badge{% else %}text-bg-success{% endif %} dealer-action-badge">{% if health_issue_count %}{{ health_issue_count }} issues{% else %}Healthy{% endif %}</span>
     </a>
 
     <a class="dealer-action-card" href="{{ url_for('ai_import_review') }}">
