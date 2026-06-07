@@ -961,7 +961,17 @@
                                     <option value="{{ location }}" {% if selected_storage == location %}selected{% endif %}>{{ location }}</option>
                                 {% endfor %}
                             </select>
-                            <div class="cd-small-help mt-1">Add new locations from Storage Explorer first. Examples: BSB-01 / A / SEC-03, Showcase Left, Dollar Box 3.</div>
+                            {% if not all_storage_location_choices %}
+                                <div class="alert alert-warning small mt-2 mb-0">
+                                    <strong>No storage locations yet.</strong> Create your first location before assigning storage to cards.<br>
+                                    Examples: <strong>BSB-01 / A / SEC-03</strong>, <strong>Case 2 / Row 1</strong>, <strong>Showcase Left</strong>.
+                                    <div class="mt-2">
+                                        <a class="btn btn-sm btn-warning fw-bold" href="{{ url_for('storage_explorer') }}">Create First Storage Location</a>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="cd-small-help mt-1">Add new locations from Storage Explorer first. Examples: BSB-01 / A / SEC-03, Showcase Left, Dollar Box 3.</div>
+                            {% endif %}
                         </div>
                         <div class="col-lg-4 col-md-6">
                             <label class="form-label">Notes</label>

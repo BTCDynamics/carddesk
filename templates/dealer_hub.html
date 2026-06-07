@@ -4,6 +4,33 @@
 
 {% block content %}
 <style>
+
+.dealer-storage-setup-card {
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.1rem;
+    border-radius: 1.1rem;
+    color: #f8fafc;
+    background:
+        radial-gradient(circle at top left, rgba(251, 191, 36, .18), transparent 34%),
+        linear-gradient(145deg, #172033, #202b3a);
+    border: 1px solid rgba(251, 191, 36, .32);
+    box-shadow: 0 .75rem 1.8rem rgba(0,0,0,.24);
+}
+.dealer-storage-setup-title {
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 1.05rem;
+}
+.dealer-storage-setup-copy {
+    color: #cbd5e1;
+    font-size: .86rem;
+}
+.dealer-storage-setup-examples {
+    color: #fde68a;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
 .dealer-health-badge {
     background-color: #14b8a6 !important;
     color: #ffffff !important;
@@ -407,6 +434,23 @@
         </div>
     </div>
 </div>
+
+{% if not all_storage_location_choices %}
+<div class="dealer-storage-setup-card">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+            <div class="dealer-storage-setup-title mb-1">Storage setup needed</div>
+            <div class="dealer-storage-setup-copy">
+                Create your first storage location so Add Card, Rapid Entry, and AI Review can use consistent dropdown choices instead of free-typing.
+            </div>
+            <div class="dealer-storage-setup-examples mt-2">
+                Examples: BSB-01 / A / SEC-03 · Case 2 / Row 1 · Showcase Left · Dollar Box 3
+            </div>
+        </div>
+        <a class="btn btn-warning fw-bold" href="{{ url_for('storage_explorer') }}">Create First Location</a>
+    </div>
+</div>
+{% endif %}
 
 
 {% if active_event %}
