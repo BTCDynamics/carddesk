@@ -106,11 +106,11 @@
 }
 
 .dealer-action-card {
-    min-height: 152px;
+    min-height: 120px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 1rem;
+    padding: .8rem;
     border-radius: 1.15rem;
     color: #f8fafc !important;
     text-decoration: none !important;
@@ -139,7 +139,7 @@
 }
 
 .dealer-action-title {
-    margin-top: .85rem;
+    margin-top: .55rem;
     color: #ffffff;
     font-size: 1.05rem;
     font-weight: 900;
@@ -154,7 +154,7 @@
 
 .dealer-action-badge {
     align-self: flex-start;
-    margin-top: .8rem;
+    margin-top: .55rem;
 }
 
 .dealer-work-grid {
@@ -257,7 +257,12 @@
 }
 
 @media (max-width: 1399.98px) {
-    .dealer-hub-stat-grid,
+    .dealer-hub-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1199.98px) {
     .dealer-action-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
