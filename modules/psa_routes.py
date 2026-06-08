@@ -11,6 +11,31 @@ from helpers.psa_helpers import (
 )
 
 
+
+def find_pending_staged_psa_cert(cert_number):
+    """Return an existing unimported staged PSA cert to prevent double-submit duplicates."""
+    clean_cert = clean_psa_cert_number(cert_number)
+
+    if not clean_cert:
+        return None
+
+    staged_cards = (
+        CardImportStaging.query
+        .filter(CardImportStaging.ai_status.in_(["Pending Review", "Needs Manual Review"]))
+        .filter(CardImportStaging.cert_number.isnot(None))
+        .order_by(CardImportStaging.id.desc())
+        .limit(25)
+        .all()
+    )
+
+    for staged_card in staged_cards:
+        if clean_psa_cert_number(staged_card.cert_number) == clean_cert:
+            return staged_card
+
+    return None
+
+
+
 def register_psa_routes(app):
     @app.route("/psa-lookup", methods=["GET", "POST"])
     def psa_lookup():
@@ -74,13 +99,21 @@ def register_psa_routes(app):
                 flash("Scan or enter a PSA cert number.")
                 return redirect(url_for("psa_desktop_scan"))
 
-            try:
-                staged_card = stage_psa_cert_lookup(scanned_cert, request.form)
+            existing_staged_card = find_pending_staged_psa_cert(scanned_cert)
+
+            if existing_staged_card:
                 staged_success = True
-                staged_card_id = staged_card.id
-                scanned_cert = clean_value(staged_card.cert_number) or scanned_cert
-                flash(f"PSA cert {scanned_cert} staged for review.")
-            except Exception as error:
+                staged_card_id = existing_staged_card.id
+                scanned_cert = clean_value(existing_staged_card.cert_number) or scanned_cert
+                flash(f"PSA cert {scanned_cert} is already waiting in AI Review.")
+            else:
+                try:
+                    staged_card = stage_psa_cert_lookup(scanned_cert, request.form)
+                    staged_success = True
+                    staged_card_id = staged_card.id
+                    scanned_cert = clean_value(staged_card.cert_number) or scanned_cert
+                    flash(f"PSA cert {scanned_cert} staged for review.")
+                except Exception as error:
                 flash(f"PSA lookup failed: {error}")
                 return redirect(url_for("psa_desktop_scan"))
 

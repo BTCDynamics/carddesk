@@ -254,9 +254,13 @@
 <script>
 const scanInput = document.getElementById("cert_number");
 const scanForm = document.getElementById("psaDesktopScanForm");
+const submitButton = scanForm ? scanForm.querySelector('button[type="submit"]') : null;
+
+let scanSubmitLocked = false;
+let scanSubmitTimer = null;
 
 function focusScanner() {
-    if (!scanInput || scanInput.disabled) {
+    if (!scanInput || scanInput.disabled || scanSubmitLocked) {
         return;
     }
     scanInput.focus();
@@ -264,11 +268,44 @@ function focusScanner() {
 }
 
 function clearAndFocusScanner() {
-    if (!scanInput) {
+    if (!scanInput || scanSubmitLocked) {
         return;
     }
     scanInput.value = "";
     focusScanner();
+}
+
+function lockScannerSubmit() {
+    scanSubmitLocked = true;
+
+    if (scanSubmitTimer) {
+        window.clearTimeout(scanSubmitTimer);
+        scanSubmitTimer = null;
+    }
+
+    if (scanInput) {
+        scanInput.readOnly = true;
+    }
+
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Submitting...";
+    }
+}
+
+function submitScanOnce() {
+    if (!scanInput || !scanForm || scanSubmitLocked) {
+        return;
+    }
+
+    const value = scanInput.value.trim();
+
+    if (value.length < 5) {
+        return;
+    }
+
+    lockScannerSubmit();
+    scanForm.submit();
 }
 
 window.addEventListener("load", function () {
@@ -281,24 +318,45 @@ document.addEventListener("click", function () {
 });
 
 if (scanInput && scanForm) {
+    scanForm.addEventListener("submit", function (event) {
+        if (scanSubmitLocked) {
+            event.preventDefault();
+            return false;
+        }
+
+        const value = scanInput.value.trim();
+
+        if (value.length < 5) {
+            event.preventDefault();
+            focusScanner();
+            return false;
+        }
+
+        lockScannerSubmit();
+        return true;
+    });
+
     scanInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
             event.preventDefault();
-            const value = scanInput.value.trim();
-            if (value.length >= 5) {
-                scanForm.submit();
-            }
+            submitScanOnce();
         }
     });
 
     scanInput.addEventListener("input", function () {
+        if (scanSubmitLocked) {
+            return;
+        }
+
         const value = scanInput.value.trim();
+
         if (value.length >= 7) {
-            window.clearTimeout(scanInput.dataset.submitTimer);
-            scanInput.dataset.submitTimer = window.setTimeout(function () {
-                if (scanInput.value.trim().length >= 7) {
-                    scanForm.submit();
-                }
+            if (scanSubmitTimer) {
+                window.clearTimeout(scanSubmitTimer);
+            }
+
+            scanSubmitTimer = window.setTimeout(function () {
+                submitScanOnce();
             }, 350);
         }
     });
