@@ -1,12 +1,62 @@
 from datetime import date, datetime
 
-from flask import render_template, url_for
+from flask import render_template, request, url_for
 from sqlalchemy import or_
 
 from models import Card, CardImportStaging
 
 
 STALE_DAYS = 180
+
+
+SHOW_LOCATION_KEYWORDS = [
+    "show",
+    "showcase",
+    "show box",
+    "showbox",
+    "case",
+    "dollar",
+    "value box",
+]
+
+
+def _is_show_location(location):
+    """Return True when a storage location looks like a show-ready box/case."""
+    location_text = (location or "").strip().lower()
+    return any(keyword in location_text for keyword in SHOW_LOCATION_KEYWORDS)
+
+
+def _location_summary(cards):
+    """Summarize active cards by storage location for show-loadout planning."""
+    summaries = {}
+
+    for card in cards:
+        location = (card.storage_location or "").strip()
+        if not location:
+            continue
+
+        if location not in summaries:
+            summaries[location] = {
+                "location": location,
+                "record_count": 0,
+                "card_count": 0,
+                "cost": 0.0,
+                "estimated_value": 0.0,
+                "asking_price": 0.0,
+                "is_show_location": _is_show_location(location),
+            }
+
+        quantity = card.quantity or 1
+        summaries[location]["record_count"] += 1
+        summaries[location]["card_count"] += quantity
+        summaries[location]["cost"] += _money(card.purchase_price) * quantity
+        summaries[location]["estimated_value"] += _money(card.estimated_value) * quantity
+        summaries[location]["asking_price"] += _money(card.asking_price) * quantity
+
+    return sorted(
+        summaries.values(),
+        key=lambda item: (not item["is_show_location"], item["location"].lower()),
+    )
 
 
 def _parse_date(value):
@@ -67,6 +117,47 @@ def register_show_prep_routes(app):
         total_estimated_value = sum(_money(card.estimated_value) * (card.quantity or 1) for card in active_cards)
         total_asking_price = sum(_money(card.asking_price) * (card.quantity or 1) for card in active_cards)
         potential_profit = total_asking_price - total_cost
+
+        location_summaries = _location_summary(active_cards)
+        requested_locations = [
+            location.strip()
+            for location in request.args.getlist("show_location")
+            if location and location.strip()
+        ]
+
+        if requested_locations:
+            selected_show_locations = requested_locations
+        else:
+            selected_show_locations = [
+                item["location"]
+                for item in location_summaries
+                if item["is_show_location"]
+            ]
+
+        selected_show_location_set = set(selected_show_locations)
+        show_cards = [
+            card for card in active_cards
+            if (card.storage_location or "").strip() in selected_show_location_set
+        ]
+
+        show_card_count = _total_card_quantity(show_cards)
+        show_total_cost = sum(_money(card.purchase_price) * (card.quantity or 1) for card in show_cards)
+        show_total_estimated_value = sum(_money(card.estimated_value) * (card.quantity or 1) for card in show_cards)
+        show_total_asking_price = sum(_money(card.asking_price) * (card.quantity or 1) for card in show_cards)
+        show_potential_profit = show_total_asking_price - show_total_cost
+        selected_location_summaries = [
+            item for item in location_summaries
+            if item["location"] in selected_show_location_set
+        ]
+
+        show_missing_asking_cards = [card for card in show_cards if not card.asking_price or card.asking_price <= 0]
+        show_missing_comp_cards = [card for card in show_cards if not card.estimated_value or card.estimated_value <= 0]
+        show_missing_cost_cards = [card for card in show_cards if not card.purchase_price or card.purchase_price <= 0]
+        show_issue_card_ids = set(
+            card.id
+            for card in show_missing_asking_cards + show_missing_comp_cards + show_missing_cost_cards
+        )
+        show_ready_count = max(0, show_card_count - len(show_issue_card_ids))
 
         missing_asking_cards = [card for card in active_cards if not card.asking_price or card.asking_price <= 0]
         missing_comp_cards = [card for card in active_cards if not card.estimated_value or card.estimated_value <= 0]
@@ -178,4 +269,18 @@ def register_show_prep_routes(app):
             comp_refresh_needed_count=comp_refresh_needed_count,
             ai_review_count=ai_review_count,
             open_fulfillment_count=open_fulfillment_count,
+            location_summaries=location_summaries,
+            selected_show_locations=selected_show_locations,
+            selected_location_summaries=selected_location_summaries,
+            show_cards=show_cards,
+            show_card_count=show_card_count,
+            show_total_cost=show_total_cost,
+            show_total_estimated_value=show_total_estimated_value,
+            show_total_asking_price=show_total_asking_price,
+            show_potential_profit=show_potential_profit,
+            show_ready_count=show_ready_count,
+            show_missing_asking_count=len(show_missing_asking_cards),
+            show_missing_comp_count=len(show_missing_comp_cards),
+            show_missing_cost_count=len(show_missing_cost_cards),
+            show_issue_count=len(show_issue_card_ids),
         )
