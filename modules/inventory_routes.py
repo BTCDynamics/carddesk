@@ -715,6 +715,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             card.sold_price = request.form.get("sold_price") or None
             card.sold_date = request.form.get("sold_date")
             card.sales_platform = clean_value(request.form.get("sales_platform"))
+            card.payment_type = clean_value(request.form.get("payment_type"))
             card.purchase_date = purchase_date_value(request.form)
             card.acquisition_source = acquisition_value(request.form.get("acquisition_source"))
             card.acquisition_date = acquisition_date_value(request.form)

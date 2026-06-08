@@ -96,8 +96,8 @@
     gap: .75rem !important;
 
     background:
-        radial-gradient(circle at top right, rgba(20, 184, 166, .24), transparent 40%),
-        linear-gradient(135deg, rgba(15, 118, 110, .92), rgba(15, 23, 42, .96)) !important;
+        radial-gradient(circle at top right, rgba(37, 99, 235, .15), transparent 40%),
+        linear-gradient(135deg, #07111f, #1e3a8a) !important;
 
     padding: .82rem 1rem !important;
     border-radius: 12px !important;
@@ -503,7 +503,42 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-6 col-md-auto cw-field-select-md">
+            
+
+<div class="col-6 col-md-auto cw-field-select-md">
+    <label class="form-label">Sales Platform</label>
+    <select class="form-select" name="sales_platform">
+        {% for platform in ["", "eBay", "Whatnot", "Facebook", "Card Show", "COMC", "Direct Sale", "Trade", "Other"] %}
+            <option value="{{ platform }}" {% if card.sales_platform == platform %}selected{% endif %}>
+                {{ platform or "Select Platform" }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="col-6 col-md-auto cw-field-select-md">
+    <label class="form-label">Payment Method</label>
+    <select class="form-select" name="payment_type">
+        <option value="">Select Payment</option>
+        <option value="Cash" {% if card.payment_type == "Cash" %}selected{% endif %}>Cash</option>
+        <option value="PayPal" {% if card.payment_type == "PayPal" %}selected{% endif %}>PayPal</option>
+        <option value="Venmo" {% if card.payment_type == "Venmo" %}selected{% endif %}>Venmo</option>
+        <option value="Cash App" {% if card.payment_type == "Cash App" %}selected{% endif %}>Cash App</option>
+        <option value="Zelle" {% if card.payment_type == "Zelle" %}selected{% endif %}>Zelle</option>
+        <option value="Check" {% if card.payment_type == "Check" %}selected{% endif %}>Check</option>
+        <option value="Credit Card" {% if card.payment_type == "Credit Card" %}selected{% endif %}>Credit Card</option>
+        <option value="Trade" {% if card.payment_type == "Trade" %}selected{% endif %}>Trade</option>
+        <option value="Other" {% if card.payment_type == "Other" %}selected{% endif %}>Other</option>
+    </select>
+</div>
+
+
+
+
+
+
+
+<div class="col-6 col-md-auto cw-field-select-md">
                 <label class="form-label">Status</label>
                 <select class="form-select" name="status">
                     {% for status in ["Holding", "Active", "Sold"] %}

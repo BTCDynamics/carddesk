@@ -277,10 +277,19 @@
     font-weight: 700;
 }
 
+
+
 .cd-detail-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: .85rem;
+}
+
+
+
+
+.cd-detail-grid.sales-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .cd-detail-item,
@@ -749,35 +758,46 @@
                 </section>
 
                 <section class="cd-section">
-                    <div class="cd-section-title">Inventory, Dates & Sales</div>
-                    <div class="cd-detail-grid">
-                        <div class="cd-detail-item">
-                            <div class="cd-detail-label">Purchase Date</div>
-                            <div class="cd-detail-value">{{ card.purchase_date or '—' }}</div>
-                        </div>
+    <div class="cd-section-title">Inventory, Dates & Sales</div>
 
-                        <div class="cd-detail-item">
-                            <div class="cd-detail-label">Sold Date</div>
-                            <div class="cd-detail-value">{{ card.sold_date or '—' }}</div>
-                        </div>
+    <div class="cd-detail-grid sales-grid">
 
-                        <div class="cd-detail-item">
-                            <div class="cd-detail-label">Sales Platform</div>
-                            <div class="cd-detail-value">{{ card.sales_platform or '—' }}</div>
-                        </div>
+        <div class="cd-detail-item">
+            <div class="cd-detail-label">Purchase Date</div>
+            <div class="cd-detail-value">{{ card.purchase_date or '—' }}</div>
+        </div>
 
-                        <div class="cd-detail-item cd-detail-item-wide">
-                            <div class="cd-detail-label">Storage Location</div>
-                            <div class="cd-detail-value">
-                                {% if card.storage_location %}
-                                    <a class="storage-pill" href="{{ url_for('cards', storage=card.storage_location) }}">{{ card.storage_location }}</a>
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </section>
+        <div class="cd-detail-item">
+            <div class="cd-detail-label">Sold Date</div>
+            <div class="cd-detail-value">{{ card.sold_date or '—' }}</div>
+        </div>
+
+        <div class="cd-detail-item">
+            <div class="cd-detail-label">Sales Platform</div>
+            <div class="cd-detail-value">{{ card.sales_platform or '—' }}</div>
+        </div>
+
+        <div class="cd-detail-item">
+            <div class="cd-detail-label">Payment Method</div>
+            <div class="cd-detail-value">{{ card.payment_type or '—' }}</div>
+        </div>
+
+        <div class="cd-detail-item" style="grid-column: 1 / -1;">
+            <div class="cd-detail-label">Storage Location</div>
+            <div class="cd-detail-value">
+                {% if card.storage_location %}
+                    <a class="storage-pill"
+                       href="{{ url_for('cards', storage=card.storage_location) }}">
+                        {{ card.storage_location }}
+                    </a>
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</section>
 
                 <section class="cd-section">
                     <div class="cd-section-title">Notes</div>

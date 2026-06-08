@@ -42,15 +42,24 @@
                         <input class="form-control" type="date" name="sold_date" value="{{ card.sold_date or today }}">
                     </div>
 
-                    <div class="col-12 col-md-auto cw-field-md">
-                        <label class="form-label">Sales Platform</label>
-                        <select class="form-select" name="sales_platform">
-                            {% for platform in ["eBay", "Whatnot", "Facebook", "Card Show", "COMC", "Direct Sale", "Trade", "Other"] %}
-                                <option value="{{ platform }}" {% if card.sales_platform == platform %}selected{% endif %}>{{ platform }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
+<div class="col-12 col-md-auto cw-field-md">
+    <label class="form-label">Sales Platform</label>
+    <select class="form-select" name="sales_platform">
+        {% for platform in ["eBay", "Whatnot", "Facebook", "Card Show", "COMC", "Direct Sale", "Trade", "Other"] %}
+            <option value="{{ platform }}" {% if card.sales_platform == platform %}selected{% endif %}>{{ platform }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="col-12 col-md-auto cw-field-md">
+    <label class="form-label">Payment Method</label>
+    <select class="form-select" name="payment_type">
+        {% for payment in ["Cash", "Venmo", "PayPal", "Cash App", "Credit Card", "Check", "Trade", "Other"] %}
+            <option value="{{ payment }}" {% if card.payment_type == payment %}selected{% endif %}>{{ payment }}</option>
+        {% endfor %}
+    </select>
+</div>
+</div>
 
                 <div class="row g-4 inventory-grid mb-3">
                     <div class="col-md-4">

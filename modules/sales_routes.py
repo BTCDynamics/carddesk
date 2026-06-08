@@ -20,6 +20,7 @@ def register_sales_routes(app):
             card.sold_price = request.form.get("sold_price") or None
             card.sold_date = request.form.get("sold_date") or date.today().isoformat()
             card.sales_platform = clean_value(request.form.get("sales_platform"))
+            card.payment_type = clean_value(request.form.get("payment_type"))
             card.status = "Sold"
             card.fulfillment_status = "Needs Pulling" if card.storage_location else "No Location"
 
