@@ -1,7 +1,7 @@
 import os
 from urllib.parse import quote
 
-from flask import Flask, render_template, url_for, send_from_directory
+from flask import Flask, render_template, url_for, send_from_directory, jsonify
 from sqlalchemy import inspect, text
 
 from models import db, CardImportStaging, CompRefreshQueue
@@ -228,42 +228,6 @@ def ensure_database_columns():
     )
 
     add_column_if_missing(
-        "dealer_event",
-        "selected_show_locations",
-        "ALTER TABLE dealer_event ADD COLUMN selected_show_locations TEXT"
-    )
-    add_column_if_missing(
-        "dealer_event",
-        "table_fee",
-        "ALTER TABLE dealer_event ADD COLUMN table_fee FLOAT DEFAULT 0"
-    )
-    add_column_if_missing(
-        "dealer_event",
-        "travel_expense",
-        "ALTER TABLE dealer_event ADD COLUMN travel_expense FLOAT DEFAULT 0"
-    )
-    add_column_if_missing(
-        "dealer_event",
-        "lodging_expense",
-        "ALTER TABLE dealer_event ADD COLUMN lodging_expense FLOAT DEFAULT 0"
-    )
-    add_column_if_missing(
-        "dealer_event",
-        "food_expense",
-        "ALTER TABLE dealer_event ADD COLUMN food_expense FLOAT DEFAULT 0"
-    )
-    add_column_if_missing(
-        "dealer_event",
-        "other_expense",
-        "ALTER TABLE dealer_event ADD COLUMN other_expense FLOAT DEFAULT 0"
-    )
-    add_column_if_missing(
-        "dealer_event",
-        "expense_notes",
-        "ALTER TABLE dealer_event ADD COLUMN expense_notes TEXT"
-    )
-
-    add_column_if_missing(
         "card_import_staging",
         "image_back_filename",
         "ALTER TABLE card_import_staging ADD COLUMN image_back_filename VARCHAR(200)"
@@ -362,6 +326,30 @@ def inject_global_counts():
         "missing_asking_price_count": inventory_health["missing_asking_price_count"],
         "missing_estimated_value_count": inventory_health["missing_estimated_value_count"],
     }
+
+
+@app.route("/api/nav-counts")
+def nav_counts():
+    """Return small live counts used by the navbar badges.
+
+    This lets an already-open Dealer Hub or dashboard update after Mobile Capture
+    saves a staged card from another device, without requiring a full page refresh.
+    """
+    pending_import_count = CardImportStaging.query.filter(
+        CardImportStaging.ai_status == "Pending Review"
+    ).count()
+
+    manual_review_count = CardImportStaging.query.filter(
+        CardImportStaging.ai_status == "Needs Manual Review"
+    ).count()
+
+    ai_import_action_count = pending_import_count + manual_review_count
+
+    return jsonify({
+        "pending_import_count": pending_import_count,
+        "manual_review_count": manual_review_count,
+        "ai_import_action_count": ai_import_action_count,
+    })
 
 
 # Route modules that depend on helper functions defined above.
