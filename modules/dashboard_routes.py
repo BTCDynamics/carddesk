@@ -433,7 +433,7 @@ def register_dashboard_routes(app):
         )
 
 
-    def get_active_event():
+    def get_open_event():
         return (
             DealerEvent.query
             .filter(DealerEvent.status == "Open")
@@ -441,9 +441,25 @@ def register_dashboard_routes(app):
             .first()
         )
 
+    def get_planned_event():
+        return (
+            DealerEvent.query
+            .filter(DealerEvent.status == "Planned")
+            .order_by(DealerEvent.id.desc())
+            .first()
+        )
+
+    def get_current_event():
+        # Open event takes priority. If no event is open, use the most recent
+        # planned event so the dealer can prep locations/expenses before showtime.
+        return get_open_event() or get_planned_event()
+
     def event_date_bounds(event):
-        start_date = parse_card_date(event.start_date) if event else None
-        end_date = parse_card_date(event.end_date) if event and event.end_date else date.today()
+        if not event or event.status == "Planned":
+            return None, None
+
+        start_date = parse_card_date(event.start_date)
+        end_date = parse_card_date(event.end_date) if event.end_date else date.today()
         return start_date, end_date
 
     def event_money(value):
@@ -572,7 +588,8 @@ def register_dashboard_routes(app):
     @app.route("/events", methods=["GET"])
     def events():
         all_cards = Card.query.all()
-        active_event = get_active_event()
+        active_event = get_open_event()
+        current_event = get_current_event()
         events_list = DealerEvent.query.order_by(DealerEvent.id.desc()).all()
 
         event_summaries = []
@@ -586,11 +603,13 @@ def register_dashboard_routes(app):
             "events.html",
             today=date.today().isoformat(),
             active_event=active_event,
+            current_event=current_event,
             event_summaries=event_summaries,
         )
 
-    @app.route("/events/start", methods=["POST"])
-    def start_event():
+    @app.route("/events/create", methods=["POST"])
+    @app.route("/events/start", methods=["POST"])  # Backward-compatible URL. Creates a Planned event now.
+    def create_event():
         event_name = (request.form.get("event_name") or "").strip()
         location = (request.form.get("location") or "").strip() or None
         start_date = request.form.get("start_date") or date.today().isoformat()
@@ -606,16 +625,16 @@ def register_dashboard_routes(app):
             flash("Event name is required.")
             return redirect(request.referrer or url_for("events"))
 
-        active_event = get_active_event()
-        if active_event:
-            flash(f"Close {active_event.event_name} before starting another event.")
+        current_event = get_current_event()
+        if current_event:
+            flash(f"Finish {current_event.event_name} before creating another event.")
             return redirect(request.referrer or url_for("dealer_hub"))
 
         new_event = DealerEvent(
             event_name=event_name,
             location=location,
             start_date=start_date,
-            status="Open",
+            status="Planned",
             notes=notes,
             table_fee=table_fee,
             travel_expense=travel_expense,
@@ -628,8 +647,31 @@ def register_dashboard_routes(app):
         db.session.add(new_event)
         db.session.commit()
 
-        flash(f"Started event: {new_event.event_name}.")
-        return redirect(url_for("dealer_hub"))
+        flash(f"Created event: {new_event.event_name}. Use Show Prep now, then start it when business begins.")
+        return redirect(url_for("event_detail", event_id=new_event.id))
+
+    @app.route("/events/<int:event_id>/start", methods=["POST"])
+    def start_existing_event(event_id):
+        event = DealerEvent.query.get_or_404(event_id)
+
+        if event.status == "Closed":
+            flash("Closed events cannot be restarted.")
+            return redirect(url_for("event_detail", event_id=event.id))
+
+        open_event = get_open_event()
+        if open_event and open_event.id != event.id:
+            flash(f"Close {open_event.event_name} before starting another event.")
+            return redirect(url_for("event_detail", event_id=event.id))
+
+        event.status = "Open"
+        event.start_date = request.form.get("start_date") or date.today().isoformat()
+        event.end_date = None
+        event.closed_at = None
+
+        db.session.commit()
+
+        flash(f"Started event: {event.event_name}.")
+        return redirect(url_for("event_detail", event_id=event.id))
 
     @app.route("/events/<int:event_id>")
     def event_detail(event_id):
@@ -658,6 +700,7 @@ def register_dashboard_routes(app):
         return render_template(
             "event_detail.html",
             event=event,
+            today=date.today().isoformat(),
             stats=stats,
             recent_acquisitions=recent_acquisitions,
             recent_sales=recent_sales,
@@ -708,8 +751,9 @@ def register_dashboard_routes(app):
         dealer_hub_range_label = dealer_hub_range_labels[dealer_hub_range]
 
         cards = Card.query.all()
-        active_event = get_active_event()
-        active_event_stats = event_stats(active_event, cards) if active_event else None
+        current_event = get_current_event()
+        active_event = get_open_event()
+        active_event_stats = event_stats(current_event, cards) if current_event else None
 
         active_cards = [
             card for card in cards
@@ -845,6 +889,7 @@ def register_dashboard_routes(app):
             "dealer_hub.html",
             today=today,
             active_event=active_event,
+            current_event=current_event,
             active_event_stats=active_event_stats,
             dealer_hub_range=dealer_hub_range,
             dealer_hub_range_label=dealer_hub_range_label,

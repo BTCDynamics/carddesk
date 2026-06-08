@@ -115,7 +115,7 @@ class DealerEvent(db.Model):
     start_date = db.Column(db.String(20))
     end_date = db.Column(db.String(20))
 
-    status = db.Column(db.String(20), default="Open")
+    status = db.Column(db.String(20), default="Planned")
     notes = db.Column(db.Text)
 
     # Event expense tracking. Table fee is prominent because it is the

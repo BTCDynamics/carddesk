@@ -327,9 +327,9 @@
     <div>
         <h1 class="h2 mb-1">Show Prep</h1>
         {% if active_event %}
-            <p class="text-muted mb-0">Preparing for <strong class="text-white">{{ active_event.event_name }}</strong>{% if active_event.location %} · {{ active_event.location }}{% endif %}.</p>
+            <p class="text-muted mb-0">Preparing for <strong class="text-white">{{ active_event.event_name }}</strong> <span class="badge {% if active_event.status == 'Open' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ active_event.status }}</span>{% if active_event.location %} · {{ active_event.location }}{% endif %}.</p>
         {% else %}
-            <p class="text-muted mb-0">Start an event first, then choose the boxes or showcases going to that show.</p>
+            <p class="text-muted mb-0">Create an event first, then choose the boxes or showcases going to that show. Start it when business begins.</p>
         {% endif %}
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -342,7 +342,7 @@
 <div class="show-prep-hero mb-4">
     <div>
         <div class="show-prep-kicker mb-2">Dealer Readiness</div>
-        <div class="show-prep-title mb-2">{% if active_event %}Preparing for {{ active_event.event_name }}{% else %}No active event yet{% endif %}</div>
+        <div class="show-prep-title mb-2">{% if active_event %}Preparing for {{ active_event.event_name }}{% else %}No planned/open event yet{% endif %}</div>
         <p class="show-prep-subtitle mb-0">
             {% if active_event %}
                 Select the storage locations you are taking to this event. CardDesk saves that loadout to the open event so Dealer Hub and Event Detail can report event-specific inventory value.
@@ -361,7 +361,7 @@
 
 {% if not active_event %}
     <div class="alert alert-warning mb-4">
-        <strong>No active event is open.</strong> Start an event/show before saving a show loadout. You can still preview location totals below, but they will not be attached to an event until one is open.
+        <strong>No event is planned or open.</strong> Create an event/show before saving a show loadout. You can still preview location totals below, but they will not be attached to an event until one is created.
         <div class="mt-2">
             <a class="btn btn-sm btn-warning fw-bold" href="{{ url_for('events') }}">Start Event</a>
         </div>

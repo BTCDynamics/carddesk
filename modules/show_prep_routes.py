@@ -20,13 +20,26 @@ SHOW_LOCATION_KEYWORDS = [
 ]
 
 
-def _get_active_event():
+def _get_open_event():
     return (
         DealerEvent.query
         .filter(DealerEvent.status == "Open")
         .order_by(DealerEvent.id.desc())
         .first()
     )
+
+
+def _get_planned_event():
+    return (
+        DealerEvent.query
+        .filter(DealerEvent.status == "Planned")
+        .order_by(DealerEvent.id.desc())
+        .first()
+    )
+
+
+def _get_current_event():
+    return _get_open_event() or _get_planned_event()
 
 
 def _split_show_locations(value):
@@ -143,11 +156,11 @@ def register_show_prep_routes(app):
     def show_prep():
         active_cards = _active_inventory_query().all()
         today = date.today()
-        active_event = _get_active_event()
+        active_event = _get_current_event()
 
         if request.method == "POST":
             if not active_event:
-                flash("Start an event before saving a show prep loadout.")
+                flash("Create an event before saving a show prep loadout.")
                 return redirect(url_for("events"))
 
             selected_locations = request.form.getlist("show_location")

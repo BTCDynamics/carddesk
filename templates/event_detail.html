@@ -6,19 +6,32 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
         <h1 class="h2 mb-1">{{ event.event_name }}</h1>
-        <p class="text-muted mb-0">{{ event.location or 'No location' }} · {{ event.start_date or '—' }}{% if event.end_date %} to {{ event.end_date }}{% endif %}</p>
+        <p class="text-muted mb-0">
+            <span class="badge {% if event.status == 'Open' %}text-bg-success{% elif event.status == 'Planned' %}text-bg-warning{% else %}text-bg-secondary{% endif %}">{{ event.status }}</span>
+            {{ event.location or 'No location' }} · {{ event.start_date or '—' }}{% if event.end_date %} to {{ event.end_date }}{% endif %}
+        </p>
     </div>
     <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-primary" href="{{ url_for('show_prep') }}">Show Prep</a>
         <a class="btn btn-outline-info" href="{{ url_for('events') }}">Event History</a>
         <a class="btn btn-outline-secondary" href="{{ url_for('dealer_hub') }}">Dealer Hub</a>
-        {% if event.status == 'Open' %}
+        {% if event.status == 'Planned' %}
+            <form method="POST" action="{{ url_for('start_existing_event', event_id=event.id) }}" onsubmit="return confirm('Start this event now? Sales from the event start date forward will count toward this event.');">
+                <input type="hidden" name="start_date" value="{{ today or '' }}">
+                <button class="btn btn-success fw-bold" type="submit">Start Event</button>
+            </form>
+        {% elif event.status == 'Open' %}
             <form method="POST" action="{{ url_for('close_event', event_id=event.id) }}" onsubmit="return confirm('Close this event?');">
                 <button class="btn btn-warning fw-bold" type="submit">Close Event</button>
             </form>
         {% endif %}
     </div>
 </div>
+{% if event.status == 'Planned' %}
+<div class="alert alert-info mb-4">
+    <strong>This event is planned.</strong> You can use Show Prep and select boxes/showcases now. Click <strong>Start Event</strong> when you open for business so sales begin counting toward this event.
+</div>
+{% endif %}
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-6 g-3 mb-4">
     <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-success mb-3">Cards Going</span><div class="display-6 fw-bold">{{ stats.show_card_count or 0 }}</div><div class="small text-white-50">Cards in selected locations</div></div></div></div>

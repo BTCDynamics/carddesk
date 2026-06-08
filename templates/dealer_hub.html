@@ -471,24 +471,32 @@
 {% endif %}
 
 
-{% if active_event %}
+{% if current_event %}
 <div class="dealer-event-panel">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
-            <div class="dealer-event-kicker mb-1">Active Event</div>
-            <div class="dealer-event-title">{{ active_event.event_name }}</div>
+            <div class="dealer-event-kicker mb-1">{% if current_event.status == 'Open' %}Active Event{% else %}Upcoming Event{% endif %}</div>
+            <div class="dealer-event-title">{{ current_event.event_name }}</div>
             <div class="dealer-event-meta mt-1">
-                {% if active_event.location %}{{ active_event.location }} · {% endif %}
-                Started {{ active_event.start_date or '—' }}
+                <span class="badge {% if current_event.status == 'Open' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ current_event.status }}</span>
+                {% if current_event.location %}{{ current_event.location }} · {% endif %}
+                {{ 'Started' if current_event.status == 'Open' else 'Planned for' }} {{ current_event.start_date or '—' }}
             </div>
         </div>
         <div class="d-flex flex-wrap gap-2">
             <a class="btn btn-sm btn-primary" href="{{ url_for('show_prep') }}">Show Prep</a>
-            <a class="btn btn-sm btn-outline-info" href="{{ url_for('event_detail', event_id=active_event.id) }}">View Event</a>
-            <form method="POST" action="{{ url_for('close_event', event_id=active_event.id) }}" onsubmit="return confirm('Close this event and save the final summary?');">
-                <input type="hidden" name="end_date" value="{{ today }}">
-                <button type="submit" class="btn btn-sm btn-warning">Close Event</button>
-            </form>
+            <a class="btn btn-sm btn-outline-info" href="{{ url_for('event_detail', event_id=current_event.id) }}">View Event</a>
+            {% if current_event.status == 'Planned' %}
+                <form method="POST" action="{{ url_for('start_existing_event', event_id=current_event.id) }}" onsubmit="return confirm('Start this event now?');">
+                    <input type="hidden" name="start_date" value="{{ today }}">
+                    <button type="submit" class="btn btn-sm btn-success">Start Event</button>
+                </form>
+            {% elif current_event.status == 'Open' %}
+                <form method="POST" action="{{ url_for('close_event', event_id=current_event.id) }}" onsubmit="return confirm('Close this event and save the final summary?');">
+                    <input type="hidden" name="end_date" value="{{ today }}">
+                    <button type="submit" class="btn btn-sm btn-warning">Close Event</button>
+                </form>
+            {% endif %}
         </div>
     </div>
 
@@ -526,13 +534,13 @@
 <div class="dealer-event-panel">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
         <div>
-            <div class="dealer-event-kicker mb-1">No Active Event</div>
-            <div class="dealer-event-title">Start a card show or buying session</div>
-            <div class="dealer-event-meta mt-1">New Add Card and Rapid Entry acquisitions will auto-tag to the active event.</div>
+            <div class="dealer-event-kicker mb-1">No Current Event</div>
+            <div class="dealer-event-title">Create a card show or buying session</div>
+            <div class="dealer-event-meta mt-1">Create the event now, prep locations, then start it when business begins.</div>
         </div>
         <a class="btn btn-sm btn-outline-info" href="{{ url_for('events') }}">Event History</a>
     </div>
-    <form method="POST" action="{{ url_for('start_event') }}">
+    <form method="POST" action="{{ url_for('create_event') }}">
         <div class="dealer-event-form-grid">
             <div>
                 <label class="form-label small fw-bold text-muted">Event Name</label>
@@ -543,11 +551,11 @@
                 <input class="form-control" name="location" placeholder="Dallas, TX">
             </div>
             <div>
-                <label class="form-label small fw-bold text-muted">Start Date</label>
+                <label class="form-label small fw-bold text-muted">Planned Start Date</label>
                 <input class="form-control" type="date" name="start_date" value="{{ today }}">
             </div>
             <div>
-                <button type="submit" class="btn btn-warning fw-bold w-100">Start Event</button>
+                <button type="submit" class="btn btn-warning fw-bold w-100">Create Event</button>
             </div>
         </div>
     </form>
