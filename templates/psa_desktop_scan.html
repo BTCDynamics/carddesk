@@ -118,6 +118,32 @@
     color: #dcfce7;
 }
 
+.psa-auto-submit-panel {
+    border-radius: 1rem;
+    padding: .85rem 1rem;
+    background: rgba(15, 23, 42, .58);
+    border: 1px solid rgba(148, 163, 184, .22);
+}
+
+.psa-auto-submit-panel.auto-on {
+    background: rgba(34, 197, 94, .14);
+    border-color: rgba(74, 222, 128, .34);
+}
+
+.psa-auto-submit-title {
+    color: #f8fafc;
+    font-weight: 900;
+}
+
+.psa-auto-submit-help {
+    color: #94a3b8;
+    font-size: .82rem;
+}
+
+.psa-auto-submit-panel.auto-on .psa-auto-submit-help {
+    color: #bbf7d0;
+}
+
 @media (max-width: 767.98px) {
     .psa-desktop-help-grid {
         grid-template-columns: 1fr;
@@ -163,10 +189,25 @@
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                 <div>
                     <div class="psa-ready-pill">● Ready to Scan</div>
-                    <div class="text-muted small mt-2">Keep this page open. Scan one PSA slab at a time.</div>
+                    <div class="text-muted small mt-2">Manual Submit is the default. Turn Auto Submit on only when you want rapid-fire scanning.</div>
                 </div>
                 <div class="text-muted small">
                     Pending review: <strong>{{ pending_count }}</strong>
+                </div>
+            </div>
+
+            <div class="psa-auto-submit-panel mb-3" id="autoSubmitPanel">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <div class="psa-auto-submit-title">Scanner Submit Mode</div>
+                        <div class="psa-auto-submit-help" id="autoSubmitHelp">
+                            Manual Submit is ON. Scan fills the box, then click Submit Scan.
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mb-0 text-light fw-bold">
+                        <input class="form-check-input" type="checkbox" role="switch" id="autoSubmitToggle">
+                        <label class="form-check-label" for="autoSubmitToggle">Auto Submit Scan</label>
+                    </div>
                 </div>
             </div>
 
@@ -225,7 +266,7 @@
                 </div>
 
                 <div class="d-flex flex-wrap gap-2 mt-4">
-                    <button class="btn btn-primary fw-bold" type="submit" {% if not token_configured %}disabled{% endif %}>Submit Scan</button>
+                    <button class="btn btn-primary fw-bold" id="submitScanBtn" type="submit" {% if not token_configured %}disabled{% endif %}>Submit Scan</button>
                     <button class="btn btn-outline-light" type="button" onclick="clearAndFocusScanner()">Clear / Refocus</button>
                     <a class="btn btn-outline-info" href="{{ url_for('ai_import_review') }}">Open AI Review</a>
                 </div>
@@ -240,11 +281,11 @@
         </div>
         <div class="psa-help-card">
             <strong>2. Scan the barcode</strong>
-            <span>Most handheld scanners type the PSA cert and send Enter.</span>
+            <span>Manual mode fills the box without saving. Turn on Auto Submit for rapid-fire scanning.</span>
         </div>
         <div class="psa-help-card">
-            <strong>3. Keep scanning</strong>
-            <span>After a successful lookup, the page returns ready for the next slab.</span>
+            <strong>3. Submit or auto-submit</strong>
+            <span>Click Submit Scan manually, or enable Auto Submit when you trust the scanner flow.</span>
         </div>
     </div>
 </div>
@@ -254,13 +295,51 @@
 <script>
 const scanInput = document.getElementById("cert_number");
 const scanForm = document.getElementById("psaDesktopScanForm");
-const submitButton = scanForm ? scanForm.querySelector('button[type="submit"]') : null;
+const autoSubmitToggle = document.getElementById("autoSubmitToggle");
+const autoSubmitPanel = document.getElementById("autoSubmitPanel");
+const autoSubmitHelp = document.getElementById("autoSubmitHelp");
+const submitScanBtn = document.getElementById("submitScanBtn");
+let scanSubmitInProgress = false;
 
-let scanSubmitLocked = false;
-let scanSubmitTimer = null;
+function isAutoSubmitEnabled() {
+    return !!(autoSubmitToggle && autoSubmitToggle.checked);
+}
+
+function updateAutoSubmitUi() {
+    if (!autoSubmitPanel || !autoSubmitHelp) {
+        return;
+    }
+
+    if (isAutoSubmitEnabled()) {
+        autoSubmitPanel.classList.add("auto-on");
+        autoSubmitHelp.textContent = "Auto Submit is ON. A scan will submit automatically after Enter or a short pause.";
+    } else {
+        autoSubmitPanel.classList.remove("auto-on");
+        autoSubmitHelp.textContent = "Manual Submit is ON. Scan fills the box, then click Submit Scan.";
+    }
+}
+
+function submitScanOnce() {
+    if (!scanInput || !scanForm || scanSubmitInProgress) {
+        return;
+    }
+
+    const value = scanInput.value.trim();
+    if (value.length < 5) {
+        return;
+    }
+
+    scanSubmitInProgress = true;
+    if (submitScanBtn) {
+        submitScanBtn.disabled = true;
+        submitScanBtn.textContent = "Submitting...";
+    }
+
+    scanForm.submit();
+}
 
 function focusScanner() {
-    if (!scanInput || scanInput.disabled || scanSubmitLocked) {
+    if (!scanInput || scanInput.disabled) {
         return;
     }
     scanInput.focus();
@@ -268,44 +347,11 @@ function focusScanner() {
 }
 
 function clearAndFocusScanner() {
-    if (!scanInput || scanSubmitLocked) {
+    if (!scanInput) {
         return;
     }
     scanInput.value = "";
     focusScanner();
-}
-
-function lockScannerSubmit() {
-    scanSubmitLocked = true;
-
-    if (scanSubmitTimer) {
-        window.clearTimeout(scanSubmitTimer);
-        scanSubmitTimer = null;
-    }
-
-    if (scanInput) {
-        scanInput.readOnly = true;
-    }
-
-    if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.textContent = "Submitting...";
-    }
-}
-
-function submitScanOnce() {
-    if (!scanInput || !scanForm || scanSubmitLocked) {
-        return;
-    }
-
-    const value = scanInput.value.trim();
-
-    if (value.length < 5) {
-        return;
-    }
-
-    lockScannerSubmit();
-    scanForm.submit();
 }
 
 window.addEventListener("load", function () {
@@ -317,46 +363,57 @@ document.addEventListener("click", function () {
     setTimeout(focusScanner, 50);
 });
 
-if (scanInput && scanForm) {
+updateAutoSubmitUi();
+
+if (autoSubmitToggle) {
+    autoSubmitToggle.addEventListener("change", updateAutoSubmitUi);
+}
+
+if (scanForm) {
     scanForm.addEventListener("submit", function (event) {
-        if (scanSubmitLocked) {
+        if (scanSubmitInProgress) {
             event.preventDefault();
-            return false;
+            return;
         }
 
-        const value = scanInput.value.trim();
-
+        const value = scanInput ? scanInput.value.trim() : "";
         if (value.length < 5) {
             event.preventDefault();
-            focusScanner();
-            return false;
+            return;
         }
 
-        lockScannerSubmit();
-        return true;
+        scanSubmitInProgress = true;
+        if (submitScanBtn) {
+            submitScanBtn.disabled = true;
+            submitScanBtn.textContent = "Submitting...";
+        }
     });
+}
 
+if (scanInput && scanForm) {
     scanInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
             event.preventDefault();
-            submitScanOnce();
+
+            if (isAutoSubmitEnabled()) {
+                submitScanOnce();
+            }
         }
     });
 
     scanInput.addEventListener("input", function () {
-        if (scanSubmitLocked) {
+        window.clearTimeout(scanInput.dataset.submitTimer);
+
+        if (!isAutoSubmitEnabled()) {
             return;
         }
 
         const value = scanInput.value.trim();
-
         if (value.length >= 7) {
-            if (scanSubmitTimer) {
-                window.clearTimeout(scanSubmitTimer);
-            }
-
-            scanSubmitTimer = window.setTimeout(function () {
-                submitScanOnce();
+            scanInput.dataset.submitTimer = window.setTimeout(function () {
+                if (isAutoSubmitEnabled() && scanInput.value.trim().length >= 7) {
+                    submitScanOnce();
+                }
             }, 350);
         }
     });
