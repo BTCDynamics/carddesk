@@ -55,11 +55,11 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         max_price = request.args.get("max_price", "")
         scope = request.args.get("scope", "inventory")
         page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 50, type=int)
+        per_page = request.args.get("per_page", 25, type=int)
 
         allowed_per_page = [25, 50, 100]
         if per_page not in allowed_per_page:
-            per_page = 50
+            per_page = 25
         if page < 1:
             page = 1
 
