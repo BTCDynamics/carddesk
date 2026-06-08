@@ -518,8 +518,9 @@ function updateAutoSaveUi() {
     }
 }
 
-function showSaveSuccessFeedback(aiStatus) {
+function showSaveSuccessFeedback(aiStatus, options = {}) {
     const statusText = aiStatus || "Pending Review";
+    const refreshAfterSave = options.refreshAfterSave === true;
 
     if (saveSuccessDetail) {
         saveSuccessDetail.textContent = "Added to AI Review Queue: " + statusText;
@@ -536,7 +537,15 @@ function showSaveSuccessFeedback(aiStatus) {
         setTimeout(function () {
             saveSuccessOverlay.classList.remove("active");
             saveSuccessOverlay.setAttribute("aria-hidden", "true");
+
+            if (refreshAfterSave) {
+                window.location.reload();
+            }
         }, 2200);
+    } else if (refreshAfterSave) {
+        setTimeout(function () {
+            window.location.reload();
+        }, 900);
     }
 }
 
@@ -758,7 +767,7 @@ async function saveCapture(options = {}) {
         const savedStatus = result.ai_status || "Pending Review";
 
         setStatus(`✅ Saved to AI Review Queue: ${savedStatus}. Capture another card when ready.`);
-        showSaveSuccessFeedback(savedStatus);
+        showSaveSuccessFeedback(savedStatus, { refreshAfterSave: true });
 
         lastCapturedBlob = null;
         saveBtn.disabled = true;
