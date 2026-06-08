@@ -228,6 +228,42 @@ def ensure_database_columns():
     )
 
     add_column_if_missing(
+        "dealer_event",
+        "selected_show_locations",
+        "ALTER TABLE dealer_event ADD COLUMN selected_show_locations TEXT"
+    )
+    add_column_if_missing(
+        "dealer_event",
+        "table_fee",
+        "ALTER TABLE dealer_event ADD COLUMN table_fee FLOAT DEFAULT 0"
+    )
+    add_column_if_missing(
+        "dealer_event",
+        "travel_expense",
+        "ALTER TABLE dealer_event ADD COLUMN travel_expense FLOAT DEFAULT 0"
+    )
+    add_column_if_missing(
+        "dealer_event",
+        "lodging_expense",
+        "ALTER TABLE dealer_event ADD COLUMN lodging_expense FLOAT DEFAULT 0"
+    )
+    add_column_if_missing(
+        "dealer_event",
+        "food_expense",
+        "ALTER TABLE dealer_event ADD COLUMN food_expense FLOAT DEFAULT 0"
+    )
+    add_column_if_missing(
+        "dealer_event",
+        "other_expense",
+        "ALTER TABLE dealer_event ADD COLUMN other_expense FLOAT DEFAULT 0"
+    )
+    add_column_if_missing(
+        "dealer_event",
+        "expense_notes",
+        "ALTER TABLE dealer_event ADD COLUMN expense_notes TEXT"
+    )
+
+    add_column_if_missing(
         "card_import_staging",
         "image_back_filename",
         "ALTER TABLE card_import_staging ADD COLUMN image_back_filename VARCHAR(200)"

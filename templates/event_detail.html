@@ -9,6 +9,7 @@
         <p class="text-muted mb-0">{{ event.location or 'No location' }} · {{ event.start_date or '—' }}{% if event.end_date %} to {{ event.end_date }}{% endif %}</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="{{ url_for('show_prep') }}">Show Prep</a>
         <a class="btn btn-outline-info" href="{{ url_for('events') }}">Event History</a>
         <a class="btn btn-outline-secondary" href="{{ url_for('dealer_hub') }}">Dealer Hub</a>
         {% if event.status == 'Open' %}
@@ -19,19 +20,68 @@
     </div>
 </div>
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-4">
-    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-success mb-3">Acquired</span><div class="display-6 fw-bold">{{ stats.acquired_count or 0 }}</div><div class="small text-white-50">Cards tied to this event</div></div></div></div>
-    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-warning mb-3">Spent</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.acquisition_cost or 0) }}</div><div class="small text-white-50">Acquisition cost</div></div></div></div>
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-6 g-3 mb-4">
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-success mb-3">Cards Going</span><div class="display-6 fw-bold">{{ stats.show_card_count or 0 }}</div><div class="small text-white-50">Cards in selected locations</div></div></div></div>
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-warning mb-3">Cost Basis</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.show_cost or 0) }}</div><div class="small text-white-50">Money invested in loadout</div></div></div></div>
     <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-info mb-3">Sold</span><div class="display-6 fw-bold">{{ stats.sold_count or 0 }}</div><div class="small text-white-50">Sold during event window</div></div></div></div>
     <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-primary mb-3">Revenue</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.sales_revenue or 0) }}</div><div class="small text-white-50">Event sales revenue</div></div></div></div>
-    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-purple mb-3">Profit</span><div class="display-6 fw-bold {% if stats.sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.sales_profit or 0) }}</div><div class="small text-white-50">Margin {{ "%.1f"|format(stats.sales_margin or 0) }}%</div></div></div></div>
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-secondary mb-3">Expenses</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.event_expenses or 0) }}</div><div class="small text-white-50">Table fee + optional costs</div></div></div></div>
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-purple mb-3">Net Profit</span><div class="display-6 fw-bold {% if stats.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.net_profit or 0) }}</div><div class="small text-white-50">After expenses</div></div></div></div>
+</div>
+
+<div class="card page-card mb-4">
+    <div class="card-header fw-bold">Event Financial Summary</div>
+    <div class="card-body">
+        <div class="row row-cols-1 row-cols-md-4 g-3 mb-3">
+            <div class="col"><div class="small text-muted">Revenue</div><div class="h4 mb-0">${{ "%.0f"|format(stats.sales_revenue or 0) }}</div></div>
+            <div class="col"><div class="small text-muted">Card Profit</div><div class="h4 mb-0 {% if stats.sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.sales_profit or 0) }}</div></div>
+            <div class="col"><div class="small text-muted">Event Expenses</div><div class="h4 mb-0">${{ "%.0f"|format(stats.event_expenses or 0) }}</div></div>
+            <div class="col"><div class="small text-muted">Net Profit</div><div class="h4 mb-0 {% if stats.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.net_profit or 0) }}</div></div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-5 g-3 small text-muted">
+            <div class="col"><strong>Table Fee:</strong> ${{ "%.0f"|format(stats.table_fee or 0) }}</div>
+            <div class="col"><strong>Travel:</strong> ${{ "%.0f"|format(stats.travel_expense or 0) }}</div>
+            <div class="col"><strong>Lodging:</strong> ${{ "%.0f"|format(stats.lodging_expense or 0) }}</div>
+            <div class="col"><strong>Food:</strong> ${{ "%.0f"|format(stats.food_expense or 0) }}</div>
+            <div class="col"><strong>Other:</strong> ${{ "%.0f"|format(stats.other_expense or 0) }}</div>
+        </div>
+
+        {% if event.expense_notes %}
+            <div class="alert alert-secondary small mt-3 mb-0">{{ event.expense_notes }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card page-card mb-4">
+    <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+        <span>Show Inventory Summary</span>
+        <a class="btn btn-sm btn-outline-info" href="{{ url_for('show_prep') }}">Edit Loadout</a>
+    </div>
+    <div class="card-body">
+        {% if stats.show_locations %}
+            <div class="mb-2 text-muted">Selected storage locations:</div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                {% for location in stats.show_locations %}
+                    <a class="badge text-bg-primary text-decoration-none" href="{{ url_for('cards', status='Active', collection_type='Inventory', storage=location) }}">{{ location }}</a>
+                {% endfor %}
+            </div>
+            <div class="row row-cols-1 row-cols-md-3 g-3">
+                <div class="col"><div class="small text-muted">Cost Basis</div><div class="h4 mb-0">${{ "%.0f"|format(stats.show_cost or 0) }}</div></div>
+                <div class="col"><div class="small text-muted">Comp Value</div><div class="h4 mb-0">${{ "%.0f"|format(stats.show_estimated_value or 0) }}</div></div>
+                <div class="col"><div class="small text-muted">Potential Profit</div><div class="h4 mb-0 {% if stats.show_potential_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.show_potential_profit or 0) }}</div></div>
+            </div>
+        {% else %}
+            <div class="text-muted">No show locations have been saved for this event yet.</div>
+        {% endif %}
+    </div>
 </div>
 
 <div class="row g-3">
     <div class="col-lg-6">
         <div class="card page-card h-100">
             <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>Event Acquisitions</span>
+                <span>Purchases During Event</span>
                 <a class="btn btn-sm btn-outline-info" href="{{ url_for('cards', acquisition_event=event.event_name) }}">View Inventory</a>
             </div>
             <div class="card-body">
@@ -49,7 +99,7 @@
                     {% endfor %}
                     </div>
                 {% else %}
-                    <div class="text-center text-muted py-4">No acquisitions are tagged to this event yet.</div>
+                    <div class="text-center text-muted py-4">No purchases are tagged to this event yet.</div>
                 {% endif %}
             </div>
         </div>

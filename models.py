@@ -118,6 +118,19 @@ class DealerEvent(db.Model):
     status = db.Column(db.String(20), default="Open")
     notes = db.Column(db.Text)
 
+    # Event expense tracking. Table fee is prominent because it is the
+    # most common fixed card-show cost; the rest are optional for users
+    # who want more detailed profitability tracking.
+    table_fee = db.Column(db.Float, default=0)
+    travel_expense = db.Column(db.Float, default=0)
+    lodging_expense = db.Column(db.Float, default=0)
+    food_expense = db.Column(db.Float, default=0)
+    other_expense = db.Column(db.Float, default=0)
+    expense_notes = db.Column(db.Text)
+
+    # Storage locations selected for this event/show prep loadout.
+    selected_show_locations = db.Column(db.Text)
+
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     closed_at = db.Column(db.DateTime)
 
@@ -194,6 +207,7 @@ class CompRefreshQueue(db.Model):
     status = db.Column(db.String(20), default="Pending")
 
     notes = db.Column(db.Text)
+
 
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     applied_at = db.Column(db.DateTime)

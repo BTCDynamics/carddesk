@@ -446,6 +446,36 @@ def register_dashboard_routes(app):
         end_date = parse_card_date(event.end_date) if event and event.end_date else date.today()
         return start_date, end_date
 
+    def event_money(value):
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    def event_expense_total(event):
+        if not event:
+            return 0.0
+
+        return sum([
+            event_money(getattr(event, "table_fee", 0)),
+            event_money(getattr(event, "travel_expense", 0)),
+            event_money(getattr(event, "lodging_expense", 0)),
+            event_money(getattr(event, "food_expense", 0)),
+            event_money(getattr(event, "other_expense", 0)),
+        ])
+
+    def split_show_locations(value):
+        if not value:
+            return []
+
+        locations = []
+        for raw_location in str(value).replace("|", "\n").splitlines():
+            location = raw_location.strip()
+            if location and location not in locations:
+                locations.append(location)
+
+        return locations
+
     def cards_for_event(event, cards):
         """Return acquisition and sales cards for an event.
 
@@ -487,11 +517,39 @@ def register_dashboard_routes(app):
         sales_revenue = sum((card.sold_price or 0) * (card.quantity or 1) for card in sales_cards)
         sales_cost = sum((card.purchase_price or 0) * (card.quantity or 1) for card in sales_cards)
         sales_profit = sales_revenue - sales_cost
+        event_expenses = event_expense_total(event)
+        net_profit = sales_profit - event_expenses
         sales_margin = (sales_profit / sales_revenue * 100) if sales_revenue else 0
+        net_margin = (net_profit / sales_revenue * 100) if sales_revenue else 0
+
+        show_locations = split_show_locations(
+            getattr(event, "selected_show_locations", None)
+        )
+        show_location_set = set(show_locations)
+        show_inventory_cards = [
+            card for card in cards
+            if card.status == "Active"
+            and card.collection_type == "Inventory"
+            and (card.storage_location or "").strip() in show_location_set
+        ]
+
+        show_card_count = sum((card.quantity or 1) for card in show_inventory_cards)
+        show_cost = sum((card.purchase_price or 0) * (card.quantity or 1) for card in show_inventory_cards)
+        show_estimated_value = sum((card.estimated_value or 0) * (card.quantity or 1) for card in show_inventory_cards)
+        show_asking_price = sum((card.asking_price or 0) * (card.quantity or 1) for card in show_inventory_cards)
+        show_potential_profit = show_asking_price - show_cost
 
         return {
             "acquisition_cards": acquisition_cards,
             "sales_cards": sales_cards,
+            "show_inventory_cards": show_inventory_cards,
+            "show_locations": show_locations,
+            "show_location_count": len(show_locations),
+            "show_card_count": show_card_count,
+            "show_cost": show_cost,
+            "show_estimated_value": show_estimated_value,
+            "show_asking_price": show_asking_price,
+            "show_potential_profit": show_potential_profit,
             "acquired_count": acquired_count,
             "acquisition_cost": acquisition_cost,
             "acquisition_value": acquisition_value,
@@ -500,7 +558,15 @@ def register_dashboard_routes(app):
             "sales_revenue": sales_revenue,
             "sales_profit": sales_profit,
             "sales_margin": sales_margin,
-            "net_cash": sales_revenue - acquisition_cost,
+            "event_expenses": event_expenses,
+            "net_profit": net_profit,
+            "net_margin": net_margin,
+            "table_fee": event_money(getattr(event, "table_fee", 0)),
+            "travel_expense": event_money(getattr(event, "travel_expense", 0)),
+            "lodging_expense": event_money(getattr(event, "lodging_expense", 0)),
+            "food_expense": event_money(getattr(event, "food_expense", 0)),
+            "other_expense": event_money(getattr(event, "other_expense", 0)),
+            "net_cash": sales_revenue - acquisition_cost - event_expenses,
         }
 
     @app.route("/events", methods=["GET"])
@@ -529,6 +595,12 @@ def register_dashboard_routes(app):
         location = (request.form.get("location") or "").strip() or None
         start_date = request.form.get("start_date") or date.today().isoformat()
         notes = (request.form.get("notes") or "").strip() or None
+        table_fee = event_money(request.form.get("table_fee"))
+        travel_expense = event_money(request.form.get("travel_expense"))
+        lodging_expense = event_money(request.form.get("lodging_expense"))
+        food_expense = event_money(request.form.get("food_expense"))
+        other_expense = event_money(request.form.get("other_expense"))
+        expense_notes = (request.form.get("expense_notes") or "").strip() or None
 
         if not event_name:
             flash("Event name is required.")
@@ -545,6 +617,12 @@ def register_dashboard_routes(app):
             start_date=start_date,
             status="Open",
             notes=notes,
+            table_fee=table_fee,
+            travel_expense=travel_expense,
+            lodging_expense=lodging_expense,
+            food_expense=food_expense,
+            other_expense=other_expense,
+            expense_notes=expense_notes,
         )
 
         db.session.add(new_event)

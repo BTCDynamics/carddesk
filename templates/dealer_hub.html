@@ -483,6 +483,7 @@
             </div>
         </div>
         <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-sm btn-primary" href="{{ url_for('show_prep') }}">Show Prep</a>
             <a class="btn btn-sm btn-outline-info" href="{{ url_for('event_detail', event_id=active_event.id) }}">View Event</a>
             <form method="POST" action="{{ url_for('close_event', event_id=active_event.id) }}" onsubmit="return confirm('Close this event and save the final summary?');">
                 <input type="hidden" name="end_date" value="{{ today }}">
@@ -494,19 +495,19 @@
     {% if active_event_stats %}
     <div class="dealer-hub-stat-grid mt-3">
         <div class="dealer-hub-stat">
-            <div class="dealer-hub-stat-label">Event Acquired</div>
-            <div class="dealer-hub-stat-value">{{ active_event_stats.acquired_count or 0 }}</div>
-            <div class="dealer-hub-stat-note">Cards tied to event</div>
+            <div class="dealer-hub-stat-label">Show Locations</div>
+            <div class="dealer-hub-stat-value">{{ active_event_stats.show_location_count or 0 }}</div>
+            <div class="dealer-hub-stat-note">Boxes/cases selected</div>
         </div>
         <div class="dealer-hub-stat">
-            <div class="dealer-hub-stat-label">Event Cost</div>
-            <div class="dealer-hub-stat-value">${{ "%.0f"|format(active_event_stats.acquisition_cost or 0) }}</div>
-            <div class="dealer-hub-stat-note">Buying spend</div>
+            <div class="dealer-hub-stat-label">Cards Going</div>
+            <div class="dealer-hub-stat-value">{{ active_event_stats.show_card_count or 0 }}</div>
+            <div class="dealer-hub-stat-note">Active cards in loadout</div>
         </div>
         <div class="dealer-hub-stat">
-            <div class="dealer-hub-stat-label">Event Sold</div>
-            <div class="dealer-hub-stat-value">{{ active_event_stats.sold_count or 0 }}</div>
-            <div class="dealer-hub-stat-note">Sales in event window</div>
+            <div class="dealer-hub-stat-label">Cost Basis</div>
+            <div class="dealer-hub-stat-value">${{ "%.0f"|format(active_event_stats.show_cost or 0) }}</div>
+            <div class="dealer-hub-stat-note">Money invested in loadout</div>
         </div>
         <div class="dealer-hub-stat">
             <div class="dealer-hub-stat-label">Event Revenue</div>
@@ -514,9 +515,9 @@
             <div class="dealer-hub-stat-note">Sold during event</div>
         </div>
         <div class="dealer-hub-stat">
-            <div class="dealer-hub-stat-label">Event Profit</div>
-            <div class="dealer-hub-stat-value {% if active_event_stats.sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(active_event_stats.sales_profit or 0) }}</div>
-            <div class="dealer-hub-stat-note">Sales minus cost</div>
+            <div class="dealer-hub-stat-label">Net Profit</div>
+            <div class="dealer-hub-stat-value {% if active_event_stats.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(active_event_stats.net_profit or 0) }}</div>
+            <div class="dealer-hub-stat-note">After expenses</div>
         </div>
     </div>
     {% endif %}
@@ -555,9 +556,12 @@
 
 
 
-<div class="d-flex justify-content-between align-items-end mb-3">
-    <div class="dealer-hub-section-title">
-        Show / Event Metrics
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div>
+        <div class="dealer-hub-section-title mb-1">Business Financials</div>
+        <div class="text-muted small">
+            All inventory • All platforms • All events
+        </div>
     </div>
 
     <div class="text-end">

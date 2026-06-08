@@ -1,9 +1,9 @@
 from datetime import date, datetime
 
-from flask import render_template, request, url_for
+from flask import render_template, request, url_for, redirect, flash
 from sqlalchemy import or_
 
-from models import Card, CardImportStaging
+from models import db, Card, CardImportStaging, DealerEvent
 
 
 STALE_DAYS = 180
@@ -18,6 +18,38 @@ SHOW_LOCATION_KEYWORDS = [
     "dollar",
     "value box",
 ]
+
+
+def _get_active_event():
+    return (
+        DealerEvent.query
+        .filter(DealerEvent.status == "Open")
+        .order_by(DealerEvent.id.desc())
+        .first()
+    )
+
+
+def _split_show_locations(value):
+    if not value:
+        return []
+
+    locations = []
+    for raw_location in str(value).replace("|", "\n").splitlines():
+        location = raw_location.strip()
+        if location and location not in locations:
+            locations.append(location)
+
+    return locations
+
+
+def _join_show_locations(locations):
+    clean_locations = []
+    for location in locations:
+        location = (location or "").strip()
+        if location and location not in clean_locations:
+            clean_locations.append(location)
+
+    return "\n".join(clean_locations)
 
 
 def _is_show_location(location):
@@ -107,10 +139,23 @@ def _total_card_quantity(cards):
 
 
 def register_show_prep_routes(app):
-    @app.route("/show-prep")
+    @app.route("/show-prep", methods=["GET", "POST"])
     def show_prep():
         active_cards = _active_inventory_query().all()
         today = date.today()
+        active_event = _get_active_event()
+
+        if request.method == "POST":
+            if not active_event:
+                flash("Start an event before saving a show prep loadout.")
+                return redirect(url_for("events"))
+
+            selected_locations = request.form.getlist("show_location")
+            active_event.selected_show_locations = _join_show_locations(selected_locations)
+            db.session.commit()
+
+            flash(f"Show loadout saved for {active_event.event_name}.")
+            return redirect(url_for("show_prep"))
 
         active_card_count = _total_card_quantity(active_cards)
         total_cost = sum(_money(card.purchase_price) * (card.quantity or 1) for card in active_cards)
@@ -119,14 +164,12 @@ def register_show_prep_routes(app):
         potential_profit = total_asking_price - total_cost
 
         location_summaries = _location_summary(active_cards)
-        requested_locations = [
-            location.strip()
-            for location in request.args.getlist("show_location")
-            if location and location.strip()
-        ]
+        event_show_locations = _split_show_locations(
+            getattr(active_event, "selected_show_locations", None)
+        )
 
-        if requested_locations:
-            selected_show_locations = requested_locations
+        if event_show_locations:
+            selected_show_locations = event_show_locations
         else:
             selected_show_locations = [
                 item["location"]
@@ -257,6 +300,7 @@ def register_show_prep_routes(app):
         return render_template(
             "show_prep.html",
             stale_days=STALE_DAYS,
+            active_event=active_event,
             active_card_count=active_card_count,
             total_cost=total_cost,
             total_estimated_value=total_estimated_value,
