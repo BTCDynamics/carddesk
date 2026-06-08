@@ -284,10 +284,80 @@
     border-color:#2dd4bf !important;
 }
 
+
+/* Inventory pagination controls */
+.inventory-pagination-card {
+    background: linear-gradient(145deg, #202b3a, #263244);
+    border: 1px solid rgba(148, 163, 184, .22);
+}
+
+.inventory-pagination-card .form-select {
+    min-width: 135px;
+}
+
 </style>
 {% set current_view = request.args.get('view', 'table') %}
 {% set pull_sheet_status_filter = status_filter if status_filter else ('Active' if scope != 'all' else '') %}
 {% set pull_sheet_collection_type_filter = collection_type_filter if collection_type_filter else ('Inventory' if scope != 'all' else '') %}
+
+{% macro inventory_pagination_bar(extra_class='') %}
+    {% if pagination %}
+        <div class="card page-card inventory-pagination-card {{ extra_class }}">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+
+                <div class="small text-muted">
+                    Showing {{ first_item }} - {{ last_item }}
+                    of {{ record_total }} record(s)
+                    {% if filtered_card_count is defined and filtered_card_count != record_total %}
+                        · {{ filtered_card_count or 0 }} total card quantity
+                    {% endif %}
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center gap-2">
+
+                    {% if prev_url %}
+                        <a class="btn btn-sm btn-outline-light" href="{{ prev_url }}">
+                            ← Previous
+                        </a>
+                    {% else %}
+                        <span class="btn btn-sm btn-outline-secondary disabled">← Previous</span>
+                    {% endif %}
+
+                    {% for link in page_links %}
+                        {% if link %}
+                            <a class="btn btn-sm {% if link.page == current_page %}btn-primary{% else %}btn-outline-light{% endif %}"
+                               href="{{ link.url }}">
+                                {{ link.page }}
+                            </a>
+                        {% else %}
+                            <span class="px-2 text-muted">...</span>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if next_url %}
+                        <a class="btn btn-sm btn-outline-light" href="{{ next_url }}">
+                            Next →
+                        </a>
+                    {% else %}
+                        <span class="btn btn-sm btn-outline-secondary disabled">Next →</span>
+                    {% endif %}
+
+                </div>
+
+                <div>
+                    <select class="form-select form-select-sm" onchange="window.location=this.value">
+                        {% for option in per_page_links %}
+                            <option value="{{ option.url }}" {% if option.value == per_page %}selected{% endif %}>
+                                {{ option.value }} per page
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            </div>
+        </div>
+    {% endif %}
+{% endmacro %}
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
@@ -600,6 +670,8 @@
     </div>
 </div>
 
+{{ inventory_pagination_bar('mb-3') }}
+
 {% if current_view == 'gallery' %}
     <div class="row g-4">
         {% for card in cards %}
@@ -853,4 +925,6 @@
         </div>
     </div>
 {% endif %}
+{{ inventory_pagination_bar('mt-3') }}
+
 {% endblock %}

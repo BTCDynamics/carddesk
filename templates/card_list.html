@@ -767,9 +767,11 @@
     </div>
 {% else %}
     <form id="deal-cart-add-form" method="POST" action="{{ url_for('add_to_deal_cart') }}"></form>
+    <form id="label-preview-form" method="POST" action="{{ url_for('label_preview') }}"></form>
+
     <div class="d-flex flex-wrap justify-content-end gap-2 mb-2">
-        <button class="btn btn-warning" type="submit" form="deal-cart-add-form" formaction="{{ url_for('label_preview') }}" formmethod="post">Preview Price Labels</button>
-        <button class="btn btn-dark" type="submit" form="deal-cart-add-form">Add Selected to Deal Cart</button>
+        <button class="btn btn-warning" type="button" onclick="submitSelectedInventoryCards('label-preview-form')">Preview Price Labels</button>
+        <button class="btn btn-dark" type="button" onclick="submitSelectedInventoryCards('deal-cart-add-form')">Add Selected to Deal Cart</button>
         <a class="btn btn-danger" href="{{ url_for('deal_cart') }}">Sell Deal Cart as Lot</a>
     </div>
 
@@ -802,7 +804,7 @@
                         <tr class="inventory-row {% if card.status == 'Sold' %}sold-inventory-row{% endif %}">
                             <td>
                                 {% if card.status == "Active" %}
-                                    <input class="form-check-input" type="checkbox" name="card_ids" value="{{ card.id }}" form="deal-cart-add-form">
+                                    <input class="form-check-input inventory-card-select" type="checkbox" value="{{ card.id }}">
                                 {% else %}
                                     <span class="text-muted">—</span>
                                 {% endif %}
@@ -926,5 +928,35 @@
     </div>
 {% endif %}
 {{ inventory_pagination_bar('mt-3') }}
+
+<script>
+function submitSelectedInventoryCards(formId) {
+    const form = document.getElementById(formId);
+    if (!form) {
+        return;
+    }
+
+    form.querySelectorAll('input[name="card_ids"]').forEach(function(input) {
+        input.remove();
+    });
+
+    const selectedCards = document.querySelectorAll('.inventory-card-select:checked');
+
+    if (!selectedCards.length) {
+        alert('Select at least one card first.');
+        return;
+    }
+
+    selectedCards.forEach(function(checkbox) {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'card_ids';
+        hiddenInput.value = checkbox.value;
+        form.appendChild(hiddenInput);
+    });
+
+    form.submit();
+}
+</script>
 
 {% endblock %}
