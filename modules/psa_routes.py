@@ -114,8 +114,8 @@ def register_psa_routes(app):
                     scanned_cert = clean_value(staged_card.cert_number) or scanned_cert
                     flash(f"PSA cert {scanned_cert} staged for review.")
                 except Exception as error:
-                flash(f"PSA lookup failed: {error}")
-                return redirect(url_for("psa_desktop_scan"))
+                    flash(f"PSA lookup failed: {error}")
+                    return redirect(url_for("psa_desktop_scan"))
 
         pending_count = CardImportStaging.query.filter(
             CardImportStaging.ai_status.in_(["Pending Review", "Needs Manual Review"])
