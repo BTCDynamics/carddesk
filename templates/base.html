@@ -164,11 +164,37 @@
         }
     }
 
-    refreshNavCounts();
-    setInterval(refreshNavCounts, 5000);
+    let navCountTimer = null;
+
+    function startNavPolling() {
+        if (navCountTimer) {
+            return;
+        }
+
+        refreshNavCounts();
+        navCountTimer = setInterval(refreshNavCounts, 5000);
+    }
+
+    function stopNavPolling() {
+        if (!navCountTimer) {
+            return;
+        }
+
+        clearInterval(navCountTimer);
+        navCountTimer = null;
+    }
+
+    if (document.hidden) {
+        stopNavPolling();
+    } else {
+        startNavPolling();
+    }
+
     document.addEventListener("visibilitychange", function () {
-        if (!document.hidden) {
-            refreshNavCounts();
+        if (document.hidden) {
+            stopNavPolling();
+        } else {
+            startNavPolling();
         }
     });
 })();

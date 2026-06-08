@@ -706,6 +706,62 @@ def register_dashboard_routes(app):
             recent_sales=recent_sales,
         )
 
+    @app.route("/events/<int:event_id>/close-report")
+    def event_close_report(event_id):
+        """Printable / reviewable event close report.
+
+        This report uses the same event_stats() data as Event Detail so it does
+        not require a database migration. It is safe for open, planned, or
+        closed events, but it is most useful after closing an event.
+        """
+        event = DealerEvent.query.get_or_404(event_id)
+        all_cards = Card.query.all()
+        stats = event_stats(event, all_cards)
+
+        def payment_key(card):
+            value = (getattr(card, "payment_type", None) or "Unspecified").strip()
+            return value or "Unspecified"
+
+        payment_rows = {}
+        for card in stats["sales_cards"]:
+            quantity = card.quantity or 1
+            payment_type = payment_key(card)
+            sale_total = (card.sold_price or 0) * quantity
+            cost_total = (card.purchase_price or 0) * quantity
+
+            if payment_type not in payment_rows:
+                payment_rows[payment_type] = {
+                    "payment_type": payment_type,
+                    "card_count": 0,
+                    "revenue": 0.0,
+                    "profit": 0.0,
+                }
+
+            payment_rows[payment_type]["card_count"] += quantity
+            payment_rows[payment_type]["revenue"] += sale_total
+            payment_rows[payment_type]["profit"] += sale_total - cost_total
+
+        payment_breakdown = sorted(
+            payment_rows.values(),
+            key=lambda item: item["revenue"],
+            reverse=True,
+        )
+
+        top_sales = sorted(
+            stats["sales_cards"],
+            key=lambda card: ((card.sold_price or 0) * (card.quantity or 1)),
+            reverse=True,
+        )[:10]
+
+        return render_template(
+            "event_close_report.html",
+            event=event,
+            stats=stats,
+            payment_breakdown=payment_breakdown,
+            top_sales=top_sales,
+            generated_on=date.today().isoformat(),
+        )
+
     @app.route("/events/<int:event_id>/close", methods=["POST"])
     def close_event(event_id):
         event = DealerEvent.query.get_or_404(event_id)
@@ -717,7 +773,7 @@ def register_dashboard_routes(app):
         db.session.commit()
 
         flash(f"Closed event: {event.event_name}.")
-        return redirect(url_for("event_detail", event_id=event.id))
+        return redirect(url_for("event_close_report", event_id=event.id))
 
     @app.route("/dealer-hub")
     def dealer_hub():

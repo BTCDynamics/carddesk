@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}Event Close Report | {{ event.event_name }}{% endblock %}
+
+{% block content %}
+<style>
+.close-report-page {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.close-report-hero {
+    border-radius: 1.35rem;
+    padding: 1.35rem;
+    color: #f8fafc;
+    background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, .22), transparent 38%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, .16), transparent 36%),
+        linear-gradient(145deg, #07111f, #172033);
+    border: 1px solid rgba(148, 163, 184, .24);
+    box-shadow: 0 1rem 2.5rem rgba(0,0,0,.30);
+}
+
+.close-report-kicker {
+    color: #fbbf24;
+    font-size: .76rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.close-report-title {
+    color: #ffffff;
+    font-size: clamp(1.75rem, 3vw, 2.8rem);
+    font-weight: 950;
+    letter-spacing: -.045em;
+    line-height: 1.05;
+}
+
+.close-report-subtitle {
+    color: #cbd5e1;
+    font-size: .95rem;
+}
+
+.close-report-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: .85rem;
+}
+
+.close-report-stat {
+    min-height: 126px;
+    padding: 1rem;
+    border-radius: 1.05rem;
+    color: #f8fafc;
+    background: linear-gradient(145deg, #1f2937, #263244);
+    border: 1px solid rgba(148, 163, 184, .22);
+    box-shadow: 0 .75rem 1.6rem rgba(0,0,0,.22);
+}
+
+.close-report-stat-label {
+    color: #cbd5e1;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .055em;
+    text-transform: uppercase;
+}
+
+.close-report-stat-value {
+    margin-top: .45rem;
+    color: #ffffff;
+    font-size: 1.85rem;
+    font-weight: 950;
+    line-height: 1;
+}
+
+.close-report-stat-note {
+    margin-top: .45rem;
+    color: #94a3b8;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.close-report-panel {
+    border-radius: 1.1rem;
+    color: #f8fafc;
+    background: linear-gradient(145deg, #101827, #172033);
+    border: 1px solid rgba(148, 163, 184, .20);
+    box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.24);
+    overflow: hidden;
+}
+
+.close-report-panel-header {
+    padding: .95rem 1rem;
+    background: rgba(15, 23, 42, .45);
+    border-bottom: 1px solid rgba(148, 163, 184, .16);
+}
+
+.close-report-panel-title {
+    color: #ffffff;
+    font-size: .9rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.close-report-panel-body {
+    padding: 1rem;
+}
+
+.close-report-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .85rem;
+}
+
+.close-report-mini {
+    padding: .85rem;
+    border-radius: .9rem;
+    background: rgba(15, 23, 42, .48);
+    border: 1px solid rgba(148, 163, 184, .16);
+}
+
+.close-report-mini-label {
+    color: #94a3b8;
+    font-size: .76rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: .045em;
+}
+
+.close-report-mini-value {
+    margin-top: .25rem;
+    color: #ffffff;
+    font-size: 1.35rem;
+    font-weight: 950;
+}
+
+.close-report-table {
+    color: #e5edf7;
+    margin-bottom: 0;
+}
+
+.close-report-table th {
+    color: #93c5fd;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    border-color: rgba(148, 163, 184, .18);
+}
+
+.close-report-table td {
+    border-color: rgba(148, 163, 184, .12);
+    vertical-align: middle;
+}
+
+.close-report-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+}
+
+@media (max-width: 1199.98px) {
+    .close-report-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767.98px) {
+    .close-report-grid,
+    .close-report-mini-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+    nav,
+    .btn,
+    .alert,
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff !important;
+        color: #111827 !important;
+    }
+
+    .close-report-hero,
+    .close-report-stat,
+    .close-report-panel,
+    .close-report-mini {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+    }
+
+    .close-report-title,
+    .close-report-stat-value,
+    .close-report-mini-value,
+    .close-report-panel-title {
+        color: #111827 !important;
+    }
+
+    .close-report-subtitle,
+    .close-report-stat-note,
+    .close-report-mini-label,
+    .close-report-table,
+    .close-report-table th,
+    .close-report-table td {
+        color: #111827 !important;
+    }
+}
+</style>
+
+<div class="close-report-page">
+    <div class="close-report-hero mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <div class="close-report-kicker mb-2">Event Close Report</div>
+                <h1 class="close-report-title mb-2">{{ event.event_name }}</h1>
+                <div class="close-report-subtitle">
+                    {{ event.location or 'No location' }} · {{ event.start_date or '—' }}{% if event.end_date %} to {{ event.end_date }}{% endif %}
+                    · Status: {{ event.status }} · Generated {{ generated_on }}
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 no-print">
+                <button class="btn btn-warning fw-bold" type="button" onclick="window.print()">Print Report</button>
+                <a class="btn btn-outline-info" href="{{ url_for('event_detail', event_id=event.id) }}">Event Detail</a>
+                <a class="btn btn-outline-light" href="{{ url_for('events') }}">Event History</a>
+                <a class="btn btn-primary" href="{{ url_for('dealer_hub') }}">Dealer Hub</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="close-report-grid mb-4">
+        <div class="close-report-stat">
+            <div class="close-report-stat-label">Cards Sold</div>
+            <div class="close-report-stat-value">{{ stats.sold_count or 0 }}</div>
+            <div class="close-report-stat-note">Sold during event window</div>
+        </div>
+        <div class="close-report-stat">
+            <div class="close-report-stat-label">Revenue</div>
+            <div class="close-report-stat-value">${{ "%.0f"|format(stats.sales_revenue or 0) }}</div>
+            <div class="close-report-stat-note">Total event sales</div>
+        </div>
+        <div class="close-report-stat">
+            <div class="close-report-stat-label">Card Profit</div>
+            <div class="close-report-stat-value {% if stats.sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.sales_profit or 0) }}</div>
+            <div class="close-report-stat-note">Revenue minus card cost</div>
+        </div>
+        <div class="close-report-stat">
+            <div class="close-report-stat-label">Expenses</div>
+            <div class="close-report-stat-value">${{ "%.0f"|format(stats.event_expenses or 0) }}</div>
+            <div class="close-report-stat-note">Table fee + optional costs</div>
+        </div>
+        <div class="close-report-stat">
+            <div class="close-report-stat-label">Net Profit</div>
+            <div class="close-report-stat-value {% if stats.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.net_profit or 0) }}</div>
+            <div class="close-report-stat-note">After event expenses</div>
+        </div>
+        <div class="close-report-stat">
+            <div class="close-report-stat-label">Net Margin</div>
+            <div class="close-report-stat-value">{{ "%.1f"|format(stats.net_margin or 0) }}%</div>
+            <div class="close-report-stat-note">Net profit / revenue</div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="close-report-panel h-100">
+                <div class="close-report-panel-header">
+                    <div class="close-report-panel-title">Expense Breakdown</div>
+                </div>
+                <div class="close-report-panel-body">
+                    <div class="close-report-mini-grid">
+                        <div class="close-report-mini"><div class="close-report-mini-label">Table Fee</div><div class="close-report-mini-value">${{ "%.0f"|format(stats.table_fee or 0) }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Travel</div><div class="close-report-mini-value">${{ "%.0f"|format(stats.travel_expense or 0) }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Lodging</div><div class="close-report-mini-value">${{ "%.0f"|format(stats.lodging_expense or 0) }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Food</div><div class="close-report-mini-value">${{ "%.0f"|format(stats.food_expense or 0) }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Other</div><div class="close-report-mini-value">${{ "%.0f"|format(stats.other_expense or 0) }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Total</div><div class="close-report-mini-value">${{ "%.0f"|format(stats.event_expenses or 0) }}</div></div>
+                    </div>
+                    {% if event.expense_notes %}
+                        <div class="alert alert-secondary small mt-3 mb-0">{{ event.expense_notes }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="close-report-panel h-100">
+                <div class="close-report-panel-header">
+                    <div class="close-report-panel-title">Inventory & Buying</div>
+                </div>
+                <div class="close-report-panel-body">
+                    <div class="close-report-mini-grid">
+                        <div class="close-report-mini"><div class="close-report-mini-label">Cards Going</div><div class="close-report-mini-value">{{ stats.show_card_count or 0 }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Loadout Cost</div><div class="close-report-mini-value">${{ "%.0f"|format(stats.show_cost or 0) }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Comp Value</div><div class="close-report-mini-value">${{ "%.0f"|format(stats.show_estimated_value or 0) }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Bought Cards</div><div class="close-report-mini-value">{{ stats.acquired_count or 0 }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Spent Buying</div><div class="close-report-mini-value">${{ "%.0f"|format(stats.acquisition_cost or 0) }}</div></div>
+                        <div class="close-report-mini"><div class="close-report-mini-label">Net Cash</div><div class="close-report-mini-value {% if stats.net_cash >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.net_cash or 0) }}</div></div>
+                    </div>
+                    {% if stats.show_locations %}
+                        <div class="mt-3 text-muted small">Locations taken:</div>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            {% for location in stats.show_locations %}
+                                <span class="badge text-bg-primary">{{ location }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="close-report-panel h-100">
+                <div class="close-report-panel-header">
+                    <div class="close-report-panel-title">Payment Method Breakdown</div>
+                </div>
+                <div class="close-report-panel-body">
+                    {% if payment_breakdown %}
+                        <div class="table-responsive">
+                            <table class="table close-report-table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Payment</th>
+                                        <th>Cards</th>
+                                        <th>Revenue</th>
+                                        <th>Profit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in payment_breakdown %}
+                                        <tr>
+                                            <td>{{ row.payment_type }}</td>
+                                            <td>{{ row.card_count }}</td>
+                                            <td>${{ "%.0f"|format(row.revenue or 0) }}</td>
+                                            <td class="{% if row.profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(row.profit or 0) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="close-report-empty">No sales were found for this event window.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="close-report-panel h-100">
+                <div class="close-report-panel-header">
+                    <div class="close-report-panel-title">Top Sales</div>
+                </div>
+                <div class="close-report-panel-body">
+                    {% if top_sales %}
+                        <div class="table-responsive">
+                            <table class="table close-report-table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Card</th>
+                                        <th>Sold</th>
+                                        <th>P/L</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for card in top_sales %}
+                                        {% set quantity = card.quantity or 1 %}
+                                        {% set sale_total = (card.sold_price or 0) * quantity %}
+                                        {% set profit_total = sale_total - ((card.purchase_price or 0) * quantity) %}
+                                        <tr>
+                                            <td>
+                                                <a href="{{ url_for('card_detail', card_id=card.id) }}" class="text-decoration-none fw-bold">{{ card.player_name }}</a>
+                                                <div class="text-muted small">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }}</div>
+                                            </td>
+                                            <td>${{ "%.0f"|format(sale_total or 0) }}</td>
+                                            <td class="{% if profit_total >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(profit_total or 0) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="close-report-empty">No top sales yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
