@@ -88,7 +88,14 @@
                 </li>
 
                 <li class="nav-item ms-lg-5 mt-2 mt-lg-0">
-                    <a class="nav-link fw-bold text-info" href="{{ url_for('intake_tools') }}">Card Intake</a>
+                    <a class="nav-link fw-bold text-info position-relative" href="{{ url_for('intake_tools') }}">
+                        Card Intake
+                        {% if ai_import_action_count %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                                {{ ai_import_action_count }}
+                            </span>
+                        {% endif %}
+                    </a>
                 </li>
             </ul>
         </div>
