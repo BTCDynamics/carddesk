@@ -64,6 +64,46 @@
         {% if event.expense_notes %}
             <div class="alert alert-secondary small mt-3 mb-0">{{ event.expense_notes }}</div>
         {% endif %}
+
+        <hr class="my-4">
+
+        <form method="POST" action="{{ url_for('update_event_expenses', event_id=event.id) }}">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <div class="fw-bold">Edit Event Expenses</div>
+                    <div class="small text-muted">Table fee is the main show cost. Additional expenses are optional.</div>
+                </div>
+                <button class="btn btn-sm btn-warning fw-bold" type="submit">Save Expenses</button>
+            </div>
+
+            <div class="row row-cols-1 row-cols-md-5 g-3 mb-3">
+                <div class="col">
+                    <label class="form-label small text-muted">Table Fee</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="table_fee" value="{{ '%.2f'|format(event.table_fee or 0) }}">
+                </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Travel</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="travel_expense" value="{{ '%.2f'|format(event.travel_expense or 0) }}">
+                </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Lodging</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="lodging_expense" value="{{ '%.2f'|format(event.lodging_expense or 0) }}">
+                </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Food</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="food_expense" value="{{ '%.2f'|format(event.food_expense or 0) }}">
+                </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Other</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="other_expense" value="{{ '%.2f'|format(event.other_expense or 0) }}">
+                </div>
+            </div>
+
+            <div>
+                <label class="form-label small text-muted">Expense Notes</label>
+                <textarea class="form-control" name="expense_notes" rows="2" placeholder="Parking, supplies, meals, booth helper...">{{ event.expense_notes or '' }}</textarea>
+            </div>
+        </form>
     </div>
 </div>
 

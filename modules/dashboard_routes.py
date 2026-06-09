@@ -650,6 +650,23 @@ def register_dashboard_routes(app):
         flash(f"Created event: {new_event.event_name}. Use Show Prep now, then start it when business begins.")
         return redirect(url_for("event_detail", event_id=new_event.id))
 
+
+    @app.route("/events/<int:event_id>/expenses", methods=["POST"])
+    def update_event_expenses(event_id):
+        event = DealerEvent.query.get_or_404(event_id)
+
+        event.table_fee = event_money(request.form.get("table_fee"))
+        event.travel_expense = event_money(request.form.get("travel_expense"))
+        event.lodging_expense = event_money(request.form.get("lodging_expense"))
+        event.food_expense = event_money(request.form.get("food_expense"))
+        event.other_expense = event_money(request.form.get("other_expense"))
+        event.expense_notes = (request.form.get("expense_notes") or "").strip() or None
+
+        db.session.commit()
+
+        flash(f"Updated expenses for {event.event_name}.")
+        return redirect(url_for("event_detail", event_id=event.id))
+
     @app.route("/events/<int:event_id>/start", methods=["POST"])
     def start_existing_event(event_id):
         event = DealerEvent.query.get_or_404(event_id)
