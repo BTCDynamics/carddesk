@@ -393,7 +393,7 @@
                         <div>
                             <input type="checkbox" name="show_location" value="{{ location.location }}" {% if location.location in selected_show_locations %}checked{% endif %}>
                             <span class="show-location-name">{{ location.location }}</span>
-                            {% if location.is_show_location %}<span class="show-location-default-badge">show</span>{% endif %}
+                            {% if location.location in selected_show_locations %}<span class="show-location-default-badge">AT SHOW</span>{% endif %}
                         </div>
                         <div class="show-location-meta">
                             {{ location.card_count }} card(s) · Ask ${{ "%.0f"|format(location.asking_price or 0) }}
