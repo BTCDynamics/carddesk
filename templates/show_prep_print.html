@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Show Loadout Sheet{% if active_event %} - {{ active_event.event_name }}{% endif %}</title>
+    <style>
+        :root {
+            --ink: #111827;
+            --muted: #4b5563;
+            --line: #d1d5db;
+            --soft: #f3f4f6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            line-height: 1.35;
+            background: #ffffff;
+        }
+
+        .print-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #9ca3af;
+            color: #111827;
+            text-decoration: none;
+            background: #ffffff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            color: #ffffff;
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+
+        .sheet {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 16px;
+            align-items: start;
+            border-bottom: 3px solid var(--ink);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.05;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .meta-box {
+            min-width: 230px;
+            border: 1px solid var(--line);
+            padding: 10px;
+            border-radius: 8px;
+            background: var(--soft);
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .meta-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .label {
+            color: var(--muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: .04em;
+        }
+
+        .value {
+            font-weight: 800;
+            text-align: right;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .summary-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 10px;
+            background: #ffffff;
+            min-height: 70px;
+        }
+
+        .summary-card .number {
+            margin-top: 4px;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .section {
+            margin-top: 18px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--line);
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            page-break-inside: auto;
+        }
+
+        th,
+        td {
+            padding: 7px 6px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        th {
+            background: var(--soft);
+            color: #111827;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            text-align: left;
+        }
+
+        td.num,
+        th.num {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px 18px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 26px;
+            border-bottom: 1px dotted #cbd5e1;
+        }
+
+        .box {
+            width: 15px;
+            height: 15px;
+            border: 2px solid #111827;
+            display: inline-block;
+            flex: 0 0 auto;
+        }
+
+        .issue-list {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .issue-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 9px;
+        }
+
+        .issue-count {
+            font-size: 19px;
+            font-weight: 900;
+        }
+
+        .small {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .empty-note {
+            padding: 12px;
+            border: 1px dashed var(--line);
+            border-radius: 8px;
+            color: var(--muted);
+            background: #fafafa;
+        }
+
+        .footer-notes {
+            min-height: 86px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        @media print {
+            body {
+                padding: 0.35in;
+            }
+
+            .print-actions {
+                display: none !important;
+            }
+
+            .sheet {
+                max-width: none;
+            }
+
+            a {
+                color: inherit;
+                text-decoration: none;
+            }
+        }
+
+        @page {
+            margin: 0.45in;
+        }
+    </style>
+</head>
+<body>
+<div class="print-actions">
+    <a class="btn" href="{{ url_for('show_prep') }}">Back to Show Prep</a>
+    <button class="btn btn-primary" type="button" onclick="window.print()">Print</button>
+</div>
+
+<div class="sheet">
+    <div class="header">
+        <div>
+            <h1>Show Loadout Sheet</h1>
+            <div class="subtitle">
+                {% if active_event %}
+                    {{ active_event.event_name }}
+                    {% if active_event.location %} · {{ active_event.location }}{% endif %}
+                {% else %}
+                    No active event
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="meta-box">
+            <div class="meta-row">
+                <span class="label">Status</span>
+                <span class="value">{{ active_event.status if active_event else '—' }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="label">Start Date</span>
+                <span class="value">{{ active_event.start_date if active_event and active_event.start_date else '—' }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="label">Print Date</span>
+                <span class="value">{{ print_date }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="label">Locations</span>
+                <span class="value">{{ selected_location_summaries|length }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="label">Cards</div>
+            <div class="number">{{ show_card_count or 0 }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Cost Basis</div>
+            <div class="number">${{ "%.0f"|format(show_total_cost or 0) }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Comp Value</div>
+            <div class="number">${{ "%.0f"|format(show_total_estimated_value or 0) }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Asking Value</div>
+            <div class="number">${{ "%.0f"|format(show_total_asking_price or 0) }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Issues</div>
+            <div class="number">{{ issue_total or 0 }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <span>Locations to Load</span>
+            <span class="small">Check each box/case after it is physically loaded</span>
+        </div>
+
+        {% if selected_location_summaries %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 38px;">Loaded</th>
+                        <th>Location</th>
+                        <th class="num">Cards</th>
+                        <th class="num">Cost</th>
+                        <th class="num">Comp</th>
+                        <th class="num">Ask</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for location in selected_location_summaries %}
+                        <tr>
+                            <td><span class="box"></span></td>
+                            <td><strong>{{ location.location }}</strong></td>
+                            <td class="num">{{ location.card_count }}</td>
+                            <td class="num">${{ "%.0f"|format(location.cost or 0) }}</td>
+                            <td class="num">${{ "%.0f"|format(location.estimated_value or 0) }}</td>
+                            <td class="num">${{ "%.0f"|format(location.asking_price or 0) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-note">No locations are currently saved to this event loadout.</div>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <span>Loadout Issue Check</span>
+            <span class="small">Counts are based only on selected locations</span>
+        </div>
+
+        <div class="issue-list">
+            {% for issue in issue_cards %}
+                <div class="issue-card">
+                    <div class="label">{{ issue.title }}</div>
+                    <div class="issue-count">{{ issue.count }}</div>
+                    <div class="small">{{ issue.detail }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <span>Dealer Supplies Checklist</span>
+            <span class="small">General show-day reminders</span>
+        </div>
+
+        <div class="checklist-grid">
+            {% for item in supplies_checklist %}
+                <div class="check-item"><span class="box"></span><span>{{ item }}</span></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <span>Notes</span>
+        </div>
+        <div class="footer-notes">
+            {% if active_event and active_event.notes %}
+                {{ active_event.notes }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+</body>
+</html>

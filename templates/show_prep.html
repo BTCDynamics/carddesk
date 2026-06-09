@@ -334,6 +334,9 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-primary" href="{{ url_for('dealer_hub') }}">Dealer Hub</a>
+        {% if active_event %}
+            <a class="btn btn-success" href="{{ url_for('show_prep_print') }}" target="_blank">Print Loadout Sheet</a>
+        {% endif %}
         <a class="btn btn-outline-info" href="{{ url_for('comp_refresh') }}">Update Comps</a>
         <a class="btn btn-outline-warning" href="{{ url_for('inventory_health') }}">Inventory Health</a>
     </div>
@@ -388,9 +391,9 @@
                 {% for location in location_summaries %}
                     <label class="show-location-option">
                         <div>
-                            <input type="checkbox" name="show_location" value="{{ location.location }}" {% if location.location in selected_show_locations %}checked{% endif %} {% if not active_event %}disabled{% endif %}>
+                            <input type="checkbox" name="show_location" value="{{ location.location }}" {% if location.location in selected_show_locations %}checked{% endif %}>
                             <span class="show-location-name">{{ location.location }}</span>
-                            {% if location.location in selected_show_locations %}<span class="show-location-default-badge">AT SHOW</span>{% endif %}
+                            {% if location.is_show_location %}<span class="show-location-default-badge">show</span>{% endif %}
                         </div>
                         <div class="show-location-meta">
                             {{ location.card_count }} card(s) · Ask ${{ "%.0f"|format(location.asking_price or 0) }}
@@ -401,6 +404,7 @@
             <div class="d-flex flex-wrap gap-2">
                 <button class="btn btn-primary" type="submit" {% if not active_event %}disabled{% endif %}>Save Loadout to Event</button>
                 {% if active_event %}
+                    <a class="btn btn-success" href="{{ url_for('show_prep_print') }}" target="_blank">Print Loadout Sheet</a>
                     <a class="btn btn-outline-info" href="{{ url_for('event_detail', event_id=active_event.id) }}">View Event</a>
                 {% else %}
                     <a class="btn btn-outline-warning" href="{{ url_for('events') }}">Start Event First</a>

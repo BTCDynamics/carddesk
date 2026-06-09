@@ -243,7 +243,6 @@ def register_show_prep_routes(app):
         open_fulfillment_count = _sold_open_fulfillment_query().count()
 
         comp_refresh_needed_count = len(show_missing_comp_cards)
-        loadout_locations_value = _show_locations_query_value(selected_show_locations)
 
         issue_cards = [
             {
@@ -253,13 +252,7 @@ def register_show_prep_routes(app):
                 "level": "warning",
                 "detail": "Cards in this event loadout without an asking price.",
                 "action_label": "Review Loadout Pricing",
-                "url": url_for(
-                    "cards",
-                    status="Active",
-                    collection_type="Inventory",
-                    issue="missing_asking",
-                    loadout_locations=loadout_locations_value,
-                ),
+                "url": url_for("inventory_health"),
             },
             {
                 "key": "show_missing_comps",
@@ -267,14 +260,8 @@ def register_show_prep_routes(app):
                 "count": len(show_missing_comp_cards),
                 "level": "warning",
                 "detail": "Cards in this event loadout that need estimated value / comp cleanup.",
-                "action_label": "Review Loadout Comps",
-                "url": url_for(
-                    "cards",
-                    status="Active",
-                    collection_type="Inventory",
-                    issue="missing_comp",
-                    loadout_locations=loadout_locations_value,
-                ),
+                "action_label": "Open Comp Refresh",
+                "url": url_for("comp_refresh"),
             },
             {
                 "key": "show_missing_cost",
@@ -283,13 +270,7 @@ def register_show_prep_routes(app):
                 "level": "warning",
                 "detail": "Cards in this event loadout missing purchase cost, which affects profit reporting.",
                 "action_label": "Review Loadout Costs",
-                "url": url_for(
-                    "cards",
-                    status="Active",
-                    collection_type="Inventory",
-                    issue="missing_cost",
-                    loadout_locations=loadout_locations_value,
-                ),
+                "url": url_for("inventory_health"),
             },
             {
                 "key": "show_stale_inventory",
@@ -302,7 +283,7 @@ def register_show_prep_routes(app):
                     "inventory_aging",
                     bucket="stale",
                     scope="event_loadout",
-                    locations=loadout_locations_value,
+                    locations=_show_locations_query_value(selected_show_locations),
                 ),
             },
         ]
@@ -347,3 +328,112 @@ def register_show_prep_routes(app):
             show_missing_cost_count=len(show_missing_cost_cards),
             show_issue_count=show_issue_count,
         )
+
+    @app.route("/show-prep/print")
+    def show_prep_print():
+        """Printable event loadout sheet for the current planned/open event."""
+        active_cards = _active_inventory_query().all()
+        today = date.today()
+        active_event = _get_current_event()
+
+        if not active_event:
+            flash("Create an event before printing a show prep loadout.")
+            return redirect(url_for("events"))
+
+        location_summaries = _location_summary(active_cards)
+        selected_show_locations = _split_show_locations(
+            getattr(active_event, "selected_show_locations", None)
+        )
+        selected_show_location_set = set(selected_show_locations)
+
+        show_cards = [
+            card for card in active_cards
+            if (card.storage_location or "").strip() in selected_show_location_set
+        ]
+
+        selected_location_summaries = [
+            item for item in location_summaries
+            if item["location"] in selected_show_location_set
+        ]
+
+        show_card_count = _total_card_quantity(show_cards)
+        show_total_cost = sum(_money(card.purchase_price) * (card.quantity or 1) for card in show_cards)
+        show_total_estimated_value = sum(_money(card.estimated_value) * (card.quantity or 1) for card in show_cards)
+        show_total_asking_price = sum(_money(card.asking_price) * (card.quantity or 1) for card in show_cards)
+        show_potential_profit = show_total_asking_price - show_total_cost
+
+        show_missing_asking_cards = [
+            card for card in show_cards
+            if not card.asking_price or card.asking_price <= 0
+        ]
+        show_missing_comp_cards = [
+            card for card in show_cards
+            if not card.estimated_value or card.estimated_value <= 0
+        ]
+        show_missing_cost_cards = [
+            card for card in show_cards
+            if not card.purchase_price or card.purchase_price <= 0
+        ]
+
+        show_stale_cards = []
+        for card in show_cards:
+            acquired_date = _parse_date(card.acquisition_date or card.purchase_date)
+            if acquired_date and (today - acquired_date).days >= STALE_DAYS:
+                show_stale_cards.append(card)
+
+        issue_cards = [
+            {
+                "title": "Missing Asking Prices",
+                "count": len(show_missing_asking_cards),
+                "detail": "Cards in this loadout without an asking price.",
+            },
+            {
+                "title": "Missing Comp Values",
+                "count": len(show_missing_comp_cards),
+                "detail": "Cards in this loadout without an estimated value / comp.",
+            },
+            {
+                "title": "Missing Cost Basis",
+                "count": len(show_missing_cost_cards),
+                "detail": "Cards in this loadout missing purchase cost.",
+            },
+            {
+                "title": f"Stale Cards ({STALE_DAYS}+ Days)",
+                "count": len(show_stale_cards),
+                "detail": "Older cards in this loadout to review before the show.",
+            },
+        ]
+
+        issue_total = sum(item["count"] for item in issue_cards)
+
+        supplies_checklist = [
+            "Cash box / change",
+            "Card reader / Square reader",
+            "Phone charger / battery pack",
+            "Pricing labels / marker",
+            "Penny sleeves",
+            "Top loaders",
+            "Team bags",
+            "Table cover",
+            "Banner / signage",
+            "Receipt book / notebook",
+        ]
+
+        return render_template(
+            "show_prep_print.html",
+            print_date=today,
+            stale_days=STALE_DAYS,
+            active_event=active_event,
+            selected_show_locations=selected_show_locations,
+            selected_location_summaries=selected_location_summaries,
+            show_cards=show_cards,
+            show_card_count=show_card_count,
+            show_total_cost=show_total_cost,
+            show_total_estimated_value=show_total_estimated_value,
+            show_total_asking_price=show_total_asking_price,
+            show_potential_profit=show_potential_profit,
+            issue_cards=issue_cards,
+            issue_total=issue_total,
+            supplies_checklist=supplies_checklist,
+        )
+
