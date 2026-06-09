@@ -654,6 +654,9 @@
                         {% if staged.ai_confidence %}
                             <span class="badge text-bg-dark">{{ "%.1f"|format(staged.ai_confidence) }}% confidence</span>
                         {% endif %}
+                        {% if staged.intake_batch_id and batch_lookup is defined and batch_lookup.get(staged.intake_batch_id) %}
+                            <a class="badge text-bg-primary text-decoration-none" href="{{ url_for('intake_batch_detail', batch_id=staged.intake_batch_id) }}">Batch: {{ batch_lookup.get(staged.intake_batch_id).batch_name }}</a>
+                        {% endif %}
                         {% if duplicate %}
                             <span class="badge text-bg-warning">Possible duplicate</span>
                         {% endif %}

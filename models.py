@@ -60,6 +60,8 @@ class Card(db.Model):
 
     acquisition_event = db.Column(db.String(150))
 
+    intake_batch_id = db.Column(db.Integer, db.ForeignKey("intake_batch.id"))
+
     storage_location = db.Column(db.String(200))
 
     image_filename = db.Column(db.String(200))
@@ -102,6 +104,28 @@ class Card(db.Model):
 
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
+
+
+class IntakeBatch(db.Model):
+    """Optional intake batch defaults for repeated card entry/capture workflows."""
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    batch_name = db.Column(db.String(150), nullable=False)
+    status = db.Column(db.String(20), default="Active")
+    notes = db.Column(db.Text)
+
+    default_sport = db.Column(db.String(50), default="Baseball")
+    default_card_type = db.Column(db.String(20), default="Raw")
+    default_collection_type = db.Column(db.String(50), default="Inventory")
+    default_status = db.Column(db.String(50), default="Active")
+    default_storage_location = db.Column(db.String(200))
+    default_acquisition_source = db.Column(db.String(50), default="Existing Inventory")
+    default_acquisition_date = db.Column(db.String(20))
+    default_acquisition_event = db.Column(db.String(150))
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    closed_at = db.Column(db.DateTime)
 
 
 class DealerEvent(db.Model):
@@ -169,6 +193,7 @@ class CardImportStaging(db.Model):
     acquisition_source = db.Column(db.String(50), default="Existing Inventory")
     acquisition_date = db.Column(db.String(20))
     acquisition_event = db.Column(db.String(150))
+    intake_batch_id = db.Column(db.Integer, db.ForeignKey("intake_batch.id"))
     storage_location = db.Column(db.String(200))
     collection_type = db.Column(db.String(50), default="Inventory")
     status = db.Column(db.String(50), default="Active")

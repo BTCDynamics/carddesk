@@ -351,6 +351,13 @@
         </div>
     </div>
 
+    {% if active_intake_batch %}
+    <div class="alert alert-info mb-4">
+        <strong>Active Intake Batch:</strong> {{ active_intake_batch.batch_name }}. Captures saved from this phone will inherit the batch defaults.
+        <a class="alert-link" href="{{ url_for('intake_batch_detail', batch_id=active_intake_batch.id) }}">View batch</a>.
+    </div>
+    {% endif %}
+
     <div class="capture-autosave-top-panel mb-4" id="captureModeCard">
         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div>
@@ -765,8 +772,9 @@ async function saveCapture(options = {}) {
         }
 
         const savedStatus = result.ai_status || "Pending Review";
+        const batchText = result.batch_name ? ` · Batch: ${result.batch_name}` : "";
 
-        setStatus(`✅ Saved to AI Review Queue: ${savedStatus}. Capture another card when ready.`);
+        setStatus(`✅ Saved to AI Review Queue: ${savedStatus}${batchText}. Capture another card when ready.`);
         showSaveSuccessFeedback(savedStatus, { refreshAfterSave: true });
 
         lastCapturedBlob = null;

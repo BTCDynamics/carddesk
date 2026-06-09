@@ -2,7 +2,7 @@ import json
 
 from flask import render_template, request, url_for
 
-from models import db, CardImportStaging
+from models import db, CardImportStaging, IntakeBatch
 from helpers.acquisition_helpers import (
     clean_value,
     acquisition_value,
@@ -11,11 +11,31 @@ from helpers.acquisition_helpers import (
 )
 
 
+def get_active_intake_batch():
+    return (
+        IntakeBatch.query
+        .filter(IntakeBatch.status == "Active")
+        .order_by(IntakeBatch.id.desc())
+        .first()
+    )
+
+
+def batch_default(active_batch, attr_name, fallback=None):
+    if not active_batch:
+        return fallback
+    value = getattr(active_batch, attr_name, None)
+    return value if value not in [None, ""] else fallback
+
+
 def register_capture_routes(app, save_uploaded_image_with_source, recognize_card_image):
     @app.route("/mobile-capture")
     def mobile_capture():
         """Use a phone browser as a CardDesk camera capture station."""
-        return render_template("mobile_capture.html")
+        active_intake_batch = get_active_intake_batch()
+        return render_template(
+            "mobile_capture.html",
+            active_intake_batch=active_intake_batch,
+        )
 
 
     @app.route("/mobile-capture/upload", methods=["POST"])
@@ -31,17 +51,21 @@ def register_capture_routes(app, save_uploaded_image_with_source, recognize_card
         if not image_filename:
             return {"ok": False, "error": "Image could not be saved."}, 400
 
+        active_intake_batch = get_active_intake_batch()
+
         staged_card = CardImportStaging(
             image_filename=image_filename,
             source_filename=source_filename or uploaded_file.filename,
-            sport=request.form.get("default_sport") or "Baseball",
-            collection_type=request.form.get("collection_type") or "Inventory",
-            status=request.form.get("status") or "Active",
-            purchase_date=purchase_date_value(request.form),
-            acquisition_source=acquisition_value(request.form.get("acquisition_source")),
-            acquisition_date=acquisition_date_value(request.form),
-            acquisition_event=clean_value(request.form.get("acquisition_event")),
-            storage_location=clean_value(request.form.get("storage_location")),
+            sport=request.form.get("default_sport") or batch_default(active_intake_batch, "default_sport", "Baseball"),
+            card_type=batch_default(active_intake_batch, "default_card_type", "Raw"),
+            collection_type=request.form.get("collection_type") or batch_default(active_intake_batch, "default_collection_type", "Inventory"),
+            status=request.form.get("status") or batch_default(active_intake_batch, "default_status", "Active"),
+            purchase_date=purchase_date_value(request.form) or batch_default(active_intake_batch, "default_acquisition_date"),
+            acquisition_source=acquisition_value(request.form.get("acquisition_source") or batch_default(active_intake_batch, "default_acquisition_source", "Existing Inventory")),
+            acquisition_date=acquisition_date_value(request.form) or batch_default(active_intake_batch, "default_acquisition_date"),
+            acquisition_event=clean_value(request.form.get("acquisition_event")) or batch_default(active_intake_batch, "default_acquisition_event"),
+            intake_batch_id=active_intake_batch.id if active_intake_batch else None,
+            storage_location=clean_value(request.form.get("storage_location")) or batch_default(active_intake_batch, "default_storage_location"),
             quantity=1,
             ai_status="Pending Review",
             notes="Captured from Mobile Capture.",
@@ -77,5 +101,6 @@ def register_capture_routes(app, save_uploaded_image_with_source, recognize_card
             "staging_id": staged_card.id,
             "ai_status": staged_card.ai_status,
             "review_url": url_for("ai_import_review"),
-            "message": "Image saved and added to the AI review queue."
+            "message": "Image saved and added to the AI review queue.",
+            "batch_name": active_intake_batch.batch_name if active_intake_batch else None
         }

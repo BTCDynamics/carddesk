@@ -4,7 +4,7 @@ from urllib.parse import quote
 from flask import Flask, render_template, url_for, send_from_directory, jsonify
 from sqlalchemy import inspect, text
 
-from models import db, CardImportStaging, CompRefreshQueue
+from models import db, CardImportStaging, CompRefreshQueue, IntakeBatch
 from helpers.card_code_helpers import generate_card_code
 from helpers.image_helpers import (
     save_uploaded_image,
@@ -29,6 +29,7 @@ from modules.capture_routes import register_capture_routes
 from modules.fulfillment_routes import register_fulfillment_routes
 from modules.comp_refresh_routes import register_comp_refresh_routes
 from modules.show_prep_routes import register_show_prep_routes
+from modules.batch_routes import register_batch_routes
 
 
 app = Flask(__name__)
@@ -233,6 +234,18 @@ def ensure_database_columns():
         "ALTER TABLE card_import_staging ADD COLUMN image_back_filename VARCHAR(200)"
     )
 
+    add_column_if_missing(
+        "card",
+        "intake_batch_id",
+        "ALTER TABLE card ADD COLUMN intake_batch_id INTEGER"
+    )
+    add_column_if_missing(
+        "card_import_staging",
+        "intake_batch_id",
+        "ALTER TABLE card_import_staging ADD COLUMN intake_batch_id INTEGER"
+    )
+
+
 
 def add_column_if_missing(table_name, column_name, ddl):
     """Safely add a SQLite column only if it does not already exist."""
@@ -271,11 +284,18 @@ with app.app_context():
 # Route modules
 register_storage_routes(app)
 register_dashboard_routes(app)
+register_batch_routes(app)
 
 
 
 @app.route("/intake-tools")
 def intake_tools():
+    active_intake_batch = (
+        IntakeBatch.query
+        .filter(IntakeBatch.status == "Active")
+        .order_by(IntakeBatch.id.desc())
+        .first()
+    )
     mobile_capture_url = url_for("mobile_capture", _external=True)
     mobile_capture_qr_url = (
         "https://api.qrserver.com/v1/create-qr-code/"
@@ -284,6 +304,7 @@ def intake_tools():
 
     return render_template(
         "intake_tools.html",
+        active_intake_batch=active_intake_batch,
         mobile_capture_url=mobile_capture_url,
         mobile_capture_qr_url=mobile_capture_qr_url,
     )

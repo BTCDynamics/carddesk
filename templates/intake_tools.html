@@ -147,9 +147,30 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
     <div>
         <h1 class="h2 mb-1">Card Intake</h1>
-        <p class="text-muted mb-0">
-Capture, scan, review, and import cards into CardDesk inventory.
-</p>Choose the best way to capture, scan, or stage cards before they become inventory.</p>
+        <p class="text-muted mb-0">Capture, scan, review, and import cards into CardDesk inventory. Choose the best way to capture, scan, or stage cards before they become inventory.</p>
+    </div>
+</div>
+
+<div class="mb-4 intake-section-intro">
+    <div class="card page-card">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="cw-section-label mb-2">Intake Batch</div>
+                {% if active_intake_batch %}
+                    <h3 class="h5 mb-1">{{ active_intake_batch.batch_name }}</h3>
+                    <p class="text-muted small mb-0">Active defaults are applied to Mobile Capture, Upload Images, AI Review imports, and Rapid Entry.</p>
+                {% else %}
+                    <h3 class="h5 mb-1">No active batch</h3>
+                    <p class="text-muted small mb-0">Create a batch when you want shared defaults for a stack of cards.</p>
+                {% endif %}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-warning fw-bold" href="{{ url_for('intake_batches') }}">Manage Batches</a>
+                {% if active_intake_batch %}
+                    <a class="btn btn-outline-info" href="{{ url_for('intake_batch_detail', batch_id=active_intake_batch.id) }}">View Active Batch</a>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 

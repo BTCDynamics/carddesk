@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from flask import render_template, request, redirect, url_for, flash
 
-from models import db, Card, CompRefreshQueue, DealerEvent
+from models import db, Card, CompRefreshQueue, DealerEvent, IntakeBatch
 from helpers.acquisition_helpers import (
     clean_value,
     acquisition_value,
@@ -32,6 +32,26 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         manual_event = clean_value(form_data.get("acquisition_event"))
         return manual_event or get_active_event_name()
 
+    def get_active_intake_batch():
+        return (
+            IntakeBatch.query
+            .filter(IntakeBatch.status == "Active")
+            .order_by(IntakeBatch.id.desc())
+            .first()
+        )
+
+    def batch_default(active_batch, attr_name, fallback=None):
+        if not active_batch:
+            return fallback
+        value = getattr(active_batch, attr_name, None)
+        return value if value not in [None, ""] else fallback
+
+    def batch_value_from_form(form_data, field_name, active_batch, batch_attr, fallback=None):
+        value = clean_value(form_data.get(field_name))
+        if value not in [None, ""]:
+            return value
+        return batch_default(active_batch, batch_attr, fallback)
+
     @app.route("/cards")
     def cards():
         sold_range = request.args.get("sold_range")
@@ -53,8 +73,6 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         acquisition_event_filter = request.args.get("acquisition_event", "")
         min_price = request.args.get("min_price", "")
         max_price = request.args.get("max_price", "")
-        issue_filter = request.args.get("issue", "")
-        loadout_locations_filter = request.args.get("loadout_locations", "")
         scope = request.args.get("scope", "inventory")
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 25, type=int)
@@ -64,21 +82,6 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             per_page = 25
         if page < 1:
             page = 1
-
-        def split_loadout_locations(value):
-            """Split exact event-loadout locations from Show Prep links."""
-            if not value:
-                return []
-
-            locations = []
-            for raw_location in str(value).replace("|", "\n").splitlines():
-                location = raw_location.strip()
-                if location and location not in locations:
-                    locations.append(location)
-
-            return locations
-
-        loadout_locations = split_loadout_locations(loadout_locations_filter)
 
         query = Card.query
 
@@ -94,18 +97,6 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         if scope == "inventory" and not has_manual_scope_filter:
             query = query.filter(Card.status == "Active")
             query = query.filter(Card.collection_type == "Inventory")
-
-        # Event loadout links from Show Prep pass exact storage locations.
-        # This lets checklist rows open only the cards actually loaded for the event.
-        if loadout_locations:
-            query = query.filter(Card.storage_location.in_(loadout_locations))
-
-        if issue_filter == "missing_cost":
-            query = query.filter(db.or_(Card.purchase_price.is_(None), Card.purchase_price <= 0))
-        elif issue_filter == "missing_asking":
-            query = query.filter(db.or_(Card.asking_price.is_(None), Card.asking_price <= 0))
-        elif issue_filter == "missing_comp":
-            query = query.filter(db.or_(Card.estimated_value.is_(None), Card.estimated_value <= 0))
 
         # Do not apply LIMIT until after all filters have been added.
         # SQLAlchemy raises an InvalidRequestError if .filter() is called after .limit().
@@ -252,8 +243,6 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             acquisition_event_filter,
             min_price,
             max_price,
-            issue_filter,
-            loadout_locations_filter,
         ])
 
         # Keep summary totals tied to the full filtered result set, but only
@@ -392,9 +381,6 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             acquisition_event_filter=acquisition_event_filter,
             min_price=min_price,
             max_price=max_price,
-            issue_filter=issue_filter,
-            loadout_locations_filter=loadout_locations_filter,
-            loadout_locations=loadout_locations,
             storage_locations=storage_locations,
             acquisition_sources=acquisition_sources,
             acquisition_events=acquisition_events,
@@ -933,10 +919,12 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
 
     @app.route("/rapid-entry", methods=["GET", "POST"])
     def rapid_entry():
+        active_intake_batch = get_active_intake_batch()
+
         if request.method == "POST":
             quantity_to_add = int(request.form.get("quantity") or 1)
-            card_type = request.form.get("card_type") or "Raw"
-            collection_type = request.form.get("collection_type") or "Inventory"
+            card_type = request.form.get("card_type") or batch_default(active_intake_batch, "default_card_type", "Raw")
+            collection_type = request.form.get("collection_type") or batch_default(active_intake_batch, "default_collection_type", "Inventory")
 
             player_name = clean_value(request.form["player_name"])
             sport = request.form.get("sport")
@@ -977,7 +965,9 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
                 existing_card.collection_type = collection_type
                 existing_card.acquisition_source = existing_card.acquisition_source or acquisition_value(request.form.get("acquisition_source"))
                 existing_card.acquisition_date = existing_card.acquisition_date or acquisition_date_value(request.form)
-                existing_card.acquisition_event = existing_card.acquisition_event or event_value_from_form(request.form)
+                existing_card.acquisition_event = existing_card.acquisition_event or batch_value_from_form(request.form, "acquisition_event", active_intake_batch, "default_acquisition_event", get_active_event_name())
+                if active_intake_batch and not getattr(existing_card, "intake_batch_id", None):
+                    existing_card.intake_batch_id = active_intake_batch.id
                 db.session.commit()
                 flash(f"Duplicate found. Quantity updated from {old_quantity} to {existing_card.quantity}.")
                 saved_card_id = existing_card.id
@@ -1006,13 +996,14 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
                     sold_date=request.form.get("sold_date"),
                     sales_platform=clean_value(request.form.get("sales_platform")),
                     purchase_date=purchase_date_value(request.form),
-                    acquisition_source=acquisition_value(request.form.get("acquisition_source")),
-                    acquisition_date=acquisition_date_value(request.form),
-                    acquisition_event=event_value_from_form(request.form),
-                    storage_location=clean_value(request.form.get("storage_location")),
+                    acquisition_source=acquisition_value(request.form.get("acquisition_source") or batch_default(active_intake_batch, "default_acquisition_source", "Existing Inventory")),
+                    acquisition_date=acquisition_date_value(request.form) or batch_default(active_intake_batch, "default_acquisition_date"),
+                    acquisition_event=batch_value_from_form(request.form, "acquisition_event", active_intake_batch, "default_acquisition_event", get_active_event_name()),
+                    intake_batch_id=active_intake_batch.id if active_intake_batch else None,
+                    storage_location=batch_value_from_form(request.form, "storage_location", active_intake_batch, "default_storage_location"),
                     collection_type=collection_type,
                     notes=request.form.get("notes"),
-                    status=request.form.get("status") or "Active"
+                    status=request.form.get("status") or batch_default(active_intake_batch, "default_status", "Active")
                 )
 
                 db.session.add(new_card)
@@ -1042,17 +1033,22 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
 
             return redirect(url_for("rapid_entry", **keep_values))
 
-        return render_template("rapid_entry.html")
+        return render_template(
+            "rapid_entry.html",
+            active_intake_batch=active_intake_batch,
+        )
 
 
     @app.route("/add-card", methods=["GET", "POST"])
     def add_card():
+        active_intake_batch = get_active_intake_batch()
+
         if request.method == "POST":
             quantity_to_add = int(request.form.get("quantity") or 1)
 
-            card_type = request.form.get("card_type") or "Raw"
-            collection_type = request.form.get("collection_type") or "Inventory"
-            card_status = "Holding" if collection_type == "Personal Collection" else "Active"
+            card_type = request.form.get("card_type") or batch_default(active_intake_batch, "default_card_type", "Raw")
+            collection_type = request.form.get("collection_type") or batch_default(active_intake_batch, "default_collection_type", "Inventory")
+            card_status = request.form.get("status") or batch_default(active_intake_batch, "default_status") or ("Holding" if collection_type == "Personal Collection" else "Active")
 
             player_name = clean_value(request.form["player_name"])
             sport = request.form.get("sport")
@@ -1106,7 +1102,9 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
                 existing_card.status = card_status
                 existing_card.acquisition_source = existing_card.acquisition_source or acquisition_value(request.form.get("acquisition_source"))
                 existing_card.acquisition_date = existing_card.acquisition_date or acquisition_date_value(request.form)
-                existing_card.acquisition_event = existing_card.acquisition_event or event_value_from_form(request.form)
+                existing_card.acquisition_event = existing_card.acquisition_event or batch_value_from_form(request.form, "acquisition_event", active_intake_batch, "default_acquisition_event", get_active_event_name())
+                if active_intake_batch and not getattr(existing_card, "intake_batch_id", None):
+                    existing_card.intake_batch_id = active_intake_batch.id
 
                 if uploaded_image:
                     if existing_card.image_filename:
@@ -1159,11 +1157,12 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
                 sold_date=request.form.get("sold_date"),
                 sales_platform=clean_value(request.form.get("sales_platform")),
                 purchase_date=purchase_date_value(request.form),
-                acquisition_source=acquisition_value(request.form.get("acquisition_source")),
-                acquisition_date=acquisition_date_value(request.form),
-                acquisition_event=event_value_from_form(request.form),
-                storage_location=clean_value(
-                    request.form.get("storage_location")
+                acquisition_source=acquisition_value(request.form.get("acquisition_source") or batch_default(active_intake_batch, "default_acquisition_source", "Existing Inventory")),
+                acquisition_date=acquisition_date_value(request.form) or batch_default(active_intake_batch, "default_acquisition_date"),
+                acquisition_event=batch_value_from_form(request.form, "acquisition_event", active_intake_batch, "default_acquisition_event", get_active_event_name()),
+                intake_batch_id=active_intake_batch.id if active_intake_batch else None,
+                storage_location=batch_value_from_form(
+                    request.form, "storage_location", active_intake_batch, "default_storage_location"
                 ),
                 collection_type=collection_type,
                 image_filename=uploaded_image,
