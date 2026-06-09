@@ -388,9 +388,9 @@
                 {% for location in location_summaries %}
                     <label class="show-location-option">
                         <div>
-                            <input type="checkbox" name="show_location" value="{{ location.location }}" {% if location.location in selected_show_locations %}checked{% endif %}>
+                            <input type="checkbox" name="show_location" value="{{ location.location }}" {% if location.location in selected_show_locations %}checked{% endif %} {% if not active_event %}disabled{% endif %}>
                             <span class="show-location-name">{{ location.location }}</span>
-                            {% if location.is_show_location %}<span class="show-location-default-badge">show</span>{% endif %}
+                            {% if location.location in selected_show_locations %}<span class="show-location-default-badge">AT SHOW</span>{% endif %}
                         </div>
                         <div class="show-location-meta">
                             {{ location.card_count }} card(s) · Ask ${{ "%.0f"|format(location.asking_price or 0) }}
@@ -442,7 +442,7 @@
     <div class="show-prep-stat {% if show_issue_count %}show-prep-stat-warning{% else %}show-prep-stat-health{% endif %}">
         <div class="show-prep-stat-label">Show Issues</div>
         <div class="show-prep-stat-value">{{ show_issue_count or 0 }}</div>
-        <div class="show-prep-stat-note">Missing ask, comp, or cost inside show loadout</div>
+        <div class="show-prep-stat-note">Missing ask, comp, cost, or stale cards inside show loadout</div>
     </div>
 </div>
 
@@ -510,14 +510,17 @@
     </div>
 
     <div class="show-prep-stat {% if issue_total %}show-prep-stat-warning{% else %}show-prep-stat-health{% endif %}">
-        <div class="show-prep-stat-label">Prep Issues</div>
+        <div class="show-prep-stat-label">Loadout Issues</div>
         <div class="show-prep-stat-value">{{ issue_total or 0 }}</div>
-        <div class="show-prep-stat-note">Items to review before showtime</div>
+        <div class="show-prep-stat-note">Only checks cards selected for this event</div>
     </div>
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="show-prep-section-title">Pre-Show Checklist</div>
+    <div>
+        <div class="show-prep-section-title">Event Loadout Checklist</div>
+        <div class="text-muted small">Only checks cards in the selected boxes/showcases above. Use Inventory Health for full-inventory cleanup.</div>
+    </div>
     <span class="badge {% if issue_total %}text-bg-warning{% else %}text-bg-success{% endif %}">
         {% if issue_total %}{{ issue_total }} issue(s){% else %}Ready{% endif %}
     </span>
@@ -546,7 +549,7 @@
     <div class="card-header fw-bold">Show Prep Notes</div>
     <div class="card-body">
         <p class="text-muted mb-0">
-            Show Prep now uses existing Storage Location values as a practical show loadout builder. Create locations like SHOWCASE-1, SHOWBOX-A, or DOLLARBOX, assign cards to those locations during add/edit, then use this page to see what is physically going to the show.
+            Show Prep focuses on the event loadout only. Select the boxes/showcases going to the event above, then use the checklist to clean up only those cards. Full inventory cleanup remains on Inventory Health and Inventory Aging.
         </p>
     </div>
 </div>

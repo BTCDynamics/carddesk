@@ -53,6 +53,8 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         acquisition_event_filter = request.args.get("acquisition_event", "")
         min_price = request.args.get("min_price", "")
         max_price = request.args.get("max_price", "")
+        issue_filter = request.args.get("issue", "")
+        loadout_locations_filter = request.args.get("loadout_locations", "")
         scope = request.args.get("scope", "inventory")
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 25, type=int)
@@ -62,6 +64,21 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             per_page = 25
         if page < 1:
             page = 1
+
+        def split_loadout_locations(value):
+            """Split exact event-loadout locations from Show Prep links."""
+            if not value:
+                return []
+
+            locations = []
+            for raw_location in str(value).replace("|", "\n").splitlines():
+                location = raw_location.strip()
+                if location and location not in locations:
+                    locations.append(location)
+
+            return locations
+
+        loadout_locations = split_loadout_locations(loadout_locations_filter)
 
         query = Card.query
 
@@ -77,6 +94,18 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         if scope == "inventory" and not has_manual_scope_filter:
             query = query.filter(Card.status == "Active")
             query = query.filter(Card.collection_type == "Inventory")
+
+        # Event loadout links from Show Prep pass exact storage locations.
+        # This lets checklist rows open only the cards actually loaded for the event.
+        if loadout_locations:
+            query = query.filter(Card.storage_location.in_(loadout_locations))
+
+        if issue_filter == "missing_cost":
+            query = query.filter(db.or_(Card.purchase_price.is_(None), Card.purchase_price <= 0))
+        elif issue_filter == "missing_asking":
+            query = query.filter(db.or_(Card.asking_price.is_(None), Card.asking_price <= 0))
+        elif issue_filter == "missing_comp":
+            query = query.filter(db.or_(Card.estimated_value.is_(None), Card.estimated_value <= 0))
 
         # Do not apply LIMIT until after all filters have been added.
         # SQLAlchemy raises an InvalidRequestError if .filter() is called after .limit().
@@ -223,6 +252,8 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             acquisition_event_filter,
             min_price,
             max_price,
+            issue_filter,
+            loadout_locations_filter,
         ])
 
         # Keep summary totals tied to the full filtered result set, but only
@@ -361,6 +392,9 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             acquisition_event_filter=acquisition_event_filter,
             min_price=min_price,
             max_price=max_price,
+            issue_filter=issue_filter,
+            loadout_locations_filter=loadout_locations_filter,
+            loadout_locations=loadout_locations,
             storage_locations=storage_locations,
             acquisition_sources=acquisition_sources,
             acquisition_events=acquisition_events,
@@ -433,14 +467,13 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
     def inventory_aging():
         """Dealer view for aging active inventory.
 
-        Date priority:
-        1. acquisition_date
-        2. purchase_date
-        3. created_at fallback
-
-        Cards using created_at fallback are marked as estimated age.
+        Supports normal inventory-wide aging and a strict event-loadout scope
+        used by Show Prep. When scope=event_loadout, only cards in the exact
+        locations saved on the current planned/open event are included.
         """
         bucket_filter = request.args.get("bucket", "all")
+        scope_filter = request.args.get("scope", "all")
+        event_scope = scope_filter == "event_loadout"
 
         aging_buckets = {
             "fresh": {
@@ -496,6 +529,43 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
 
             return None
 
+        def split_locations(value):
+            """Split exact saved loadout-location values.
+
+            Accepts newline, pipe, or comma separated values so older and newer
+            Show Prep links both work. Values are matched exactly after trim.
+            """
+            if not value:
+                return []
+
+            locations = []
+            for separator in ("|", ","):
+                value = str(value).replace(separator, "\n")
+
+            for raw_location in str(value).splitlines():
+                location = raw_location.strip()
+                if location and location not in locations:
+                    locations.append(location)
+
+            return locations
+
+        def get_current_event():
+            open_event = (
+                DealerEvent.query
+                .filter(DealerEvent.status == "Open")
+                .order_by(DealerEvent.id.desc())
+                .first()
+            )
+            if open_event:
+                return open_event
+
+            return (
+                DealerEvent.query
+                .filter(DealerEvent.status == "Planned")
+                .order_by(DealerEvent.id.desc())
+                .first()
+            )
+
         def get_aging_basis(card):
             acquisition_dt = parse_card_date(card.acquisition_date)
             if acquisition_dt:
@@ -521,7 +591,28 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             return "stale"
 
         def money(value):
-            return float(value or 0)
+            try:
+                return float(value or 0)
+            except (TypeError, ValueError):
+                return 0.0
+
+        current_event = get_current_event() if event_scope else None
+
+        explicit_locations = []
+        for location in request.args.getlist("location"):
+            explicit_locations.extend(split_locations(location))
+        explicit_locations.extend(split_locations(request.args.get("locations", "")))
+
+        if event_scope:
+            scoped_locations = explicit_locations
+            if not scoped_locations and current_event:
+                scoped_locations = split_locations(
+                    getattr(current_event, "selected_show_locations", None)
+                )
+        else:
+            scoped_locations = []
+
+        scoped_location_set = set(scoped_locations)
 
         cards_for_aging = (
             Card.query
@@ -530,6 +621,14 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             .order_by(Card.created_at.asc())
             .all()
         )
+
+        if event_scope:
+            # Strict loadout mode: never fall back to all inventory.
+            # If no saved/explicit locations exist, the result should be empty.
+            cards_for_aging = [
+                card for card in cards_for_aging
+                if (card.storage_location or "").strip() in scoped_location_set
+            ] if scoped_location_set else []
 
         bucket_stats = {
             key: {
@@ -621,6 +720,12 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             visible_cards = enriched_cards
             current_label = "All Active Inventory"
 
+        if event_scope:
+            if current_event:
+                current_label = f"{current_label} · {current_event.event_name} Loadout"
+            else:
+                current_label = f"{current_label} · Event Loadout"
+
         visible_cards = sorted(
             visible_cards,
             key=lambda item: item["days_old"],
@@ -660,6 +765,10 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             "inventory_aging.html",
             bucket_stats=bucket_stats,
             bucket_filter=bucket_filter,
+            scope_filter=scope_filter,
+            event_scope=event_scope,
+            current_event=current_event,
+            scoped_locations=scoped_locations,
             visible_cards=visible_cards[:150],
             current_label=current_label,
             summary=summary,

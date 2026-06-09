@@ -65,6 +65,16 @@ def _join_show_locations(locations):
     return "\n".join(clean_locations)
 
 
+def _show_locations_query_value(locations):
+    """Return exact loadout locations as a compact query-string value."""
+    clean_locations = []
+    for location in locations:
+        location = (location or "").strip()
+        if location and location not in clean_locations:
+            clean_locations.append(location)
+    return "|".join(clean_locations)
+
+
 def _is_show_location(location):
     """Return True when a storage location looks like a show-ready box/case."""
     location_text = (location or "").strip().lower()
@@ -181,14 +191,10 @@ def register_show_prep_routes(app):
             getattr(active_event, "selected_show_locations", None)
         )
 
-        if event_show_locations:
-            selected_show_locations = event_show_locations
-        else:
-            selected_show_locations = [
-                item["location"]
-                for item in location_summaries
-                if item["is_show_location"]
-            ]
+        # For real event prep, selected locations must mean only the
+        # locations the dealer explicitly checked and saved for this event.
+        # Do not auto-load "show-like" names such as Showcase, Case, or Vintage Box.
+        selected_show_locations = event_show_locations if active_event else []
 
         selected_show_location_set = set(selected_show_locations)
         show_cards = [
@@ -206,26 +212,29 @@ def register_show_prep_routes(app):
             if item["location"] in selected_show_location_set
         ]
 
+        # Show Prep should only check cards that are actually in the selected
+        # event loadout. Inventory-wide cleanup belongs on Inventory Health/Aging.
         show_missing_asking_cards = [card for card in show_cards if not card.asking_price or card.asking_price <= 0]
         show_missing_comp_cards = [card for card in show_cards if not card.estimated_value or card.estimated_value <= 0]
         show_missing_cost_cards = [card for card in show_cards if not card.purchase_price or card.purchase_price <= 0]
-        show_issue_card_ids = set(
-            card.id
-            for card in show_missing_asking_cards + show_missing_comp_cards + show_missing_cost_cards
-        )
-        show_ready_count = max(0, show_card_count - len(show_issue_card_ids))
 
-        missing_asking_cards = [card for card in active_cards if not card.asking_price or card.asking_price <= 0]
-        missing_comp_cards = [card for card in active_cards if not card.estimated_value or card.estimated_value <= 0]
-        missing_storage_cards = [card for card in active_cards if not (card.storage_location or "").strip()]
-        missing_cost_cards = [card for card in active_cards if not card.purchase_price or card.purchase_price <= 0]
-        missing_acquisition_date_cards = [card for card in active_cards if not (card.acquisition_date or "").strip()]
-
-        stale_cards = []
-        for card in active_cards:
+        show_stale_cards = []
+        for card in show_cards:
             acquired_date = _parse_date(card.acquisition_date or card.purchase_date)
             if acquired_date and (today - acquired_date).days >= STALE_DAYS:
-                stale_cards.append(card)
+                show_stale_cards.append(card)
+
+        show_issue_card_ids = set(
+            card.id
+            for card in (
+                show_missing_asking_cards
+                + show_missing_comp_cards
+                + show_missing_cost_cards
+                + show_stale_cards
+            )
+        )
+        show_issue_count = len(show_issue_card_ids)
+        show_ready_count = max(0, show_card_count - show_issue_count)
 
         ai_review_count = CardImportStaging.query.filter(
             CardImportStaging.ai_status.in_(["Pending Review", "Needs Manual Review"])
@@ -233,82 +242,79 @@ def register_show_prep_routes(app):
 
         open_fulfillment_count = _sold_open_fulfillment_query().count()
 
-        comp_refresh_needed_count = len(missing_comp_cards)
+        comp_refresh_needed_count = len(show_missing_comp_cards)
+        loadout_locations_value = _show_locations_query_value(selected_show_locations)
 
         issue_cards = [
             {
-                "key": "missing_asking",
+                "key": "show_missing_asking",
                 "title": "Missing Asking Prices",
-                "count": len(missing_asking_cards),
+                "count": len(show_missing_asking_cards),
                 "level": "warning",
-                "detail": "Active inventory without an asking price.",
-                "action_label": "Review Inventory Health",
-                "url": url_for("inventory_health"),
+                "detail": "Cards in this event loadout without an asking price.",
+                "action_label": "Review Loadout Pricing",
+                "url": url_for(
+                    "cards",
+                    status="Active",
+                    collection_type="Inventory",
+                    issue="missing_asking",
+                    loadout_locations=loadout_locations_value,
+                ),
             },
             {
-                "key": "missing_comps",
+                "key": "show_missing_comps",
                 "title": "Missing Comp Values",
-                "count": len(missing_comp_cards),
+                "count": len(show_missing_comp_cards),
                 "level": "warning",
-                "detail": "Cards that need estimated value / comp cleanup.",
-                "action_label": "Open Comp Refresh",
-                "url": url_for("comp_refresh"),
+                "detail": "Cards in this event loadout that need estimated value / comp cleanup.",
+                "action_label": "Review Loadout Comps",
+                "url": url_for(
+                    "cards",
+                    status="Active",
+                    collection_type="Inventory",
+                    issue="missing_comp",
+                    loadout_locations=loadout_locations_value,
+                ),
             },
             {
-                "key": "missing_storage",
-                "title": "Missing Storage",
-                "count": len(missing_storage_cards),
-                "level": "warning",
-                "detail": "Active inventory without a box, row, or location.",
-                "action_label": "Fix Storage",
-                "url": url_for("cards", status="Active", collection_type="Inventory", storage="__missing__"),
-            },
-            {
-                "key": "missing_cost",
+                "key": "show_missing_cost",
                 "title": "Missing Cost Basis",
-                "count": len(missing_cost_cards),
+                "count": len(show_missing_cost_cards),
                 "level": "warning",
-                "detail": "Cards missing purchase cost, which affects profit reporting.",
-                "action_label": "Review Inventory Health",
-                "url": url_for("inventory_health"),
+                "detail": "Cards in this event loadout missing purchase cost, which affects profit reporting.",
+                "action_label": "Review Loadout Costs",
+                "url": url_for(
+                    "cards",
+                    status="Active",
+                    collection_type="Inventory",
+                    issue="missing_cost",
+                    loadout_locations=loadout_locations_value,
+                ),
             },
             {
-                "key": "stale_inventory",
-                "title": f"Stale Inventory ({STALE_DAYS}+ Days)",
-                "count": len(stale_cards),
+                "key": "show_stale_inventory",
+                "title": f"Stale Cards in Loadout ({STALE_DAYS}+ Days)",
+                "count": len(show_stale_cards),
                 "level": "warning",
-                "detail": "Older inventory to consider repricing, discounting, or featuring.",
+                "detail": "Older cards in this event loadout to consider repricing, discounting, or featuring.",
                 "action_label": "View Aging",
-                "url": url_for("inventory_aging", bucket="stale"),
-            },
-            {
-                "key": "ai_review",
-                "title": "AI Review Queue",
-                "count": ai_review_count,
-                "level": "danger" if ai_review_count else "clear",
-                "detail": "Captured cards waiting before they become inventory.",
-                "action_label": "Open AI Review",
-                "url": url_for("ai_import_review"),
-            },
-            {
-                "key": "fulfillment",
-                "title": "Open Fulfillment",
-                "count": open_fulfillment_count,
-                "level": "danger" if open_fulfillment_count else "clear",
-                "detail": "Sold cards still needing pull, ship, or delivery completion.",
-                "action_label": "Open Fulfillment",
-                "url": url_for("fulfillment_queue"),
+                "url": url_for(
+                    "inventory_aging",
+                    bucket="stale",
+                    scope="event_loadout",
+                    locations=loadout_locations_value,
+                ),
             },
         ]
 
         issue_total = sum(item["count"] for item in issue_cards)
-        ready_score = max(0, 100 - min(issue_total * 3, 100))
-
-        ready_to_show_count = max(
-            0,
-            active_card_count
-            - len(set(card.id for card in missing_asking_cards + missing_comp_cards + missing_storage_cards))
+        ready_score = (
+            100
+            if show_card_count == 0
+            else max(0, int(((show_card_count - show_issue_count) / show_card_count) * 100))
         )
+
+        ready_to_show_count = show_ready_count
 
         return render_template(
             "show_prep.html",
@@ -339,5 +345,5 @@ def register_show_prep_routes(app):
             show_missing_asking_count=len(show_missing_asking_cards),
             show_missing_comp_count=len(show_missing_comp_cards),
             show_missing_cost_count=len(show_missing_cost_cards),
-            show_issue_count=len(show_issue_card_ids),
+            show_issue_count=show_issue_count,
         )

@@ -242,14 +242,18 @@
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
             <div>
                 <div class="events-kicker mb-2">Dealer Events</div>
-                <h1 class="events-title mb-2">Card Show / Event Tracking</h1>
+                <h1 class="events-title mb-2">Set Up an Event</h1>
                 <p class="events-subtitle mb-0">
-                    Create a show, buying session, or dealer event ahead of time. Prep locations while it is planned, then start it when you open for business.
+                    This is where you create the event. After it is created, CardDesk sends you to the event control center to add expenses, choose the show loadout, and start the event.
                 </p>
             </div>
             <div class="d-flex flex-wrap gap-2">
                 <a class="btn btn-primary" href="{{ url_for('dealer_hub') }}">Dealer Hub</a>
-                <a class="btn btn-outline-info" href="{{ url_for('show_prep') }}">Show Prep</a>
+                {% if current_event %}
+                    <a class="btn btn-outline-info" href="{{ url_for('show_prep') }}">Show Prep</a>
+                {% else %}
+                    <button class="btn btn-outline-secondary" type="button" disabled>Show Prep Locked</button>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -289,8 +293,8 @@
         <div class="col-lg-5">
             <div class="events-panel h-100">
                 <div class="events-panel-header">
-                    <div class="events-panel-title">Create New Event</div>
-                    <div class="events-panel-subtitle">Create one planned/open event at a time.</div>
+                    <div class="events-panel-title">New Event Setup</div>
+                    <div class="events-panel-subtitle">Step 1: enter the basic event details. Step 2 happens on Event Detail.</div>
                 </div>
                 <div class="events-panel-body">
                     {% if current_event %}
@@ -299,7 +303,7 @@
                         </div>
                     {% else %}
                         <div class="events-help-card">
-                            Create the event first, enter the table fee, then use Show Prep to select boxes/showcases. Start the event when you open for business.
+                            Start here. Enter the event details and table fee if you know it. After you click Create Event, the next page will guide you through expenses, loadout, and starting the event.
                         </div>
                     {% endif %}
 
@@ -357,7 +361,7 @@
                             <label class="form-label">Event Notes</label>
                             <textarea class="form-control" name="notes" rows="3" placeholder="Table number, budget, buying notes..." {% if current_event %}disabled{% endif %}></textarea>
                         </div>
-                        <button class="btn btn-warning fw-bold" type="submit" {% if current_event %}disabled{% endif %}>Create Event</button>
+                        <button class="btn btn-warning fw-bold" type="submit" {% if current_event %}disabled{% endif %}>Create Event & Continue Setup</button>
                     </form>
                 </div>
             </div>

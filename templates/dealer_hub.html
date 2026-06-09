@@ -193,6 +193,15 @@
     box-shadow: 0 1rem 2.4rem rgba(0,0,0,.38);
 }
 
+.dealer-action-card.disabled,
+.dealer-action-card.disabled:hover {
+    cursor: not-allowed;
+    opacity: .52;
+    transform: none;
+    box-shadow: none;
+    border-color: rgba(148, 163, 184, .16);
+}
+
 .dealer-action-icon {
     width: 3rem;
     height: 3rem;
@@ -532,33 +541,19 @@
 </div>
 {% else %}
 <div class="dealer-event-panel">
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
             <div class="dealer-event-kicker mb-1">No Current Event</div>
-            <div class="dealer-event-title">Create a card show or buying session</div>
-            <div class="dealer-event-meta mt-1">Create the event now, prep locations, then start it when business begins.</div>
+            <div class="dealer-event-title">Set up your next show or buying session</div>
+            <div class="dealer-event-meta mt-1">
+                Dealer Hub is the command center. Create the event on the Events page first, then choose the boxes/showcases for that event.
+            </div>
         </div>
-        <a class="btn btn-sm btn-outline-info" href="{{ url_for('events') }}">Event History</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-warning fw-bold" href="{{ url_for('events') }}">Create Event</a>
+            <a class="btn btn-sm btn-outline-info" href="{{ url_for('events') }}">Event History</a>
+        </div>
     </div>
-    <form method="POST" action="{{ url_for('create_event') }}">
-        <div class="dealer-event-form-grid">
-            <div>
-                <label class="form-label small fw-bold text-muted">Event Name</label>
-                <input class="form-control" name="event_name" placeholder="Dallas Card Show" required>
-            </div>
-            <div>
-                <label class="form-label small fw-bold text-muted">Location</label>
-                <input class="form-control" name="location" placeholder="Dallas, TX">
-            </div>
-            <div>
-                <label class="form-label small fw-bold text-muted">Planned Start Date</label>
-                <input class="form-control" type="date" name="start_date" value="{{ today }}">
-            </div>
-            <div>
-                <button type="submit" class="btn btn-warning fw-bold w-100">Create Event</button>
-            </div>
-        </div>
-    </form>
 </div>
 {% endif %}
 
@@ -643,16 +638,27 @@
     </a>
 
 
+    {% if current_event %}
     <a class="dealer-action-card" href="{{ url_for('show_prep') }}">
         <div>
             <div class="dealer-action-icon">🎪</div>
             <div class="dealer-action-title">Show / Event Prep</div>
-            <div class="dealer-action-copy">Run a pre-show /event readiness check for pricing, storage, comps, review, and fulfillment.</div>
+            <div class="dealer-action-copy">Choose the boxes/showcases going to {{ current_event.event_name }}.</div>
         </div>
         <span class="badge {% if action_needed_total or health_issue_count %}text-bg-warning{% else %}text-bg-success{% endif %} dealer-action-badge">
             {% if action_needed_total or health_issue_count %}Check{% else %}Ready{% endif %}
         </span>
     </a>
+    {% else %}
+    <div class="dealer-action-card disabled" aria-disabled="true">
+        <div>
+            <div class="dealer-action-icon">🎪</div>
+            <div class="dealer-action-title">Show / Event Prep</div>
+            <div class="dealer-action-copy">Create an event first. Then this will open the show loadout planner.</div>
+        </div>
+        <span class="badge text-bg-secondary dealer-action-badge">Create Event First</span>
+    </div>
+    {% endif %}
 
     
 

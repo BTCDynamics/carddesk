@@ -473,6 +473,14 @@
         </div>
     </div>
 
+    {% if event_scope %}
+        <div class="alert alert-info mb-4">
+            <strong>Event loadout filter is active.</strong> This view only shows cards in the selected locations for
+            {% if current_event %}<strong>{{ current_event.event_name }}</strong>{% else %}the current event{% endif %}.
+            <a class="alert-link" href="{{ url_for('inventory_aging', bucket=bucket_filter) }}">View all inventory aging</a>.
+        </div>
+    {% endif %}
+
     <div class="card page-card aging-hero-card mb-4">
         <div class="card-body p-4">
             <div class="aging-hero-grid">
@@ -552,7 +560,7 @@
     <div class="aging-summary-grid mb-4">
         {% for key, item in bucket_stats.items() %}
             <a class="aging-tile aging-accent-{{ item.accent }} {% if bucket_filter == key %}active{% endif %}"
-               href="{{ url_for('inventory_aging', bucket=key) }}">
+               href="{{ url_for('inventory_aging', bucket=key, scope=scope_filter) if event_scope else url_for('inventory_aging', bucket=key) }}">
                 <div class="aging-count">{{ item.count }}</div>
                 <div class="aging-label">{{ item.label }}</div>
                 <div class="aging-range">{{ item.range }}</div>
@@ -578,12 +586,12 @@
                 <div>
                     <div class="aging-workqueue-title">{{ current_label }}</div>
                     <div class="aging-workqueue-subtitle">
-                        Showing up to 150 active inventory records, oldest first. "Estimated Age" means CardDesk used created date because acquisition/purchase date was missing.
+                        Showing up to 150 {% if event_scope %}event loadout{% else %}active inventory{% endif %} records, oldest first. "Estimated Age" means CardDesk used created date because acquisition/purchase date was missing.
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a class="btn btn-sm btn-outline-info" href="{{ url_for('inventory_aging') }}">All Inventory</a>
-                    <a class="btn btn-sm btn-outline-warning" href="{{ url_for('inventory_aging', bucket='stale') }}">Stale Only</a>
+                    <a class="btn btn-sm btn-outline-info" href="{{ url_for('inventory_aging', scope=scope_filter) if event_scope else url_for('inventory_aging') }}">{% if event_scope %}All Loadout{% else %}All Inventory{% endif %}</a>
+                    <a class="btn btn-sm btn-outline-warning" href="{{ url_for('inventory_aging', bucket='stale', scope=scope_filter) if event_scope else url_for('inventory_aging', bucket='stale') }}">Stale Only</a>
                 </div>
             </div>
 
