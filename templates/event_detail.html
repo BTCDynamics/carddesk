@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Event Detail{% endblock %}
+{% block title %}Show Details{% endblock %}
 
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
@@ -12,88 +12,44 @@
         </p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        {% if event.status != 'Closed' %}
-            <a class="btn btn-primary" href="{{ url_for('show_prep') }}">Choose Show Inventory</a>
-        {% else %}
-            <button class="btn btn-secondary" type="button" disabled>Loadout Locked</button>
-        {% endif %}
-        <a class="btn btn-outline-info" href="{{ url_for('events') }}">Event History</a>
+        <a class="btn btn-primary" href="{{ url_for('show_prep') }}">Show Prep</a>
+        <a class="btn btn-outline-info" href="{{ url_for('events') }}">Show History</a>
         <a class="btn btn-outline-warning" href="{{ url_for('event_close_report', event_id=event.id) }}">Close Report</a>
         <a class="btn btn-outline-secondary" href="{{ url_for('dealer_hub') }}">Dealer Hub</a>
         {% if event.status == 'Planned' %}
-            <form method="POST" action="{{ url_for('start_existing_event', event_id=event.id) }}" onsubmit="return confirm('Start this event now? Sales from the event start date forward will count toward this event.');">
+            <form method="POST" action="{{ url_for('start_existing_event', event_id=event.id) }}" onsubmit="return confirm('Start this show now? Sales from the show start date forward will count toward this show.');">
                 <input type="hidden" name="start_date" value="{{ today or '' }}">
-                <button class="btn btn-success fw-bold" type="submit">Start Event</button>
+                <button class="btn btn-success fw-bold" type="submit">Start Show</button>
             </form>
         {% elif event.status == 'Open' %}
-            <form method="POST" action="{{ url_for('close_event', event_id=event.id) }}" onsubmit="return confirm('Close this event?');">
-                <button class="btn btn-warning fw-bold" type="submit">Close Event</button>
+            <form method="POST" action="{{ url_for('close_event', event_id=event.id) }}" onsubmit="return confirm('Close this show?');">
+                <button class="btn btn-warning fw-bold" type="submit">Close Show</button>
             </form>
         {% endif %}
     </div>
 </div>
 {% if event.status == 'Planned' %}
 <div class="alert alert-info mb-4">
-    <strong>This event is planned.</strong> Finish setup below: update expenses, choose the show inventory, then click <strong>Start Event</strong> when business begins.
-</div>
-{% elif event.status == 'Open' %}
-<div class="alert alert-success mb-4">
-    <strong>This event is open.</strong> Sales dated inside this event window count toward the event. You can still update expenses or adjust the loadout while the event is open.
-</div>
-{% elif event.status == 'Closed' %}
-<div class="alert alert-secondary mb-4">
-    <strong>This event is closed.</strong> Loadout and start/close actions are locked. Use the close report or event history for review.
+    <strong>This show is planned.</strong> You can use Show Prep and select boxes/showcases now. Click <strong>Start Show</strong> when you open for business so sales begin counting toward this show.
 </div>
 {% endif %}
-
-<div class="card page-card mb-4">
-    <div class="card-header fw-bold">Event Setup Checklist</div>
-    <div class="card-body">
-        <div class="row row-cols-1 row-cols-md-4 g-3">
-            <div class="col">
-                <div class="small text-muted">1. Event Info</div>
-                <div class="fw-bold text-success">Complete</div>
-                <div class="small text-muted">Name, location, and planned date are saved.</div>
-            </div>
-            <div class="col">
-                <div class="small text-muted">2. Expenses</div>
-                <div class="fw-bold {% if stats.event_expenses %}text-success{% else %}text-warning{% endif %}">
-                    {% if stats.event_expenses %}Added{% else %}Optional{% endif %}
-                </div>
-                <div class="small text-muted">Table fee plus optional costs.</div>
-            </div>
-            <div class="col">
-                <div class="small text-muted">3. Show Inventory</div>
-                <div class="fw-bold {% if stats.show_location_count %}text-success{% else %}text-warning{% endif %}">
-                    {% if stats.show_location_count %}{{ stats.show_location_count }} location(s){% else %}Not selected{% endif %}
-                </div>
-                <div class="small text-muted">Choose the boxes/showcases going to this event.</div>
-            </div>
-            <div class="col">
-                <div class="small text-muted">4. Event Status</div>
-                <div class="fw-bold {% if event.status == 'Open' %}text-success{% elif event.status == 'Closed' %}text-secondary{% else %}text-warning{% endif %}">{{ event.status }}</div>
-                <div class="small text-muted">Start when business begins; close when finished.</div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-6 g-3 mb-4">
     <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-success mb-3">Cards Going</span><div class="display-6 fw-bold">{{ stats.show_card_count or 0 }}</div><div class="small text-white-50">Cards in selected locations</div></div></div></div>
     <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-warning mb-3">Cost Basis</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.show_cost or 0) }}</div><div class="small text-white-50">Money invested in loadout</div></div></div></div>
-    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-info mb-3">Sold</span><div class="display-6 fw-bold">{{ stats.sold_count or 0 }}</div><div class="small text-white-50">Sold during event window</div></div></div></div>
-    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-primary mb-3">Revenue</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.sales_revenue or 0) }}</div><div class="small text-white-50">Event sales revenue</div></div></div></div>
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-info mb-3">Sold</span><div class="display-6 fw-bold">{{ stats.sold_count or 0 }}</div><div class="small text-white-50">Sold during show window</div></div></div></div>
+    <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-primary mb-3">Revenue</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.sales_revenue or 0) }}</div><div class="small text-white-50">Show sales revenue</div></div></div></div>
     <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-secondary mb-3">Expenses</span><div class="display-6 fw-bold">${{ "%.0f"|format(stats.event_expenses or 0) }}</div><div class="small text-white-50">Table fee + optional costs</div></div></div></div>
     <div class="col"><div class="card page-card dashboard-stat-card h-100"><div class="card-body"><span class="btn btn-sm btn-purple mb-3">Net Profit</span><div class="display-6 fw-bold {% if stats.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.net_profit or 0) }}</div><div class="small text-white-50">After expenses</div></div></div></div>
 </div>
 
 <div class="card page-card mb-4">
-    <div class="card-header fw-bold">Event Financial Summary</div>
+    <div class="card-header fw-bold">Show Financial Summary</div>
     <div class="card-body">
         <div class="row row-cols-1 row-cols-md-4 g-3 mb-3">
             <div class="col"><div class="small text-muted">Revenue</div><div class="h4 mb-0">${{ "%.0f"|format(stats.sales_revenue or 0) }}</div></div>
             <div class="col"><div class="small text-muted">Card Profit</div><div class="h4 mb-0 {% if stats.sales_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.sales_profit or 0) }}</div></div>
-            <div class="col"><div class="small text-muted">Event Expenses</div><div class="h4 mb-0">${{ "%.0f"|format(stats.event_expenses or 0) }}</div></div>
+            <div class="col"><div class="small text-muted">Show Expenses</div><div class="h4 mb-0">${{ "%.0f"|format(stats.event_expenses or 0) }}</div></div>
             <div class="col"><div class="small text-muted">Net Profit</div><div class="h4 mb-0 {% if stats.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.net_profit or 0) }}</div></div>
         </div>
 
@@ -108,17 +64,53 @@
         {% if event.expense_notes %}
             <div class="alert alert-secondary small mt-3 mb-0">{{ event.expense_notes }}</div>
         {% endif %}
+
+        <hr class="my-4">
+
+        <form method="POST" action="{{ url_for('update_event_expenses', event_id=event.id) }}">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <div class="fw-bold">Edit Show Expenses</div>
+                    <div class="small text-muted">Table fee is the main show cost. Additional expenses are optional.</div>
+                </div>
+                <button class="btn btn-sm btn-warning fw-bold" type="submit">Save Expenses</button>
+            </div>
+
+            <div class="row row-cols-1 row-cols-md-5 g-3 mb-3">
+                <div class="col">
+                    <label class="form-label small text-muted">Table Fee</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="table_fee" value="{{ '%.2f'|format(event.table_fee or 0) }}">
+                </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Travel</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="travel_expense" value="{{ '%.2f'|format(event.travel_expense or 0) }}">
+                </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Lodging</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="lodging_expense" value="{{ '%.2f'|format(event.lodging_expense or 0) }}">
+                </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Food</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="food_expense" value="{{ '%.2f'|format(event.food_expense or 0) }}">
+                </div>
+                <div class="col">
+                    <label class="form-label small text-muted">Other</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="other_expense" value="{{ '%.2f'|format(event.other_expense or 0) }}">
+                </div>
+            </div>
+
+            <div>
+                <label class="form-label small text-muted">Expense Notes</label>
+                <textarea class="form-control" name="expense_notes" rows="2" placeholder="Parking, supplies, meals, booth helper...">{{ event.expense_notes or '' }}</textarea>
+            </div>
+        </form>
     </div>
 </div>
 
 <div class="card page-card mb-4">
     <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-        <span>Show Inventory Summary</span>
-        {% if event.status != 'Closed' %}
-            <a class="btn btn-sm btn-outline-info" href="{{ url_for('show_prep') }}">Choose / Edit Loadout</a>
-        {% else %}
-            <button class="btn btn-sm btn-outline-secondary" type="button" disabled>Loadout Locked</button>
-        {% endif %}
+        <span>Show Loadout Summary</span>
+        <a class="btn btn-sm btn-outline-info" href="{{ url_for('show_prep') }}">Edit Loadout</a>
     </div>
     <div class="card-body">
         {% if stats.show_locations %}
@@ -134,10 +126,7 @@
                 <div class="col"><div class="small text-muted">Potential Profit</div><div class="h4 mb-0 {% if stats.show_potential_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(stats.show_potential_profit or 0) }}</div></div>
             </div>
         {% else %}
-            <div class="text-muted mb-3">No show locations have been saved for this event yet.</div>
-            {% if event.status != 'Closed' %}
-                <a class="btn btn-warning fw-bold" href="{{ url_for('show_prep') }}">Choose Show Inventory</a>
-            {% endif %}
+            <div class="text-muted">No show locations have been saved for this show yet.</div>
         {% endif %}
     </div>
 </div>
@@ -146,7 +135,7 @@
     <div class="col-lg-6">
         <div class="card page-card h-100">
             <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                <span>Purchases During Event</span>
+                <span>Purchases During Show</span>
                 <a class="btn btn-sm btn-outline-info" href="{{ url_for('cards', acquisition_event=event.event_name) }}">View Inventory</a>
             </div>
             <div class="card-body">
@@ -164,14 +153,14 @@
                     {% endfor %}
                     </div>
                 {% else %}
-                    <div class="text-center text-muted py-4">No purchases are tagged to this event yet.</div>
+                    <div class="text-center text-muted py-4">No purchases are tagged to this show yet.</div>
                 {% endif %}
             </div>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="card page-card h-100">
-            <div class="card-header fw-bold">Event Sales</div>
+            <div class="card-header fw-bold">Show Sales</div>
             <div class="card-body">
                 {% if recent_sales %}
                     <div class="recent-sales-list">
@@ -189,7 +178,7 @@
                     {% endfor %}
                     </div>
                 {% else %}
-                    <div class="text-center text-muted py-4">No sales fall inside this event window yet.</div>
+                    <div class="text-center text-muted py-4">No sales fall inside this show window yet.</div>
                 {% endif %}
             </div>
         </div>

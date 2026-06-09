@@ -450,8 +450,8 @@ def register_dashboard_routes(app):
         )
 
     def get_current_event():
-        # Open event takes priority. If no event is open, use the most recent
-        # planned event so the dealer can prep locations/expenses before showtime.
+        # Open show takes priority. If no show is open, use the most recent
+        # planned show so the dealer can prep locations/expenses before showtime.
         return get_open_event() or get_planned_event()
 
     def event_date_bounds(event):
@@ -496,7 +496,7 @@ def register_dashboard_routes(app):
         """Return acquisition and sales cards for an event.
 
         Acquisitions use Card.acquisition_event because that field already exists.
-        Sales use sold_date inside the event date window so we avoid a database
+        Sales use sold_date inside the show date window so we avoid a database
         migration for sales-event tagging in this first version.
         """
         if not event:
@@ -622,12 +622,12 @@ def register_dashboard_routes(app):
         expense_notes = (request.form.get("expense_notes") or "").strip() or None
 
         if not event_name:
-            flash("Event name is required.")
+            flash("Show name is required.")
             return redirect(request.referrer or url_for("events"))
 
         current_event = get_current_event()
         if current_event:
-            flash(f"Finish {current_event.event_name} before creating another event.")
+            flash(f"Finish {current_event.event_name} before creating another show.")
             return redirect(request.referrer or url_for("dealer_hub"))
 
         new_event = DealerEvent(
@@ -647,20 +647,37 @@ def register_dashboard_routes(app):
         db.session.add(new_event)
         db.session.commit()
 
-        flash(f"Created event: {new_event.event_name}. Finish setup on this page, choose show inventory, then start it when business begins.")
+        flash(f"Created show: {new_event.event_name}. Use Show Prep now, then start it when business begins.")
         return redirect(url_for("event_detail", event_id=new_event.id))
+
+
+    @app.route("/events/<int:event_id>/expenses", methods=["POST"])
+    def update_event_expenses(event_id):
+        event = DealerEvent.query.get_or_404(event_id)
+
+        event.table_fee = event_money(request.form.get("table_fee"))
+        event.travel_expense = event_money(request.form.get("travel_expense"))
+        event.lodging_expense = event_money(request.form.get("lodging_expense"))
+        event.food_expense = event_money(request.form.get("food_expense"))
+        event.other_expense = event_money(request.form.get("other_expense"))
+        event.expense_notes = (request.form.get("expense_notes") or "").strip() or None
+
+        db.session.commit()
+
+        flash(f"Updated expenses for {event.event_name}.")
+        return redirect(url_for("event_detail", event_id=event.id))
 
     @app.route("/events/<int:event_id>/start", methods=["POST"])
     def start_existing_event(event_id):
         event = DealerEvent.query.get_or_404(event_id)
 
         if event.status == "Closed":
-            flash("Closed events cannot be restarted.")
+            flash("Closed shows cannot be restarted.")
             return redirect(url_for("event_detail", event_id=event.id))
 
         open_event = get_open_event()
         if open_event and open_event.id != event.id:
-            flash(f"Close {open_event.event_name} before starting another event.")
+            flash(f"Close {open_event.event_name} before starting another show.")
             return redirect(url_for("event_detail", event_id=event.id))
 
         event.status = "Open"
@@ -670,7 +687,7 @@ def register_dashboard_routes(app):
 
         db.session.commit()
 
-        flash(f"Started event: {event.event_name}.")
+        flash(f"Started show: {event.event_name}.")
         return redirect(url_for("event_detail", event_id=event.id))
 
     @app.route("/events/<int:event_id>")
@@ -708,9 +725,9 @@ def register_dashboard_routes(app):
 
     @app.route("/events/<int:event_id>/close-report")
     def event_close_report(event_id):
-        """Printable / reviewable event close report.
+        """Printable / reviewable show close report.
 
-        This report uses the same event_stats() data as Event Detail so it does
+        This report uses the same event_stats() data as Show Details so it does
         not require a database migration. It is safe for open, planned, or
         closed events, but it is most useful after closing an event.
         """
@@ -772,7 +789,7 @@ def register_dashboard_routes(app):
 
         db.session.commit()
 
-        flash(f"Closed event: {event.event_name}.")
+        flash(f"Closed show: {event.event_name}.")
         return redirect(url_for("event_close_report", event_id=event.id))
 
     @app.route("/dealer-hub")

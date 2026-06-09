@@ -329,7 +329,7 @@
         {% if active_event %}
             <p class="text-muted mb-0">Preparing for <strong class="text-white">{{ active_event.event_name }}</strong> <span class="badge {% if active_event.status == 'Open' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ active_event.status }}</span>{% if active_event.location %} · {{ active_event.location }}{% endif %}.</p>
         {% else %}
-            <p class="text-muted mb-0">Create an event first, then choose the boxes or showcases going to that show. Start it when business begins.</p>
+            <p class="text-muted mb-0">Create a show first, then choose the boxes or showcases going to that show. Start it when business begins.</p>
         {% endif %}
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -345,12 +345,12 @@
 <div class="show-prep-hero mb-4">
     <div>
         <div class="show-prep-kicker mb-2">Dealer Readiness</div>
-        <div class="show-prep-title mb-2">{% if active_event %}Preparing for {{ active_event.event_name }}{% else %}No planned/open event yet{% endif %}</div>
+        <div class="show-prep-title mb-2">{% if active_event %}Preparing for {{ active_event.event_name }}{% else %}No planned/open show yet{% endif %}</div>
         <p class="show-prep-subtitle mb-0">
             {% if active_event %}
-                Select the storage locations you are taking to this event. CardDesk saves that loadout to the open event so Dealer Hub and Event Detail can report event-specific inventory value.
+                Select the storage locations you are taking to this show. CardDesk saves that loadout to the open show so Dealer Hub and Show Details can report show-specific inventory value.
             {% else %}
-                Create or open a dealer event first. Then Show Prep can save selected showcases and boxes directly to that event.
+                Create or open a show first. Then Show Prep can save selected showcases and boxes directly to that show.
             {% endif %}
         </p>
     </div>
@@ -364,9 +364,9 @@
 
 {% if not active_event %}
     <div class="alert alert-warning mb-4">
-        <strong>No event is planned or open.</strong> Create an event/show before saving a show loadout. You can still preview location totals below, but they will not be attached to an event until one is created.
+        <strong>No show is planned or open.</strong> Create a show before saving a show loadout. You can still preview location totals below, but they will not be attached to a show until one is created.
         <div class="mt-2">
-            <a class="btn btn-sm btn-warning fw-bold" href="{{ url_for('events') }}">Start Event</a>
+            <a class="btn btn-sm btn-warning fw-bold" href="{{ url_for('events') }}">Start Show</a>
         </div>
     </div>
 {% endif %}
@@ -376,7 +376,7 @@
         <div>
             <div class="show-prep-section-title">{% if active_event %}Locations for {{ active_event.event_name }}{% else %}Show Locations Preview{% endif %}</div>
             <p class="text-muted mb-0">
-                Choose the physical boxes, cases, or showcases going to the event. CardDesk uses existing Storage Location values, so no separate card-by-card show list is required.
+                Choose the physical boxes, cases, or showcases going to the show. CardDesk uses existing Storage Location values, so no separate card-by-card show list is required.
             </p>
         </div>
         <div class="d-flex flex-wrap gap-2">
@@ -393,7 +393,7 @@
                         <div>
                             <input type="checkbox" name="show_location" value="{{ location.location }}" {% if location.location in selected_show_locations %}checked{% endif %}>
                             <span class="show-location-name">{{ location.location }}</span>
-                            {% if location.location in selected_show_locations %}<span class="show-location-default-badge">AT SHOW</span>{% endif %}
+                            {% if location.is_show_location %}<span class="show-location-default-badge">show</span>{% endif %}
                         </div>
                         <div class="show-location-meta">
                             {{ location.card_count }} card(s) · Ask ${{ "%.0f"|format(location.asking_price or 0) }}
@@ -402,12 +402,12 @@
                 {% endfor %}
             </div>
             <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-primary" type="submit" {% if not active_event %}disabled{% endif %}>Save Loadout to Event</button>
+                <button class="btn btn-primary" type="submit" {% if not active_event %}disabled{% endif %}>Save Loadout to Show</button>
                 {% if active_event %}
                     <a class="btn btn-success" href="{{ url_for('show_prep_print') }}" target="_blank">Print Loadout Sheet</a>
-                    <a class="btn btn-outline-info" href="{{ url_for('event_detail', event_id=active_event.id) }}">View Event</a>
+                    <a class="btn btn-outline-info" href="{{ url_for('event_detail', event_id=active_event.id) }}">Show Details</a>
                 {% else %}
-                    <a class="btn btn-outline-warning" href="{{ url_for('events') }}">Start Event First</a>
+                    <a class="btn btn-outline-warning" href="{{ url_for('events') }}">Start Show First</a>
                 {% endif %}
             </div>
         </form>
@@ -516,13 +516,13 @@
     <div class="show-prep-stat {% if issue_total %}show-prep-stat-warning{% else %}show-prep-stat-health{% endif %}">
         <div class="show-prep-stat-label">Loadout Issues</div>
         <div class="show-prep-stat-value">{{ issue_total or 0 }}</div>
-        <div class="show-prep-stat-note">Only checks cards selected for this event</div>
+        <div class="show-prep-stat-note">Only checks cards selected for this show</div>
     </div>
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <div class="show-prep-section-title">Event Loadout Checklist</div>
+        <div class="show-prep-section-title">Show Loadout Checklist</div>
         <div class="text-muted small">Only checks cards in the selected boxes/showcases above. Use Inventory Health for full-inventory cleanup.</div>
     </div>
     <span class="badge {% if issue_total %}text-bg-warning{% else %}text-bg-success{% endif %}">
@@ -553,7 +553,7 @@
     <div class="card-header fw-bold">Show Prep Notes</div>
     <div class="card-body">
         <p class="text-muted mb-0">
-            Show Prep focuses on the event loadout only. Select the boxes/showcases going to the event above, then use the checklist to clean up only those cards. Full inventory cleanup remains on Inventory Health and Inventory Aging.
+            Show Prep focuses on the show loadout only. Select the boxes/showcases going to the show above, then use the checklist to clean up only those cards. Full inventory cleanup remains on Inventory Health and Inventory Aging.
         </p>
     </div>
 </div>
