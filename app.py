@@ -1,7 +1,7 @@
 import os
 from urllib.parse import quote
 
-from flask import Flask, render_template, url_for, send_from_directory, jsonify
+from flask import Flask, render_template, url_for, send_from_directory, jsonify, Response
 from sqlalchemy import inspect, text
 
 from models import db, CardImportStaging, CompRefreshQueue, IntakeBatch
@@ -273,6 +273,68 @@ def uploaded_file(filename):
 def uploaded_static_file(filename):
     """Keep existing template image URLs working without a symlink."""
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
+
+@app.route("/manifest/mobile-capture.webmanifest")
+def mobile_capture_manifest():
+    """Phone home-screen metadata for CardDesk Mobile Capture."""
+    manifest = {
+        "name": "CardDesk Capture",
+        "short_name": "Capture",
+        "description": "Capture raw card images into CardDesk AI Review.",
+        "start_url": url_for("mobile_capture"),
+        "scope": "/",
+        "display": "standalone",
+        "background_color": "#020617",
+        "theme_color": "#16a34a",
+        "orientation": "portrait",
+        "icons": [
+            {
+                "src": url_for("static", filename="icons/carddesk-capture-192.png"),
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": url_for("static", filename="icons/carddesk-capture-512.png"),
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ]
+    }
+    return Response(json.dumps(manifest), mimetype="application/manifest+json")
+
+
+@app.route("/manifest/psa-scanner.webmanifest")
+def psa_scanner_manifest():
+    """Phone home-screen metadata for CardDesk PSA mobile scanner."""
+    manifest = {
+        "name": "CardDesk PSA Scan",
+        "short_name": "PSA Scan",
+        "description": "Scan PSA slab barcodes into CardDesk AI Review.",
+        "start_url": url_for("psa_mobile_scan"),
+        "scope": "/",
+        "display": "standalone",
+        "background_color": "#020617",
+        "theme_color": "#0ea5e9",
+        "orientation": "portrait",
+        "icons": [
+            {
+                "src": url_for("static", filename="icons/carddesk-psa-scan-192.png"),
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": url_for("static", filename="icons/carddesk-psa-scan-512.png"),
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ]
+    }
+    return Response(json.dumps(manifest), mimetype="application/manifest+json")
 
 
 with app.app_context():
