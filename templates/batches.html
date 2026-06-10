@@ -19,11 +19,17 @@
 .batch-panel-body { padding: 1rem; }
 .batch-page .form-label { color: #cbd5e1; font-weight: 800; font-size: .82rem; }
 .batch-page .form-control, .batch-page .form-select, .batch-page textarea.form-control { background-color: rgba(15,23,42,.72) !important; border-color: rgba(148,163,184,.22) !important; color: #f9fafb !important; }
-.batch-table { color: #e5edf7; margin-bottom: 0; }
-.batch-table th { color: #93c5fd; font-size: .72rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; border-color: rgba(148,163,184,.18); }
-.batch-table td { border-color: rgba(148,163,184,.12); vertical-align: middle; }
-.batch-link { color: #fff !important; text-decoration: none; font-weight: 900; }
-.batch-muted { color: #94a3b8; font-size: .78rem; }
+.batch-table { color: #e5edf7; margin-bottom: 0; border-collapse: separate; border-spacing: 0 .55rem; }
+.batch-table thead th { background: rgba(15,23,42,.72) !important; color: #93c5fd !important; font-size: .72rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; border: 0 !important; padding: .7rem .75rem; }
+.batch-table tbody tr { background: linear-gradient(145deg, rgba(15,23,42,.92), rgba(30,41,59,.86)); box-shadow: 0 .45rem 1rem rgba(2,6,23,.20); }
+.batch-table tbody td { background: transparent !important; color: #e5edf7 !important; border-top: 1px solid rgba(96,165,250,.18) !important; border-bottom: 1px solid rgba(96,165,250,.18) !important; vertical-align: middle; padding: .85rem .75rem; }
+.batch-table tbody td:first-child { border-left: 1px solid rgba(96,165,250,.18) !important; border-top-left-radius: .85rem; border-bottom-left-radius: .85rem; }
+.batch-table tbody td:last-child { border-right: 1px solid rgba(96,165,250,.18) !important; border-top-right-radius: .85rem; border-bottom-right-radius: .85rem; }
+.batch-table tbody tr:hover { background: linear-gradient(145deg, rgba(30,64,175,.34), rgba(15,23,42,.94)); }
+.batch-link { color: #ffffff !important; text-decoration: none; font-weight: 950; font-size: .98rem; }
+.batch-link:hover { color: #fbbf24 !important; text-decoration: underline; }
+.batch-muted { color: #cbd5e1 !important; font-size: .80rem; font-weight: 650; margin-top: .18rem; }
+.batch-table .text-end { color: #f8fafc !important; font-weight: 800; }
 .batch-default-card { padding: .85rem; border-radius: .95rem; background: rgba(15,23,42,.42); border: 1px solid rgba(148,163,184,.16); }
 </style>
 
