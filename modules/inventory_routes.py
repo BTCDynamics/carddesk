@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from flask import render_template, request, redirect, url_for, flash
 
-from models import db, Card, CompRefreshQueue, DealerEvent
+from models import db, Card, CompRefreshQueue, DealerEvent, IntakeBatch
 from helpers.acquisition_helpers import (
     clean_value,
     acquisition_value,
@@ -18,6 +18,15 @@ from helpers.deal_cart_helpers import (
 
 
 print("USING INVENTORY_ROUTES AGING")
+
+
+def get_active_intake_batch():
+    return (
+        IntakeBatch.query
+        .filter(IntakeBatch.status == "Active")
+        .order_by(IntakeBatch.id.desc())
+        .first()
+    )
 
 
 def register_inventory_routes(app, generate_card_code, save_uploaded_image, delete_image_file):
@@ -742,6 +751,55 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         )
 
 
+    @app.route("/cards/bulk-delete", methods=["POST"])
+    def bulk_delete_cards():
+        """Delete multiple selected cards from the inventory list.
+
+        card_list.html already posts selected checkbox values as card_ids.
+        This route keeps that template endpoint available in production and
+        cleans up related comp-refresh rows and image files the same way the
+        single-card delete route does.
+        """
+        selected_ids = request.form.getlist("card_ids")
+
+        if not selected_ids:
+            flash("No cards selected.")
+            return redirect(request.referrer or url_for("cards"))
+
+        deleted_count = 0
+        image_filenames = []
+
+        for raw_card_id in selected_ids:
+            try:
+                card_id = int(raw_card_id)
+            except (TypeError, ValueError):
+                continue
+
+            card = Card.query.get(card_id)
+            if not card:
+                continue
+
+            image_filenames.append(card.image_filename)
+            image_filenames.append(getattr(card, "image_back_filename", None))
+
+            CompRefreshQueue.query.filter(
+                CompRefreshQueue.card_id == card.id
+            ).delete(synchronize_session=False)
+
+            db.session.delete(card)
+            deleted_count += 1
+
+        if deleted_count:
+            db.session.commit()
+            for image_filename in image_filenames:
+                delete_image_file(image_filename)
+            flash(f"Deleted {deleted_count} selected card(s).")
+        else:
+            flash("No matching cards were found to delete.")
+
+        return redirect(request.referrer or url_for("cards"))
+
+
     @app.route("/cards/<int:card_id>/delete", methods=["POST"])
     def delete_card(card_id):
         card = Card.query.get_or_404(card_id)
@@ -940,6 +998,8 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
 
             return redirect(url_for("rapid_entry", **keep_values))
 
+        active_intake_batch = get_active_intake_batch()
+
         return render_template(
             "rapid_entry.html",
             active_intake_batch=active_intake_batch,
@@ -1082,6 +1142,8 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
                 flash("New card added successfully.")
 
             return redirect(url_for("card_detail", card_id=new_card.id))
+
+        active_intake_batch = get_active_intake_batch()
 
         return render_template(
             "add_card.html",

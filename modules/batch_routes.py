@@ -75,7 +75,10 @@ def batch_stats(batch):
 
     return {
         "inventory_cards": inventory_cards,
-        "staged_cards": staged_cards,
+        "staged_cards": [
+            card for card in staged_cards
+            if card.ai_status not in ["Imported", "Rejected"]
+        ],
         "card_count": card_count,
         "staged_count": staged_count,
         "imported_staged_count": imported_staged_count,
@@ -168,6 +171,21 @@ def register_batch_routes(app):
         batch.closed_at = None
         db.session.commit()
         flash(f"Active intake batch set to {batch.batch_name}.")
+        return redirect(request.referrer or url_for("intake_batch_detail", batch_id=batch.id))
+
+
+    @app.route("/intake-batches/<int:batch_id>/update-storage", methods=["POST"])
+    def update_intake_batch_storage(batch_id):
+        """Update the active batch storage default without leaving Mobile Capture."""
+        batch = IntakeBatch.query.get_or_404(batch_id)
+        batch.default_storage_location = clean_value(request.form.get("default_storage_location"))
+        db.session.commit()
+
+        if batch.default_storage_location:
+            flash(f"Current capture storage updated to {batch.default_storage_location}.")
+        else:
+            flash("Current capture storage cleared.")
+
         return redirect(request.referrer or url_for("intake_batch_detail", batch_id=batch.id))
 
     @app.route("/intake-batches/<int:batch_id>/close", methods=["POST"])

@@ -1,6 +1,6 @@
 import json
 
-from flask import render_template, request, url_for
+from flask import render_template, request, url_for, redirect, flash
 
 from models import db, CardImportStaging, IntakeBatch
 from helpers.storage_helpers import get_storage_locations
@@ -38,6 +38,32 @@ def register_capture_routes(app, save_uploaded_image_with_source, recognize_card
             active_intake_batch=active_intake_batch,
             all_storage_location_choices=get_storage_locations(),
         )
+
+
+    @app.route("/image-inbox")
+    def image_inbox():
+        """Compatibility view for the Image Inbox template.
+
+        The current mobile capture flow sends photos directly into the AI
+        review queue, so there may not be standalone inbox records. Keeping
+        this route prevents template/url_for errors if older navigation or
+        bookmarks still point here.
+        """
+        status_filter = request.args.get("status") or "Available"
+        counts = {"available": 0, "used": 0, "all": 0}
+        return render_template(
+            "image_inbox.html",
+            images=[],
+            counts=counts,
+            status_filter=status_filter,
+        )
+
+
+    @app.route("/image-inbox/<int:image_id>/delete", methods=["POST"])
+    def delete_image_inbox_item(image_id):
+        """Compatibility endpoint for older Image Inbox delete forms."""
+        flash("Image Inbox records are handled through the AI Review queue in this version.")
+        return redirect(url_for("image_inbox"))
 
 
     @app.route("/mobile-capture/upload", methods=["POST"])

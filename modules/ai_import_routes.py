@@ -4,7 +4,7 @@ from urllib.parse import quote
 
 from flask import render_template, request, redirect, url_for, flash
 
-from models import db, Card, CardImportStaging
+from models import db, Card, CardImportStaging, IntakeBatch
 from helpers.acquisition_helpers import (
     clean_value,
     acquisition_value,
@@ -236,6 +236,7 @@ def register_ai_import_routes(
             pending_count=pending_count,
             imported_count=imported_count,
             token_configured=recognition_configured(),
+            active_intake_batch=active_intake_batch,
             all_storage_location_choices=get_storage_locations(),
         )
 
