@@ -202,6 +202,39 @@ def register_show_prep_routes(app):
             if (card.storage_location or "").strip() in selected_show_location_set
         ]
 
+        batch_summary_by_name = {}
+        for card in show_cards:
+            if not getattr(card, "intake_batch", None):
+                continue
+
+            batch_name = (card.intake_batch.batch_name or "").strip()
+            if not batch_name:
+                continue
+
+            quantity = card.quantity or 1
+
+            if batch_name not in batch_summary_by_name:
+                batch_summary_by_name[batch_name] = {
+                    "batch_name": batch_name,
+                    "card_count": 0,
+                    "record_count": 0,
+                    "cost": 0.0,
+                    "comp": 0.0,
+                    "ask": 0.0,
+                }
+
+            batch_summary_by_name[batch_name]["record_count"] += 1
+            batch_summary_by_name[batch_name]["card_count"] += quantity
+            batch_summary_by_name[batch_name]["cost"] += _money(card.purchase_price) * quantity
+            batch_summary_by_name[batch_name]["comp"] += _money(card.estimated_value) * quantity
+            batch_summary_by_name[batch_name]["ask"] += _money(card.asking_price) * quantity
+
+        batch_summary = sorted(
+            batch_summary_by_name.values(),
+            key=lambda item: (item["card_count"], item["ask"]),
+            reverse=True,
+        )
+
         show_card_count = _total_card_quantity(show_cards)
         show_total_cost = sum(_money(card.purchase_price) * (card.quantity or 1) for card in show_cards)
         show_total_estimated_value = sum(_money(card.estimated_value) * (card.quantity or 1) for card in show_cards)
@@ -316,6 +349,7 @@ def register_show_prep_routes(app):
             location_summaries=location_summaries,
             selected_show_locations=selected_show_locations,
             selected_location_summaries=selected_location_summaries,
+            batch_summary=batch_summary,
             show_cards=show_cards,
             show_card_count=show_card_count,
             show_total_cost=show_total_cost,
