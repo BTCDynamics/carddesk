@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from urllib.parse import quote
 
 from flask import render_template, request, url_for, redirect, flash
 from sqlalchemy import or_
@@ -159,6 +160,28 @@ def _money(value):
 
 def _total_card_quantity(cards):
     return sum((card.quantity or 1) for card in cards)
+
+def _current_show_cards():
+    """Return active inventory cards loaded into the current event/show."""
+    active_event = _get_current_event()
+
+    if not active_event:
+        return active_event, [], []
+
+    selected_show_locations = _split_show_locations(
+        getattr(active_event, "selected_show_locations", None)
+    )
+    selected_show_location_set = set(selected_show_locations)
+
+    if not selected_show_location_set:
+        return active_event, selected_show_locations, []
+
+    show_cards = [
+        card for card in _active_inventory_query().all()
+        if (card.storage_location or "").strip() in selected_show_location_set
+    ]
+
+    return active_event, selected_show_locations, show_cards
 
 
 def register_show_prep_routes(app):
@@ -330,6 +353,12 @@ def register_show_prep_routes(app):
 
         ready_to_show_count = show_ready_count
 
+        customer_search_url = url_for("customer_show_search", _external=True)
+        customer_search_qr_url = (
+            "https://api.qrserver.com/v1/create-qr-code/"
+            f"?size=260x260&data={quote(customer_search_url, safe='')}"
+        )
+
         return render_template(
             "show_prep.html",
             stale_days=STALE_DAYS,
@@ -361,6 +390,78 @@ def register_show_prep_routes(app):
             show_missing_comp_count=len(show_missing_comp_cards),
             show_missing_cost_count=len(show_missing_cost_cards),
             show_issue_count=show_issue_count,
+            customer_search_url=customer_search_url,
+            customer_search_qr_url=customer_search_qr_url,
+        )
+
+
+    @app.route("/customer-search")
+    def customer_show_search():
+        """Customer-facing search for cards physically loaded into the current show."""
+        active_event, selected_show_locations, show_cards = _current_show_cards()
+        search_query = (request.args.get("q") or "").strip()
+
+        results = []
+
+        if search_query and show_cards:
+            search_terms = [
+                term.strip().lower()
+                for term in search_query.split()
+                if term.strip()
+            ]
+
+            for card in show_cards:
+                searchable_text = " ".join([
+                    card.player_name or "",
+                    card.sport or "",
+                    card.brand or "",
+                    card.set_name or "",
+                    str(card.year or ""),
+                    card.card_number or "",
+                    card.variation or "",
+                    card.card_type or "",
+                    card.grading_company or "",
+                    card.actual_grade or "",
+                    "rookie" if card.is_rookie else "",
+                    "hof" if card.is_hof else "",
+                ]).lower()
+
+                if all(term in searchable_text for term in search_terms):
+                    results.append(card)
+
+        results = sorted(
+            results,
+            key=lambda card: (
+                card.player_name or "",
+                card.year or 0,
+                card.brand or "",
+                card.card_number or "",
+            )
+        )[:75]
+
+        popular_examples = [
+            row[0]
+            for row in db.session.query(Card.player_name)
+            .filter(Card.status == "Active")
+            .filter(Card.collection_type == "Inventory")
+            .filter(Card.storage_location.in_(selected_show_locations) if selected_show_locations else False)
+            .filter(Card.player_name.isnot(None))
+            .filter(Card.player_name != "")
+            .distinct()
+            .order_by(Card.player_name.asc())
+            .limit(8)
+            .all()
+        ] if selected_show_locations else []
+
+        return render_template(
+            "customer_show_search.html",
+            active_event=active_event,
+            search_query=search_query,
+            results=results,
+            result_count=len(results),
+            show_card_count=_total_card_quantity(show_cards),
+            selected_show_locations=selected_show_locations,
+            popular_examples=popular_examples,
         )
 
     @app.route("/show-prep/print")

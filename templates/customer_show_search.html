@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Search Show Inventory | CardDesk</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --cd-bg: #020617;
+            --cd-panel: #0b1220;
+            --cd-panel-2: #111827;
+            --cd-line: rgba(96, 165, 250, .24);
+            --cd-text: #f8fafc;
+            --cd-muted: #cbd5e1;
+            --cd-soft: #94a3b8;
+            --cd-green: #22c55e;
+            --cd-gold: #f59e0b;
+        }
+
+        body {
+            min-height: 100vh;
+            color: var(--cd-text);
+            background:
+                radial-gradient(circle at top left, rgba(34, 197, 94, .16), transparent 34%),
+                radial-gradient(circle at bottom right, rgba(14, 165, 233, .13), transparent 38%),
+                linear-gradient(145deg, #020617, #0f172a 48%, #111827);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .customer-shell {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .hero-card {
+            border-radius: 1.4rem;
+            padding: 1.15rem;
+            background:
+                radial-gradient(circle at top left, rgba(34, 197, 94, .18), transparent 36%),
+                linear-gradient(145deg, #07111f, #101b2b);
+            border: 1px solid rgba(125, 211, 252, .25);
+            box-shadow: 0 1.2rem 3rem rgba(0,0,0,.38);
+        }
+
+        .hero-kicker {
+            color: #86efac;
+            font-size: .76rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .hero-title {
+            color: #ffffff;
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            font-weight: 950;
+            letter-spacing: -.055em;
+            line-height: .95;
+            margin-top: .25rem;
+        }
+
+        .hero-subtitle {
+            color: var(--cd-muted);
+            font-size: .98rem;
+            margin-top: .7rem;
+            line-height: 1.35;
+        }
+
+        .search-card {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 1.2rem;
+            background: rgba(15, 23, 42, .72);
+            border: 1px solid rgba(148, 163, 184, .22);
+        }
+
+        .search-input {
+            min-height: 56px;
+            font-size: 1.12rem;
+            font-weight: 800;
+            color: #111827 !important;
+            background: #ffffff !important;
+            border: 2px solid rgba(125, 211, 252, .55) !important;
+        }
+
+        .search-button {
+            min-height: 56px;
+            font-size: 1.05rem;
+            font-weight: 900;
+        }
+
+        .example-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: .3rem .65rem;
+            color: #dbeafe;
+            background: rgba(37, 99, 235, .18);
+            border: 1px solid rgba(96, 165, 250, .28);
+            text-decoration: none;
+            font-size: .82rem;
+            font-weight: 750;
+        }
+
+        .result-card {
+            border-radius: 1.15rem;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, .10), transparent 34%),
+                linear-gradient(145deg, #0b1220, #111827);
+            border: 1px solid rgba(96, 165, 250, .20);
+            box-shadow: 0 .8rem 1.9rem rgba(0,0,0,.24);
+        }
+
+        .result-img-wrap {
+            background: #020617;
+            min-height: 180px;
+            display: grid;
+            place-items: center;
+        }
+
+        .result-img {
+            width: 100%;
+            height: 230px;
+            object-fit: contain;
+            background: #020617;
+        }
+
+        .result-no-img {
+            color: #64748b;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        .result-body {
+            padding: 1rem;
+        }
+
+        .result-title {
+            color: #ffffff;
+            font-size: 1.08rem;
+            font-weight: 900;
+            line-height: 1.15;
+        }
+
+        .result-meta {
+            color: var(--cd-muted);
+            font-size: .9rem;
+            margin-top: .25rem;
+        }
+
+        .price-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: .4rem .75rem;
+            color: #052e16;
+            background: #86efac;
+            font-weight: 950;
+            font-size: 1rem;
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .35rem;
+            margin-top: .65rem;
+        }
+
+        .customer-tag {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: .22rem .5rem;
+            font-size: .72rem;
+            font-weight: 850;
+            color: #e0f2fe;
+            background: rgba(14, 165, 233, .16);
+            border: 1px solid rgba(125, 211, 252, .25);
+        }
+
+        .empty-card {
+            padding: 1.2rem;
+            border-radius: 1.1rem;
+            text-align: center;
+            color: var(--cd-muted);
+            background: rgba(15, 23, 42, .68);
+            border: 1px dashed rgba(148, 163, 184, .28);
+        }
+
+        .footer-note {
+            color: var(--cd-soft);
+            font-size: .82rem;
+            text-align: center;
+            margin: 1.2rem 0 .5rem;
+        }
+
+        @media (max-width: 575.98px) {
+            .result-img {
+                height: 190px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="customer-shell">
+        <section class="hero-card">
+            <div class="hero-kicker">Card Show Inventory Search</div>
+            <div class="hero-title">Looking for a specific card?</div>
+            <div class="hero-subtitle">
+                Search the cards we brought to this show. Ask us if you see something you like.
+                {% if active_event %}
+                    <div class="mt-2"><strong>{{ active_event.event_name }}</strong>{% if active_event.location %} · {{ active_event.location }}{% endif %}</div>
+                {% endif %}
+            </div>
+
+            <div class="search-card">
+                <form method="GET" action="{{ url_for('customer_show_search') }}">
+                    <div class="row g-2">
+                        <div class="col-12 col-md">
+                            <input class="form-control search-input" type="search" name="q" value="{{ search_query or '' }}" placeholder="Player, year, brand, set, PSA 8..." autofocus>
+                        </div>
+                        <div class="col-12 col-md-auto">
+                            <button class="btn btn-success search-button w-100" type="submit">Search</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <a class="example-pill" href="{{ url_for('customer_show_search', q='rookie') }}">Rookies</a>
+                    <a class="example-pill" href="{{ url_for('customer_show_search', q='PSA') }}">Graded / PSA</a>
+                    {% for player in popular_examples %}
+                        <a class="example-pill" href="{{ url_for('customer_show_search', q=player) }}">{{ player }}</a>
+                    {% endfor %}
+                </div>
+
+                <div class="small mt-3" style="color:#94a3b8;">
+                    Searching {{ show_card_count or 0 }} card(s) currently loaded for the show.
+                </div>
+            </div>
+        </section>
+
+        {% if search_query %}
+            <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+                <h2 class="h5 mb-0">Results for “{{ search_query }}”</h2>
+                <span class="badge text-bg-info">{{ result_count }} found</span>
+            </div>
+
+            {% if results %}
+                <div class="row g-3">
+                    {% for card in results %}
+                        <div class="col-12 col-md-6">
+                            <div class="result-card h-100">
+                                <div class="result-img-wrap">
+                                    {% if card.image_filename %}
+                                        <img class="result-img" src="{{ url_for('static', filename='uploads/' ~ card.image_filename) }}" alt="{{ card.player_name }} card image">
+                                    {% else %}
+                                        <div class="result-no-img">No Image</div>
+                                    {% endif %}
+                                </div>
+                                <div class="result-body">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <div>
+                                            <div class="result-title">{{ card.player_name or 'Unknown Player' }}</div>
+                                            <div class="result-meta">
+                                                {{ card.year or '' }} {{ card.brand or '' }} {{ card.set_name or '' }}
+                                                {% if card.card_number %}#{{ card.card_number }}{% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="price-pill">
+                                            {% if card.asking_price %}
+                                                ${{ "%.0f"|format(card.asking_price or 0) }}
+                                            {% else %}
+                                                Ask
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="tag-row">
+                                        {% if card.card_type %}<span class="customer-tag">{{ card.card_type }}</span>{% endif %}
+                                        {% if card.card_type == 'Graded' %}
+                                            <span class="customer-tag">{{ card.grading_company or 'Graded' }} {{ card.actual_grade or '' }}</span>
+                                        {% endif %}
+                                        {% if card.variation %}<span class="customer-tag">{{ card.variation }}</span>{% endif %}
+                                        {% if card.is_rookie %}<span class="customer-tag">Rookie</span>{% endif %}
+                                        {% if card.is_hof %}<span class="customer-tag">HOF</span>{% endif %}
+                                    </div>
+
+                                    <div class="small mt-3" style="color:#bbf7d0;font-weight:800;">
+                                        Ask dealer to pull this card.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-card mt-3">
+                    <div class="h5 text-light">No matches found.</div>
+                    <div>Try searching just the player name, brand, year, team, or “PSA”.</div>
+                </div>
+            {% endif %}
+        {% elif not active_event %}
+            <div class="empty-card mt-4">
+                <div class="h5 text-light">No show is currently active.</div>
+                <div>The dealer has not enabled show inventory search yet.</div>
+            </div>
+        {% elif not selected_show_locations %}
+            <div class="empty-card mt-4">
+                <div class="h5 text-light">Show inventory has not been loaded yet.</div>
+                <div>The dealer has not selected show boxes or showcases yet.</div>
+            </div>
+        {% endif %}
+
+        <div class="footer-note">
+            This customer view only shows cards loaded for the current show.
+        </div>
+    </main>
+</body>
+</html>
