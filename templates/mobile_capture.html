@@ -323,6 +323,50 @@
     100% { transform: scale(1); box-shadow: 0 0 14px rgba(34, 197, 94, .48); }
 }
 
+.capture-batch-panel {
+    padding: 1rem;
+    border-radius: 1.1rem;
+    background: linear-gradient(145deg, rgba(14, 165, 233, .18), rgba(15, 23, 42, .88));
+    border: 1px solid rgba(125, 211, 252, .38);
+    color: #f8fafc;
+}
+
+.capture-batch-title {
+    color: #f8fafc;
+    font-weight: 800;
+}
+
+.capture-batch-help {
+    color: #cbd5e1;
+    font-size: .86rem;
+}
+
+.capture-batch-panel .form-label {
+    color: #bfdbfe;
+    font-size: .76rem;
+    font-weight: 900;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.capture-batch-panel .form-control {
+    background-color: rgba(15, 23, 42, .72) !important;
+    border-color: rgba(148, 163, 184, .30) !important;
+    color: #f8fafc !important;
+    font-weight: 800;
+}
+
+.capture-batch-storage-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: .28rem .62rem;
+    background: rgba(251, 191, 36, .18);
+    border: 1px solid rgba(251, 191, 36, .36);
+    color: #fde68a;
+    font-weight: 900;
+    font-size: .82rem;
+}
 
 @media (max-width: 768px) {
     .mobile-capture-page {
@@ -352,9 +396,42 @@
     </div>
 
     {% if active_intake_batch %}
-    <div class="alert alert-info mb-4">
-        <strong>Active Intake Batch:</strong> {{ active_intake_batch.batch_name }}. Captures saved from this phone will inherit the batch defaults.
-        <a class="alert-link" href="{{ url_for('intake_batch_detail', batch_id=active_intake_batch.id) }}">View batch</a>.
+    <div class="capture-batch-panel mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <div class="capture-batch-title">Active Intake Batch: {{ active_intake_batch.batch_name }}</div>
+                <div class="capture-batch-help">
+                    Captures saved from this phone will inherit this batch. Change the current storage when you move to the next box or section.
+                </div>
+            </div>
+            <div class="text-lg-end">
+                <div class="capture-batch-help mb-1">Current Storage</div>
+                <span class="capture-batch-storage-pill" id="currentStoragePill">
+                    {{ active_intake_batch.default_storage_location or 'Not set' }}
+                </span>
+            </div>
+        </div>
+
+        <form class="row g-2 align-items-end" method="POST" action="{{ url_for('update_intake_batch_storage', batch_id=active_intake_batch.id) }}">
+            <div class="col-md-8">
+                <label class="form-label" for="mobileDefaultStorageLocation">Current Storage Location</label>
+                <input
+                    class="form-control"
+                    id="mobileDefaultStorageLocation"
+                    name="default_storage_location"
+                    value="{{ active_intake_batch.default_storage_location or '' }}"
+                    placeholder="SEC-01, Showcase 1, Dollar Box A..."
+                >
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-warning fw-bold w-100" type="submit">Update Storage</button>
+            </div>
+        </form>
+
+        <div class="capture-batch-help mt-2">
+            Existing captures keep their saved location. Future captures use the updated storage location.
+            <a class="link-info" href="{{ url_for('intake_batch_detail', batch_id=active_intake_batch.id) }}">View batch</a>.
+        </div>
     </div>
     {% endif %}
 
@@ -775,7 +852,7 @@ async function saveCapture(options = {}) {
         const batchText = result.batch_name ? ` · Batch: ${result.batch_name}` : "";
 
         setStatus(`✅ Saved to AI Review Queue: ${savedStatus}${batchText}. Capture another card when ready.`);
-        showSaveSuccessFeedback(savedStatus, { refreshAfterSave: false });
+        showSaveSuccessFeedback(savedStatus, { refreshAfterSave: true });
 
         lastCapturedBlob = null;
         saveBtn.disabled = true;

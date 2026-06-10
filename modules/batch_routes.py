@@ -160,21 +160,34 @@ def register_batch_routes(app):
 
     @app.route("/intake-batches/<int:batch_id>/activate", methods=["POST"])
     def activate_intake_batch(batch_id):
-        """Reopen a closed batch and make it the single active intake target."""
         batch = IntakeBatch.query.get_or_404(batch_id)
-
-        # Keep the workflow simple: only one active batch can exist at a time.
-        # Reopening this batch closes any other currently active batch.
-        IntakeBatch.query.filter(
-            IntakeBatch.id != batch.id,
-            IntakeBatch.status == "Active"
-        ).update({"status": "Closed"})
-
+        IntakeBatch.query.filter(IntakeBatch.status == "Active").update({"status": "Closed"})
         batch.status = "Active"
         batch.closed_at = None
         db.session.commit()
+        flash(f"Active intake batch set to {batch.batch_name}.")
+        return redirect(request.referrer or url_for("intake_batch_detail", batch_id=batch.id))
 
-        flash(f"Reopened intake batch: {batch.batch_name}. New captures and entries will use this batch again.")
+
+
+    @app.route("/intake-batches/<int:batch_id>/update-storage", methods=["POST"])
+    def update_intake_batch_storage(batch_id):
+        """Update the active batch storage default without leaving Mobile Capture.
+
+        This lets a dealer keep the same batch active while moving from one
+        physical storage section to the next, such as SEC-01 to SEC-02.
+        Existing staged/imported cards keep the storage location they already
+        received; only future captures use this updated default.
+        """
+        batch = IntakeBatch.query.get_or_404(batch_id)
+        batch.default_storage_location = clean_value(request.form.get("default_storage_location"))
+        db.session.commit()
+
+        if batch.default_storage_location:
+            flash(f"Current capture storage updated to {batch.default_storage_location}.")
+        else:
+            flash("Current capture storage cleared.")
+
         return redirect(request.referrer or url_for("intake_batch_detail", batch_id=batch.id))
 
     @app.route("/intake-batches/<int:batch_id>/close", methods=["POST"])
