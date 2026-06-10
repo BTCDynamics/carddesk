@@ -4,6 +4,7 @@ from flask import render_template, request, redirect, url_for, flash
 
 from models import db, Card, CardImportStaging, IntakeBatch
 from helpers.acquisition_helpers import clean_value, acquisition_value, acquisition_date_value
+from helpers.storage_helpers import get_storage_locations
 
 
 BATCH_STATUSES = ["Active", "Closed"]
@@ -74,10 +75,7 @@ def batch_stats(batch):
 
     return {
         "inventory_cards": inventory_cards,
-        "staged_cards": [
-            card for card in staged_cards
-            if card.ai_status not in ["Imported", "Rejected"]
-        ],
+        "staged_cards": staged_cards,
         "card_count": card_count,
         "staged_count": staged_count,
         "imported_staged_count": imported_staged_count,
@@ -137,6 +135,7 @@ def register_batch_routes(app):
             batch=batch,
             stats=stats,
             defaults=batch_defaults(batch),
+            all_storage_location_choices=get_storage_locations(),
         )
 
     @app.route("/intake-batches/<int:batch_id>/update", methods=["POST"])
@@ -169,28 +168,6 @@ def register_batch_routes(app):
         batch.closed_at = None
         db.session.commit()
         flash(f"Active intake batch set to {batch.batch_name}.")
-        return redirect(request.referrer or url_for("intake_batch_detail", batch_id=batch.id))
-
-
-
-    @app.route("/intake-batches/<int:batch_id>/update-storage", methods=["POST"])
-    def update_intake_batch_storage(batch_id):
-        """Update the active batch storage default without leaving Mobile Capture.
-
-        This lets a dealer keep the same batch active while moving from one
-        physical storage section to the next, such as SEC-01 to SEC-02.
-        Existing staged/imported cards keep the storage location they already
-        received; only future captures use this updated default.
-        """
-        batch = IntakeBatch.query.get_or_404(batch_id)
-        batch.default_storage_location = clean_value(request.form.get("default_storage_location"))
-        db.session.commit()
-
-        if batch.default_storage_location:
-            flash(f"Current capture storage updated to {batch.default_storage_location}.")
-        else:
-            flash("Current capture storage cleared.")
-
         return redirect(request.referrer or url_for("intake_batch_detail", batch_id=batch.id))
 
     @app.route("/intake-batches/<int:batch_id>/close", methods=["POST"])

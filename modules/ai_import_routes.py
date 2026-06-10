@@ -4,33 +4,18 @@ from urllib.parse import quote
 
 from flask import render_template, request, redirect, url_for, flash
 
-from models import db, Card, CardImportStaging, IntakeBatch
+from models import db, Card, CardImportStaging
 from helpers.acquisition_helpers import (
     clean_value,
     acquisition_value,
     acquisition_date_value,
     purchase_date_value,
 )
+from helpers.storage_helpers import get_storage_locations
 from helpers.psa_helpers import (
     clean_psa_cert_number,
     find_duplicate_by_cert_number,
 )
-
-
-def get_active_intake_batch():
-    return (
-        IntakeBatch.query
-        .filter(IntakeBatch.status == "Active")
-        .order_by(IntakeBatch.id.desc())
-        .first()
-    )
-
-
-def batch_default(active_batch, attr_name, fallback=None):
-    if not active_batch:
-        return fallback
-    value = getattr(active_batch, attr_name, None)
-    return value if value not in [None, ""] else fallback
 
 
 def build_reference_search_query(staged_card):
@@ -176,8 +161,6 @@ def register_ai_import_routes(
     @app.route("/ai-import", methods=["GET", "POST"])
     def ai_import_upload():
         """Upload one or more card images and stage card recognition results."""
-        active_intake_batch = get_active_intake_batch()
-
         if request.method == "POST":
             uploaded_files = request.files.getlist("card_images")
             uploaded_files = [file for file in uploaded_files if file and file.filename]
@@ -199,16 +182,14 @@ def register_ai_import_routes(
                 staged_card = CardImportStaging(
                     image_filename=image_filename,
                     source_filename=source_filename,
-                    sport=request.form.get("default_sport") or batch_default(active_intake_batch, "default_sport", "Baseball"),
-                    card_type=batch_default(active_intake_batch, "default_card_type", "Raw"),
-                    collection_type=request.form.get("collection_type") or batch_default(active_intake_batch, "default_collection_type", "Inventory"),
-                    status=request.form.get("status") or batch_default(active_intake_batch, "default_status", "Active"),
-                    purchase_date=purchase_date_value(request.form) or batch_default(active_intake_batch, "default_acquisition_date"),
-                    acquisition_source=acquisition_value(request.form.get("acquisition_source") or batch_default(active_intake_batch, "default_acquisition_source", "Existing Inventory")),
-                    acquisition_date=acquisition_date_value(request.form) or batch_default(active_intake_batch, "default_acquisition_date"),
-                    acquisition_event=clean_value(request.form.get("acquisition_event")) or batch_default(active_intake_batch, "default_acquisition_event"),
-                    intake_batch_id=active_intake_batch.id if active_intake_batch else None,
-                    storage_location=clean_value(request.form.get("storage_location")) or batch_default(active_intake_batch, "default_storage_location"),
+                    sport=request.form.get("default_sport") or "Baseball",
+                    collection_type=request.form.get("collection_type") or "Inventory",
+                    status=request.form.get("status") or "Active",
+                    purchase_date=purchase_date_value(request.form),
+                    acquisition_source=acquisition_value(request.form.get("acquisition_source")),
+                    acquisition_date=acquisition_date_value(request.form),
+                    acquisition_event=clean_value(request.form.get("acquisition_event")),
+                    storage_location=clean_value(request.form.get("storage_location")),
                     quantity=1,
                     ai_status="Pending Review",
                 )
@@ -255,7 +236,7 @@ def register_ai_import_routes(
             pending_count=pending_count,
             imported_count=imported_count,
             token_configured=recognition_configured(),
-            active_intake_batch=active_intake_batch,
+            all_storage_location_choices=get_storage_locations(),
         )
 
     @app.route("/ai-import/review")
@@ -292,9 +273,6 @@ def register_ai_import_routes(
                 key=lambda card: 0 if card.id == focus_id else 1
             )
 
-        batch_ids = {card.intake_batch_id for card in staged_cards if getattr(card, "intake_batch_id", None)}
-        batch_lookup = {batch.id: batch for batch in IntakeBatch.query.filter(IntakeBatch.id.in_(batch_ids)).all()} if batch_ids else {}
-
         duplicate_map = {card.id: find_probable_duplicate_from_staging(card) for card in staged_cards}
         duplicate_reason_map = {card.id: duplicate_reason_from_staging(card, duplicate_map.get(card.id)) for card in staged_cards}
         reference_links_map = {card.id: build_reference_links(card) for card in staged_cards}
@@ -317,7 +295,7 @@ def register_ai_import_routes(
             focus_id=focus_id,
             missing_fields=missing_fields,
             imported_success=imported_success,
-            batch_lookup=batch_lookup,
+            all_storage_location_choices=get_storage_locations(),
         )
 
     @app.route("/ai-import/<int:staging_id>/update", methods=["POST"])
@@ -455,7 +433,6 @@ def register_ai_import_routes(
             acquisition_source=staged_card.acquisition_source or "Existing Inventory",
             acquisition_date=staged_card.acquisition_date,
             acquisition_event=staged_card.acquisition_event,
-            intake_batch_id=staged_card.intake_batch_id,
             storage_location=staged_card.storage_location,
             collection_type=staged_card.collection_type or "Inventory",
             image_filename=rename_image_for_inventory(staged_card.image_filename, staged_card),

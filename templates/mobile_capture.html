@@ -350,7 +350,8 @@
     text-transform: uppercase;
 }
 
-.capture-batch-panel .form-control {
+.capture-batch-panel .form-control,
+.capture-batch-panel .form-select {
     background-color: rgba(15, 23, 42, .72) !important;
     border-color: rgba(148, 163, 184, .30) !important;
     color: #f8fafc !important;
@@ -417,18 +418,32 @@
         <form class="row g-2 align-items-end" method="POST" action="{{ url_for('update_intake_batch_storage', batch_id=active_intake_batch.id) }}">
             <div class="col-md-8">
                 <label class="form-label" for="mobileDefaultStorageLocation">Current Storage Location</label>
-                <input
-                    class="form-control"
+                {% set selected_storage = active_intake_batch.default_storage_location or '' %}
+                <select
+                    class="form-select"
                     id="mobileDefaultStorageLocation"
                     name="default_storage_location"
-                    value="{{ active_intake_batch.default_storage_location or '' }}"
-                    placeholder="SEC-01, Showcase 1, Dollar Box A..."
                 >
+                    <option value="">Select Storage Location</option>
+                    {% if selected_storage and selected_storage not in all_storage_location_choices %}
+                        <option value="{{ selected_storage }}" selected>{{ selected_storage }}</option>
+                    {% endif %}
+                    {% for location in all_storage_location_choices %}
+                        <option value="{{ location }}" {% if selected_storage == location %}selected{% endif %}>{{ location }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-4">
                 <button class="btn btn-warning fw-bold w-100" type="submit">Update Storage</button>
             </div>
         </form>
+
+        {% if not all_storage_location_choices %}
+            <div class="alert alert-warning small mt-2 mb-0">
+                <strong>No storage locations yet.</strong> Create one in Storage Explorer before assigning capture storage.
+                <a class="alert-link" href="{{ url_for('storage_explorer') }}">Create storage location</a>.
+            </div>
+        {% endif %}
 
         <div class="capture-batch-help mt-2">
             Existing captures keep their saved location. Future captures use the updated storage location.

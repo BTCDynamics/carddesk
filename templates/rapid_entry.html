@@ -279,22 +279,6 @@
     </div>
 </div>
 
-{% set rapid_default_sport = request.args.get('sport') or (active_intake_batch.default_sport if active_intake_batch else 'Baseball') %}
-{% set rapid_default_card_type = request.args.get('card_type') or (active_intake_batch.default_card_type if active_intake_batch else 'Raw') %}
-{% set rapid_default_collection_type = request.args.get('collection_type') or (active_intake_batch.default_collection_type if active_intake_batch else 'Inventory') %}
-{% set rapid_default_status = request.args.get('status') or (active_intake_batch.default_status if active_intake_batch else 'Active') %}
-{% set rapid_default_storage = request.args.get('storage_location') or (active_intake_batch.default_storage_location if active_intake_batch else '') %}
-{% set rapid_default_acquisition_source = request.args.get('acquisition_source') or (active_intake_batch.default_acquisition_source if active_intake_batch else 'Existing Inventory') %}
-{% set rapid_default_acquisition_date = request.args.get('acquisition_date') or (active_intake_batch.default_acquisition_date if active_intake_batch else '') %}
-{% set rapid_default_acquisition_event = request.args.get('acquisition_event') or (active_intake_batch.default_acquisition_event if active_intake_batch else '') %}
-
-{% if active_intake_batch %}
-<div class="alert alert-info mb-3">
-    <strong>Active Intake Batch:</strong> {{ active_intake_batch.batch_name }}. Shared defaults are pre-filled below.
-    <a class="alert-link" href="{{ url_for('intake_batch_detail', batch_id=active_intake_batch.id) }}">View batch</a>.
-</div>
-{% endif %}
-
 <form method="POST" action="{{ url_for('rapid_entry') }}" class="card page-card cw-form-compact rapid-entry-form rapid-entry-card">
     <div class="card-body">
         <div class="alert alert-info mb-3">
@@ -315,7 +299,7 @@
                 <label class="form-label">Sport</label>
                 <select class="form-select" name="sport">
                     {% for sport in ["Baseball", "Football", "Basketball", "Hockey", "Soccer", "Golf", "Racing", "Wrestling", "Boxing", "Other"] %}
-                        <option value="{{ sport }}" {% if rapid_default_sport == sport %}selected{% endif %}>{{ sport }}</option>
+                        <option value="{{ sport }}" {% if request.args.get('sport', 'Baseball') == sport %}selected{% endif %}>{{ sport }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -323,8 +307,8 @@
             <div class="col-md-auto cw-field-select-xs">
                 <label class="form-label">Card Type</label>
                 <select class="form-select" name="card_type">
-                    <option value="Raw" {% if rapid_default_card_type == 'Raw' %}selected{% endif %}>Raw</option>
-                    <option value="Graded" {% if rapid_default_card_type == 'Graded' %}selected{% endif %}>Graded</option>
+                    <option value="Raw" {% if request.args.get('card_type', 'Raw') == 'Raw' %}selected{% endif %}>Raw</option>
+                    <option value="Graded" {% if request.args.get('card_type') == 'Graded' %}selected{% endif %}>Graded</option>
                 </select>
             </div>
 
@@ -403,10 +387,10 @@
             <div class="col-6 col-md-auto cw-field-select-md">
                 <label class="form-label">Collection Type</label>
                 <select class="form-select" name="collection_type">
-                    <option value="Inventory" {% if rapid_default_collection_type == 'Inventory' %}selected{% endif %}>Inventory</option>
-                    <option value="Personal Collection" {% if rapid_default_collection_type == 'Personal Collection' %}selected{% endif %}>Personal Collection</option>
-                    <option value="Trade Bait" {% if rapid_default_collection_type == 'Trade Bait' %}selected{% endif %}>Trade Bait</option>
-                    <option value="Grading Queue" {% if rapid_default_collection_type == 'Grading Queue' %}selected{% endif %}>Grading Queue</option>
+                    <option value="Inventory" {% if request.args.get('collection_type', 'Inventory') == 'Inventory' %}selected{% endif %}>Inventory</option>
+                    <option value="Personal Collection" {% if request.args.get('collection_type') == 'Personal Collection' %}selected{% endif %}>Personal Collection</option>
+                    <option value="Trade Bait" {% if request.args.get('collection_type') == 'Trade Bait' %}selected{% endif %}>Trade Bait</option>
+                    <option value="Grading Queue" {% if request.args.get('collection_type') == 'Grading Queue' %}selected{% endif %}>Grading Queue</option>
                 </select>
             </div>
 
@@ -434,20 +418,20 @@
                 <label class="form-label">Acquisition Source</label>
                 <select class="form-select" name="acquisition_source" id="rapidAcquisitionSource">
                     {% for source in ["Existing Inventory", "Cash Purchase", "Trade-In", "Bulk Collection", "Pack Pull", "Personal Collection", "Other"] %}
-                        <option value="{{ source }}" {% if rapid_default_acquisition_source == source %}selected{% endif %}>{{ source }}</option>
+                        <option value="{{ source }}" {% if request.args.get('acquisition_source', 'Existing Inventory') == source %}selected{% endif %}>{{ source }}</option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="col-6 col-md-auto cw-field-date">
                 <label class="form-label">Acquisition Date</label>
-                <input class="form-control" type="date" name="acquisition_date" id="rapidAcquisitionDate" value="{{ rapid_default_acquisition_date }}">
-                <input type="hidden" name="purchase_date" id="rapidPurchaseDate" value="{{ rapid_default_acquisition_date }}">
+                <input class="form-control" type="date" name="acquisition_date" id="rapidAcquisitionDate" value="{{ request.args.get('acquisition_date', '') }}">
+                <input type="hidden" name="purchase_date" id="rapidPurchaseDate" value="{{ request.args.get('purchase_date', '') }}">
             </div>
 
             <div class="col-12 col-md-auto cw-field-md">
                 <label class="form-label">Acquisition Event / Location</label>
-                <input class="form-control" type="text" name="acquisition_event" id="rapidAcquisitionEvent" placeholder="Macon Card Show, Facebook, eBay..." value="{{ rapid_default_acquisition_event }}">
+                <input class="form-control" type="text" name="acquisition_event" id="rapidAcquisitionEvent" placeholder="Macon Card Show, Facebook, eBay..." value="{{ request.args.get('acquisition_event', '') }}">
             </div>
 
             <div class="col-12">
@@ -469,7 +453,7 @@
         <div class="row g-3 align-items-end cw-form-row cw-row-b">
             <div class="col-12 col-md-auto cw-field-storage">
                 <label class="form-label">Storage Location</label>
-                {% set selected_storage = rapid_default_storage %}
+                {% set selected_storage = request.args.get('storage_location', '') %}
                 <select class="form-select" name="storage_location">
                     <option value="">Select Storage Location</option>
                     {% if selected_storage and selected_storage not in all_storage_location_choices %}
@@ -496,7 +480,7 @@
                 <label class="form-label">Status</label>
                 <select class="form-select" name="status">
                     {% for status in ["Holding", "Active", "Sold"] %}
-                        <option value="{{ status }}" {% if rapid_default_status == status %}selected{% endif %}>{{ status }}</option>
+                        <option value="{{ status }}" {% if request.args.get('status', 'Active') == status %}selected{% endif %}>{{ status }}</option>
                     {% endfor %}
                 </select>
             </div>

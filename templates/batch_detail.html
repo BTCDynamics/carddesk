@@ -14,47 +14,10 @@
 .batch-stat { padding: 1rem; min-height: 112px; border-radius: 1rem; background: linear-gradient(145deg, #202b3a, #263244); border: 1px solid rgba(148,163,184,.20); }
 .batch-stat-label { color: #cbd5e1; font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
 .batch-stat-value { margin-top: .35rem; color: #fff; font-size: 1.8rem; font-weight: 900; }
-.batch-table {
-    color: #e5edf7;
-    margin-bottom: 0;
-    --bs-table-bg: transparent;
-    --bs-table-color: #e5edf7;
-    --bs-table-striped-bg: rgba(15, 23, 42, .36);
-    --bs-table-striped-color: #f8fafc;
-    --bs-table-hover-bg: rgba(14, 165, 233, .12);
-    --bs-table-hover-color: #ffffff;
-}
-.batch-table thead th,
-.batch-table th {
-    color: #bfdbfe !important;
-    background: rgba(15, 23, 42, .92) !important;
-    font-size: .72rem;
-    font-weight: 900;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    border-color: rgba(148,163,184,.18) !important;
-}
-.batch-table tbody tr,
-.batch-table tbody td {
-    background: rgba(8, 18, 33, .72) !important;
-    color: #f8fafc !important;
-}
-.batch-table tbody tr:nth-child(even) td {
-    background: rgba(15, 23, 42, .88) !important;
-}
-.batch-table tbody tr:hover td {
-    background: rgba(14, 165, 233, .14) !important;
-}
-.batch-table td {
-    border-color: rgba(148,163,184,.12) !important;
-    vertical-align: middle;
-}
-.batch-table .text-muted,
-.batch-card-subline {
-    color: #9fb3ca !important;
-}
-.batch-link { color: #ffffff !important; text-decoration: none; font-weight: 900; }
-.batch-link:hover { color: #67e8f9 !important; text-decoration: underline; }
+.batch-table { color: #e5edf7; margin-bottom: 0; }
+.batch-table th { color: #93c5fd; font-size: .72rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; border-color: rgba(148,163,184,.18); }
+.batch-table td { border-color: rgba(148,163,184,.12); vertical-align: middle; }
+.batch-link { color: #fff !important; text-decoration: none; font-weight: 900; }
 @media (max-width: 991.98px) { .batch-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 575.98px) { .batch-stat-grid { grid-template-columns: 1fr; } }
 </style>
@@ -70,8 +33,8 @@
             <a class="btn btn-outline-info" href="{{ url_for('intake_tools') }}">Card Intake</a>
             <a class="btn btn-outline-warning" href="{{ url_for('rapid_entry') }}">Rapid Entry</a>
             {% if batch.status != 'Active' %}
-                <form method="POST" action="{{ url_for('activate_intake_batch', batch_id=batch.id) }}" onsubmit="return confirm('Reopen this batch and make it the active intake batch? Any other active batch will be closed.');">
-                    <button class="btn btn-success" type="submit">Reopen Batch</button>
+                <form method="POST" action="{{ url_for('activate_intake_batch', batch_id=batch.id) }}">
+                    <button class="btn btn-success" type="submit">Make Active</button>
                 </form>
             {% else %}
                 <form method="POST" action="{{ url_for('close_intake_batch', batch_id=batch.id) }}">
@@ -80,16 +43,6 @@
             {% endif %}
         </div>
     </div>
-
-    {% if batch.status != 'Active' %}
-        <div class="alert alert-secondary mb-4">
-            <strong>This batch is closed.</strong> Reopen it when you want Mobile Capture, Upload Images, AI Review, and Rapid Entry to start attaching new cards to this batch again.
-        </div>
-    {% else %}
-        <div class="alert alert-success mb-4">
-            <strong>This batch is active.</strong> New captures and intake records will attach to this batch until you close it or activate another batch.
-        </div>
-    {% endif %}
 
     <div class="batch-stat-grid mb-4">
         <div class="batch-stat"><div class="batch-stat-label">Inventory Cards</div><div class="batch-stat-value">{{ stats.card_count }}</div></div>
@@ -115,7 +68,26 @@
                             <div class="col-md-6"><label class="form-label">Card Type</label><select class="form-select" name="default_card_type"><option value="Raw" {% if batch.default_card_type != 'Graded' %}selected{% endif %}>Raw</option><option value="Graded" {% if batch.default_card_type == 'Graded' %}selected{% endif %}>Graded</option></select></div>
                             <div class="col-md-6"><label class="form-label">Collection</label><input class="form-control" name="default_collection_type" value="{{ batch.default_collection_type or 'Inventory' }}"></div>
                             <div class="col-md-6"><label class="form-label">Card Status</label><input class="form-control" name="default_status" value="{{ batch.default_status or 'Active' }}"></div>
-                            <div class="col-md-6"><label class="form-label">Storage Location</label><input class="form-control" name="default_storage_location" value="{{ batch.default_storage_location or '' }}"></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Storage Location</label>
+                                {% set selected_storage = batch.default_storage_location or '' %}
+                                <select class="form-select" name="default_storage_location">
+                                    <option value="">Select Storage Location</option>
+                                    {% if selected_storage and selected_storage not in all_storage_location_choices %}
+                                        <option value="{{ selected_storage }}" selected>{{ selected_storage }}</option>
+                                    {% endif %}
+                                    {% for location in all_storage_location_choices %}
+                                        <option value="{{ location }}" {% if selected_storage == location %}selected{% endif %}>{{ location }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if not all_storage_location_choices %}
+                                    <div class="small text-warning mt-1">
+                                        No storage locations yet. <a class="link-warning fw-bold" href="{{ url_for('storage_explorer') }}">Create one first</a>.
+                                    </div>
+                                {% else %}
+                                    <div class="small text-muted mt-1">Create new storage locations from Storage Explorer, then select them here.</div>
+                                {% endif %}
+                            </div>
                             <div class="col-md-6"><label class="form-label">Acquisition Source</label><input class="form-control" name="default_acquisition_source" value="{{ batch.default_acquisition_source or '' }}"></div>
                             <div class="col-md-6"><label class="form-label">Acquisition Date</label><input class="form-control" type="date" name="default_acquisition_date" value="{{ batch.default_acquisition_date or '' }}"></div>
                             <div class="col-12"><label class="form-label">Acquisition Show / Source Name</label><input class="form-control" name="default_acquisition_event" value="{{ batch.default_acquisition_event or '' }}"></div>
@@ -138,7 +110,7 @@
                                 <tbody>
                                     {% for card in stats.inventory_cards %}
                                         <tr>
-                                            <td><a class="batch-link" href="{{ url_for('card_detail', card_id=card.id) }}">{{ card.player_name }}</a><div class="batch-card-subline small">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }}{% if card.card_number %} · #{{ card.card_number }}{% endif %}</div></td>
+                                            <td><a class="batch-link" href="{{ url_for('card_detail', card_id=card.id) }}">{{ card.player_name }}</a><div class="text-muted small">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }}{% if card.card_number %} · #{{ card.card_number }}{% endif %}</div></td>
                                             <td>{{ card.storage_location or '—' }}</td>
                                             <td class="text-end">${{ "%.2f"|format(card.purchase_price or 0) }}</td>
                                             <td class="text-end">${{ "%.2f"|format(card.asking_price or 0) }}</td>
@@ -165,7 +137,7 @@
                         <tbody>
                             {% for staged in stats.staged_cards %}
                                 <tr>
-                                    <td><a class="batch-link" href="{{ url_for('ai_import_review', status=staged.ai_status, focus=staged.id) }}">{{ staged.player_name or 'Unidentified Card' }}</a><div class="batch-card-subline small">{{ staged.year or '' }} {{ staged.brand or '' }}{% if staged.card_number %} · #{{ staged.card_number }}{% endif %}</div></td>
+                                    <td><a class="batch-link" href="{{ url_for('ai_import_review', status=staged.ai_status, focus=staged.id) }}">{{ staged.player_name or 'Unidentified Card' }}</a><div class="text-muted small">{{ staged.year or '' }} {{ staged.brand or '' }}{% if staged.card_number %} · #{{ staged.card_number }}{% endif %}</div></td>
                                     <td><span class="badge text-bg-info">{{ staged.ai_status }}</span></td>
                                     <td>{{ staged.storage_location or '—' }}</td>
                                     <td class="text-end">${{ "%.2f"|format(staged.purchase_price or 0) }}</td>

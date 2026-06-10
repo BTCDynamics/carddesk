@@ -3,6 +3,7 @@ import json
 from flask import render_template, request, url_for
 
 from models import db, CardImportStaging, IntakeBatch
+from helpers.storage_helpers import get_storage_locations
 from helpers.acquisition_helpers import (
     clean_value,
     acquisition_value,
@@ -35,6 +36,7 @@ def register_capture_routes(app, save_uploaded_image_with_source, recognize_card
         return render_template(
             "mobile_capture.html",
             active_intake_batch=active_intake_batch,
+            all_storage_location_choices=get_storage_locations(),
         )
 
 
@@ -57,15 +59,14 @@ def register_capture_routes(app, save_uploaded_image_with_source, recognize_card
             image_filename=image_filename,
             source_filename=source_filename or uploaded_file.filename,
             sport=request.form.get("default_sport") or batch_default(active_intake_batch, "default_sport", "Baseball"),
-            card_type=batch_default(active_intake_batch, "default_card_type", "Raw"),
             collection_type=request.form.get("collection_type") or batch_default(active_intake_batch, "default_collection_type", "Inventory"),
             status=request.form.get("status") or batch_default(active_intake_batch, "default_status", "Active"),
             purchase_date=purchase_date_value(request.form) or batch_default(active_intake_batch, "default_acquisition_date"),
             acquisition_source=acquisition_value(request.form.get("acquisition_source") or batch_default(active_intake_batch, "default_acquisition_source", "Existing Inventory")),
             acquisition_date=acquisition_date_value(request.form) or batch_default(active_intake_batch, "default_acquisition_date"),
             acquisition_event=clean_value(request.form.get("acquisition_event")) or batch_default(active_intake_batch, "default_acquisition_event"),
-            intake_batch_id=active_intake_batch.id if active_intake_batch else None,
             storage_location=clean_value(request.form.get("storage_location")) or batch_default(active_intake_batch, "default_storage_location"),
+            intake_batch_id=active_intake_batch.id if active_intake_batch else None,
             quantity=1,
             ai_status="Pending Review",
             notes="Captured from Mobile Capture.",

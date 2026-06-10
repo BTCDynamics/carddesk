@@ -17,6 +17,9 @@ from helpers.deal_cart_helpers import (
 )
 
 
+print("USING INVENTORY_ROUTES AGING")
+
+
 def register_inventory_routes(app, generate_card_code, save_uploaded_image, delete_image_file):
     def get_active_event_name():
         active_event = (
@@ -362,6 +365,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             min_price=min_price,
             max_price=max_price,
             storage_locations=storage_locations,
+            all_storage_location_choices=storage_locations,
             acquisition_sources=acquisition_sources,
             acquisition_events=acquisition_events,
             deal_cart_ids=deal_cart_ids,
@@ -666,56 +670,6 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         )
 
 
-    @app.route("/cards/bulk-delete", methods=["POST"])
-    def bulk_delete_cards():
-        raw_card_ids = request.form.getlist("card_ids")
-        card_ids = []
-
-        for raw_id in raw_card_ids:
-            try:
-                card_ids.append(int(raw_id))
-            except (TypeError, ValueError):
-                continue
-
-        card_ids = list(dict.fromkeys(card_ids))
-
-        if not card_ids:
-            flash("Select at least one card before deleting.")
-            return redirect(request.referrer or url_for("cards"))
-
-        cards_to_delete = Card.query.filter(Card.id.in_(card_ids)).all()
-
-        if not cards_to_delete:
-            flash("No matching cards were found to delete.")
-            return redirect(request.referrer or url_for("cards"))
-
-        image_files = []
-        for card in cards_to_delete:
-            if card.image_filename:
-                image_files.append(card.image_filename)
-            image_back_filename = getattr(card, "image_back_filename", None)
-            if image_back_filename:
-                image_files.append(image_back_filename)
-
-        CompRefreshQueue.query.filter(
-            CompRefreshQueue.card_id.in_([card.id for card in cards_to_delete])
-        ).delete(synchronize_session=False)
-
-        deleted_count = len(cards_to_delete)
-
-        for card in cards_to_delete:
-            db.session.delete(card)
-
-        db.session.commit()
-
-        for image_filename in image_files:
-            delete_image_file(image_filename)
-
-        flash(f"Deleted {deleted_count} selected card(s).")
-
-        return redirect(request.referrer or url_for("cards"))
-
-
     @app.route("/cards/<int:card_id>")
     def card_detail(card_id):
         card = Card.query.get_or_404(card_id)
@@ -783,7 +737,8 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
 
         return render_template(
             "edit_card.html",
-            card=card
+            card=card,
+            all_storage_location_choices=get_storage_locations()
         )
 
 
@@ -868,7 +823,9 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
 
         return render_template(
             "add_card.html",
-            clone_source=source_card
+            clone_source=source_card,
+            active_intake_batch=get_active_intake_batch(),
+            all_storage_location_choices=get_storage_locations()
         )
 
 
@@ -983,7 +940,11 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
 
             return redirect(url_for("rapid_entry", **keep_values))
 
-        return render_template("rapid_entry.html")
+        return render_template(
+            "rapid_entry.html",
+            active_intake_batch=active_intake_batch,
+            all_storage_location_choices=get_storage_locations()
+        )
 
 
     @app.route("/add-card", methods=["GET", "POST"])
@@ -1122,4 +1083,9 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
 
             return redirect(url_for("card_detail", card_id=new_card.id))
 
-        return render_template("add_card.html", clone_source=None)
+        return render_template(
+            "add_card.html",
+            clone_source=None,
+            active_intake_batch=active_intake_batch,
+            all_storage_location_choices=get_storage_locations()
+        )
