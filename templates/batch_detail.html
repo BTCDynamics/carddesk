@@ -30,7 +30,7 @@
         </div>
         <div class="d-flex flex-wrap gap-2">
             <a class="btn btn-primary" href="{{ url_for('intake_batches') }}">All Batches</a>
-            <a class="btn btn-outline-info" href="{{ url_for('intake_tools') }}">Card Intake</a>
+            <a class="btn btn-outline-info" href="{{ url_for('intake_tools') }}">Card Processing</a>
             <a class="btn btn-outline-warning" href="{{ url_for('rapid_entry') }}">Rapid Entry</a>
             {% if batch.status != 'Active' %}
                 <form method="POST" action="{{ url_for('activate_intake_batch', batch_id=batch.id) }}">

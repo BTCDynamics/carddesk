@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Card Intake{% endblock %}
+
+{% block content %}
+<style>
+.intake-tools-shell {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+}
+
+.intake-tools-shell .page-card {
+    border-radius: 1.15rem;
+}
+
+.intake-primary-grid {
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.intake-secondary-grid {
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.intake-section-intro {
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.intake-primary-grid {
+    margin-bottom: 3rem !important;
+}
+
+.intake-secondary-intro {
+    margin-top: 2.25rem !important;
+}
+
+
+
+.intake-review-flow {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: center;
+    gap: .55rem;
+    margin: 1.05rem 0 1rem;
+    padding: .9rem;
+    border-radius: 1rem;
+    background: rgba(15, 23, 42, .42);
+    border: 1px solid rgba(147, 197, 253, .22);
+}
+
+.intake-review-step {
+    min-height: 74px;
+    display: grid;
+    place-items: center;
+    gap: .22rem;
+    padding: .55rem .35rem;
+    border-radius: .85rem;
+    background: linear-gradient(145deg, #253246, #2b374a);
+    border: 1px solid rgba(148, 163, 184, .22);
+    text-align: center;
+}
+
+.intake-review-step-icon {
+    font-size: 1.55rem;
+    line-height: 1;
+}
+
+.intake-review-step-label {
+    color: #cbd5e1;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.intake-review-arrow {
+    color: #fbbf24;
+    font-size: 1.15rem;
+    font-weight: 900;
+}
+
+.intake-review-count-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-top: .9rem;
+    padding: .75rem .85rem;
+    border-radius: .9rem;
+    background: linear-gradient(135deg, rgba(245, 158, 11, .18), rgba(15, 23, 42, .62));
+    border: 1px solid rgba(251, 191, 36, .26);
+}
+
+.intake-review-count-label {
+    color: #cbd5e1;
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.intake-review-count-number {
+    min-width: 3.1rem;
+    min-height: 3.1rem;
+    display: grid;
+    place-items: center;
+    border-radius: .85rem;
+    color: #111827;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    font-size: 1.5rem;
+    font-weight: 900;
+    box-shadow: 0 .65rem 1.2rem rgba(245, 158, 11, .24);
+}
+
+.intake-review-count-box.clear {
+    background: linear-gradient(135deg, rgba(34, 197, 94, .16), rgba(15, 23, 42, .62));
+    border-color: rgba(74, 222, 128, .24);
+}
+
+.intake-review-count-box.clear .intake-review-count-number {
+    color: #052e16;
+    background: linear-gradient(135deg, #86efac, #22c55e);
+}
+
+@media (max-width: 575.98px) {
+    .intake-review-flow {
+        grid-template-columns: 1fr;
+    }
+
+    .intake-review-arrow {
+        transform: rotate(90deg);
+        text-align: center;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .intake-tools-shell {
+        padding: 0 .35rem;
+    }
+}
+</style>
+<div class="intake-tools-shell">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
+    <div>
+        <h1 class="h2 mb-1">Card Intake</h1>
+        <p class="text-muted mb-0">Capture, scan, review, and import cards into CardDesk inventory. Choose the best way to capture, scan, or stage cards before they become inventory.</p>
+    </div>
+</div>
+
+<div class="mb-4 intake-section-intro">
+    <div class="card page-card">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="cw-section-label mb-2">Intake Batch</div>
+                {% if active_intake_batch %}
+                    <h3 class="h5 mb-1">{{ active_intake_batch.batch_name }}</h3>
+                    <p class="text-muted small mb-0">Active defaults are applied to Mobile Capture, Upload Images, AI Review imports, and Rapid Entry.</p>
+                {% else %}
+                    <h3 class="h5 mb-1">No active batch</h3>
+                    <p class="text-muted small mb-0">Create a batch when you want shared defaults for a stack of cards.</p>
+                {% endif %}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-warning fw-bold" href="{{ url_for('intake_batches') }}">Manage Batches</a>
+                {% if active_intake_batch %}
+                    <a class="btn btn-outline-info" href="{{ url_for('intake_batch_detail', batch_id=active_intake_batch.id) }}">View Active Batch</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mb-3 intake-section-intro">
+    <div class="cw-section-label mb-2">Primary Intake</div>
+    <p class="text-muted small mb-0">Use these tools when you are bringing cards into CardDesk for AI Review and Inventory Import.</p>
+</div>
+
+<div class="row g-3 mb-4 intake-primary-grid">
+    <div class="col-md-6 col-xl-4">
+        <div class="card page-card h-100">
+            <div class="card-body">
+                <span class="btn btn-sm btn-success mb-3">Phone Capture</span>
+                <h3 class="h5 mb-2">Mobile Capture</h3>
+
+                <p class="text-muted small">
+                    Scan this QR code with your phone to open Mobile Capture and save images for AI Review and Inventory Import.
+                </p>
+
+                <div class="text-center my-3">
+                    <img class="mobile-capture-mini-qr"
+                         src="{{ mobile_capture_qr_url }}"
+                         alt="QR code for Mobile Card Capture">
+                </div>
+
+                <div class="d-flex justify-content-center mt-3">
+                    <button class="btn btn-outline-light btn-sm" type="button" onclick="copyMobileCaptureUrl()">Copy URL</button>
+                    <span id="mobileCaptureUrlText" class="visually-hidden">{{ mobile_capture_url }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        {% set psa_mobile_scan_url = url_for('psa_mobile_scan', _external=True) %}
+        {% set psa_mobile_scan_qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' ~ (psa_mobile_scan_url|urlencode) %}
+        <div class="card page-card h-100">
+            <div class="card-body">
+                <span class="btn btn-sm btn-secondary mb-3">Graded Slabs</span>
+                <h3 class="h5 mb-2">PSA Lookup</h3>
+
+                <p class="text-muted small">
+                    Use Desktop Scanner for handheld USB/Bluetooth scanners, or scan this QR code with your phone for mobile PSA barcode scanning.
+                </p>
+
+                <div class="text-center my-3">
+                    <img class="mobile-capture-mini-qr"
+                         src="{{ psa_mobile_scan_qr_url }}"
+                         alt="QR code for PSA Barcode Scanner">
+                </div>
+
+                <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a class="btn btn-info btn-sm" href="{{ url_for('psa_desktop_scan') }}">Desktop Scanner</a>
+                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('psa_lookup') }}">Manual Lookup</a>
+                    <button class="btn btn-outline-light btn-sm" type="button" onclick="copyPsaScannerUrl()">Copy Mobile URL</button>
+                    <span id="psaScannerUrlText" class="visually-hidden">{{ psa_mobile_scan_url }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <a class="dashboard-card-link" href="{{ url_for('ai_import_review') }}">
+            <div class="card page-card dashboard-click-card h-100 position-relative">
+                {% if ai_import_action_count %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ ai_import_action_count }}
+                    </span>
+                {% endif %}
+                <div class="card-body">
+                    <span class="btn btn-sm {% if ai_import_action_count %}btn-warning{% else %}btn-success{% endif %} mb-3">AI Review</span>
+                    <h3 class="h5 d-flex align-items-center gap-2 mb-2">
+                        Review & Import
+                        {% if ai_import_action_count %}
+                            <span class="badge bg-danger">{{ ai_import_action_count }}</span>
+                        {% else %}
+                            <span class="badge bg-success">Clear</span>
+                        {% endif %}
+                    </h3>
+                    <p class="text-muted small mb-0">Review captured or uploaded cards before they become inventory.</p>
+
+                    <div class="intake-review-flow" aria-label="Capture to review to inventory workflow">
+                        <div class="intake-review-step">
+                            <div class="intake-review-step-icon">📸</div>
+                            <div class="intake-review-step-label">Capture</div>
+                        </div>
+                        <div class="intake-review-arrow">→</div>
+                        <div class="intake-review-step">
+                            <div class="intake-review-step-icon">🤖</div>
+                            <div class="intake-review-step-label">Review</div>
+                        </div>
+                        <div class="intake-review-arrow">→</div>
+                        <div class="intake-review-step">
+                            <div class="intake-review-step-icon">📦</div>
+                            <div class="intake-review-step-label">Inventory</div>
+                        </div>
+                    </div>
+
+                    <div class="intake-review-count-box {% if not ai_import_action_count %}clear{% endif %}">
+                        <div>
+                            <div class="intake-review-count-label">Cards Waiting Review</div>
+                            <div class="text-muted small">
+                                {% if ai_import_action_count %}
+                                    Ready for review before import.
+                                {% else %}
+                                    Queue is clear.
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="intake-review-count-number">{{ ai_import_action_count or 0 }}</div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="mb-3 intake-section-intro intake-secondary-intro">
+    <div class="cw-section-label mb-2">Other Intake Tools</div>
+    <p class="text-muted small mb-0">Use these when you already have images, need fast no-photo entry, or need a manual fallback.</p>
+</div>
+
+<div class="row g-3 mb-4 intake-secondary-grid">
+    <div class="col-md-6 col-xl-4">
+        <a class="dashboard-card-link" href="{{ url_for('ai_import_upload') }}">
+            <div class="card page-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-info mb-3">Existing Images</span>
+                    <h3 class="h5">Upload Images</h3>
+                    <p class="text-muted mb-0">Upload saved scans or image files from your computer and send them to AI Review.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <a class="dashboard-card-link" href="{{ url_for('rapid_entry') }}">
+            <div class="card page-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-dark mb-3">Fast No-Photo Entry</span>
+                    <h3 class="h5">Rapid Entry</h3>
+                    <p class="text-muted mb-0">Quickly batch enter many cards with common data like (Topps 2021 Baseball).</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <a class="dashboard-card-link" href="{{ url_for('add_card') }}">
+            <div class="card page-card dashboard-click-card h-100">
+                <div class="card-body">
+                    <span class="btn btn-sm btn-outline-light mb-3">Fallback</span>
+                    <h3 class="h5">Manual Entry</h3>
+                    <p class="text-muted mb-0">Use only when capture, upload, or AI intake is not available.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+</div>
+
+<script>
+function copyMobileCaptureUrl() {
+    const text = document.getElementById("mobileCaptureUrlText")?.textContent?.trim();
+    if (!text) {
+        return;
+    }
+    navigator.clipboard.writeText(text);
+}
+
+function copyPsaScannerUrl() {
+    const text = document.getElementById("psaScannerUrlText")?.textContent?.trim();
+    if (!text) {
+        return;
+    }
+    navigator.clipboard.writeText(text);
+}
+</script>
+{% endblock %}
