@@ -74,7 +74,10 @@ def batch_stats(batch):
 
     return {
         "inventory_cards": inventory_cards,
-        "staged_cards": staged_cards,
+        "staged_cards": [
+            card for card in staged_cards
+            if card.ai_status not in ["Imported", "Rejected"]
+        ],
         "card_count": card_count,
         "staged_count": staged_count,
         "imported_staged_count": imported_staged_count,
