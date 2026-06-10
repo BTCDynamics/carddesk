@@ -775,7 +775,7 @@ async function saveCapture(options = {}) {
         const batchText = result.batch_name ? ` · Batch: ${result.batch_name}` : "";
 
         setStatus(`✅ Saved to AI Review Queue: ${savedStatus}${batchText}. Capture another card when ready.`);
-        showSaveSuccessFeedback(savedStatus, { refreshAfterSave: true });
+        showSaveSuccessFeedback(savedStatus, { refreshAfterSave: false });
 
         lastCapturedBlob = null;
         saveBtn.disabled = true;
