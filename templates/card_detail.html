@@ -426,6 +426,23 @@
     color: #ffffff !important;
 }
 
+.batch-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: .32rem .72rem;
+    background: rgba(14, 165, 233, .20) !important;
+    color: #bfdbfe !important;
+    border: 1px solid rgba(125, 211, 252, .36) !important;
+    font-weight: 900 !important;
+    text-decoration: none !important;
+}
+
+.batch-pill:hover {
+    background: rgba(14, 165, 233, .34) !important;
+    color: #ffffff !important;
+}
+
 .cd-actions {
     display: flex;
     justify-content: space-between;
@@ -573,6 +590,7 @@
 {% set potential_profit = asking_price - purchase_price %}
 {% set realized_profit = sold_price - purchase_price %}
 {% set displayed_profit = realized_profit if card.sold_price else potential_profit %}
+{% set intake_batch = card.intake_batch if card.intake_batch is defined else none %}
 
 <div class="card-detail-page">
     <div class="card-detail-hero">
@@ -676,6 +694,17 @@
                         <div class="cd-detail-item">
                             <div class="cd-detail-label">Acquisition Event</div>
                             <div class="cd-detail-value">{{ card.acquisition_event or '—' }}</div>
+                        </div>
+
+                        <div class="cd-detail-item">
+                            <div class="cd-detail-label">Intake Batch</div>
+                            <div class="cd-detail-value">
+                                {% if intake_batch %}
+                                    <a class="batch-pill" href="{{ url_for('intake_batch_detail', batch_id=intake_batch.id) }}">{{ intake_batch.batch_name }}</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -882,6 +911,17 @@
                     <div class="cd-sidebar-row">
                         <div class="cd-sidebar-label">Acquired</div>
                         <div class="cd-sidebar-value">{{ card.acquisition_source or 'Existing Inventory' }}</div>
+                    </div>
+
+                    <div class="cd-sidebar-row">
+                        <div class="cd-sidebar-label">Batch</div>
+                        <div class="cd-sidebar-value">
+                            {% if intake_batch %}
+                                <a class="batch-pill" href="{{ url_for('intake_batch_detail', batch_id=intake_batch.id) }}">{{ intake_batch.batch_name }}</a>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
                     </div>
 
                     <div class="cd-sidebar-row">
