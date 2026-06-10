@@ -62,6 +62,11 @@ class Card(db.Model):
 
     intake_batch_id = db.Column(db.Integer, db.ForeignKey("intake_batch.id"))
 
+    intake_batch = db.relationship(
+        "IntakeBatch",
+        foreign_keys=[intake_batch_id]
+    )
+
     storage_location = db.Column(db.String(200))
 
     image_filename = db.Column(db.String(200))
