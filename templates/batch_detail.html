@@ -14,10 +14,47 @@
 .batch-stat { padding: 1rem; min-height: 112px; border-radius: 1rem; background: linear-gradient(145deg, #202b3a, #263244); border: 1px solid rgba(148,163,184,.20); }
 .batch-stat-label { color: #cbd5e1; font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
 .batch-stat-value { margin-top: .35rem; color: #fff; font-size: 1.8rem; font-weight: 900; }
-.batch-table { color: #e5edf7; margin-bottom: 0; }
-.batch-table th { color: #93c5fd; font-size: .72rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; border-color: rgba(148,163,184,.18); }
-.batch-table td { border-color: rgba(148,163,184,.12); vertical-align: middle; }
-.batch-link { color: #fff !important; text-decoration: none; font-weight: 900; }
+.batch-table {
+    color: #e5edf7;
+    margin-bottom: 0;
+    --bs-table-bg: transparent;
+    --bs-table-color: #e5edf7;
+    --bs-table-striped-bg: rgba(15, 23, 42, .36);
+    --bs-table-striped-color: #f8fafc;
+    --bs-table-hover-bg: rgba(14, 165, 233, .12);
+    --bs-table-hover-color: #ffffff;
+}
+.batch-table thead th,
+.batch-table th {
+    color: #bfdbfe !important;
+    background: rgba(15, 23, 42, .92) !important;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    border-color: rgba(148,163,184,.18) !important;
+}
+.batch-table tbody tr,
+.batch-table tbody td {
+    background: rgba(8, 18, 33, .72) !important;
+    color: #f8fafc !important;
+}
+.batch-table tbody tr:nth-child(even) td {
+    background: rgba(15, 23, 42, .88) !important;
+}
+.batch-table tbody tr:hover td {
+    background: rgba(14, 165, 233, .14) !important;
+}
+.batch-table td {
+    border-color: rgba(148,163,184,.12) !important;
+    vertical-align: middle;
+}
+.batch-table .text-muted,
+.batch-card-subline {
+    color: #9fb3ca !important;
+}
+.batch-link { color: #ffffff !important; text-decoration: none; font-weight: 900; }
+.batch-link:hover { color: #67e8f9 !important; text-decoration: underline; }
 @media (max-width: 991.98px) { .batch-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 575.98px) { .batch-stat-grid { grid-template-columns: 1fr; } }
 </style>
@@ -101,7 +138,7 @@
                                 <tbody>
                                     {% for card in stats.inventory_cards %}
                                         <tr>
-                                            <td><a class="batch-link" href="{{ url_for('card_detail', card_id=card.id) }}">{{ card.player_name }}</a><div class="text-muted small">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }}{% if card.card_number %} · #{{ card.card_number }}{% endif %}</div></td>
+                                            <td><a class="batch-link" href="{{ url_for('card_detail', card_id=card.id) }}">{{ card.player_name }}</a><div class="batch-card-subline small">{{ card.card_code }} · {{ card.year or '' }} {{ card.brand or '' }}{% if card.card_number %} · #{{ card.card_number }}{% endif %}</div></td>
                                             <td>{{ card.storage_location or '—' }}</td>
                                             <td class="text-end">${{ "%.2f"|format(card.purchase_price or 0) }}</td>
                                             <td class="text-end">${{ "%.2f"|format(card.asking_price or 0) }}</td>
@@ -128,7 +165,7 @@
                         <tbody>
                             {% for staged in stats.staged_cards %}
                                 <tr>
-                                    <td><a class="batch-link" href="{{ url_for('ai_import_review', status=staged.ai_status, focus=staged.id) }}">{{ staged.player_name or 'Unidentified Card' }}</a><div class="text-muted small">{{ staged.year or '' }} {{ staged.brand or '' }}{% if staged.card_number %} · #{{ staged.card_number }}{% endif %}</div></td>
+                                    <td><a class="batch-link" href="{{ url_for('ai_import_review', status=staged.ai_status, focus=staged.id) }}">{{ staged.player_name or 'Unidentified Card' }}</a><div class="batch-card-subline small">{{ staged.year or '' }} {{ staged.brand or '' }}{% if staged.card_number %} · #{{ staged.card_number }}{% endif %}</div></td>
                                     <td><span class="badge text-bg-info">{{ staged.ai_status }}</span></td>
                                     <td>{{ staged.storage_location or '—' }}</td>
                                     <td class="text-end">${{ "%.2f"|format(staged.purchase_price or 0) }}</td>
