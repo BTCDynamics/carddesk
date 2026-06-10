@@ -213,6 +213,74 @@
             border: 1px dashed rgba(148, 163, 184, .28);
         }
 
+        .results-confirmation {
+            margin-top: 1.25rem;
+            padding: 1rem;
+            border-radius: 1.15rem;
+            color: #052e16;
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,.42), transparent 36%),
+                linear-gradient(145deg, #86efac, #22c55e);
+            border: 1px solid rgba(187, 247, 208, .86);
+            box-shadow: 0 1rem 2.4rem rgba(34, 197, 94, .22);
+        }
+
+        .results-confirmation.zero {
+            color: #fef3c7;
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,.12), transparent 36%),
+                linear-gradient(145deg, #92400e, #451a03);
+            border-color: rgba(251, 191, 36, .50);
+            box-shadow: 0 1rem 2.4rem rgba(245, 158, 11, .16);
+        }
+
+        .results-confirmation-kicker {
+            font-size: .75rem;
+            font-weight: 950;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            opacity: .86;
+        }
+
+        .results-confirmation-title {
+            margin-top: .15rem;
+            font-size: clamp(1.45rem, 7vw, 2.35rem);
+            font-weight: 950;
+            line-height: .98;
+            letter-spacing: -.045em;
+        }
+
+        .results-confirmation-sub {
+            margin-top: .45rem;
+            font-size: .95rem;
+            font-weight: 850;
+            opacity: .88;
+        }
+
+        .results-anchor {
+            scroll-margin-top: 1rem;
+        }
+
+        .results-header-card {
+            padding: .9rem 1rem;
+            border-radius: 1rem;
+            background: rgba(15, 23, 42, .82);
+            border: 1px solid rgba(125, 211, 252, .24);
+            box-shadow: 0 .7rem 1.65rem rgba(0,0,0,.22);
+        }
+
+        .results-found-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: .38rem .7rem;
+            color: #082f49;
+            background: #7dd3fc;
+            font-size: .82rem;
+            font-weight: 950;
+            white-space: nowrap;
+        }
+
         .pager-card {
             margin-top: 1rem;
             padding: .85rem;
@@ -309,7 +377,35 @@
         </section>
 
         {% if search_query or browse_mode %}
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 mb-3">
+            <section id="results-section" class="results-anchor">
+                <div class="results-confirmation {% if not total_results %}zero{% endif %}">
+                    <div class="results-confirmation-kicker">
+                        {% if search_query %}
+                            Search Complete
+                        {% else %}
+                            Browse Mode
+                        {% endif %}
+                    </div>
+                    <div class="results-confirmation-title">
+                        {% if total_results %}
+                            ✅ {{ total_results }} Card{% if total_results != 1 %}s{% endif %} Found
+                        {% else %}
+                            No Matches Found
+                        {% endif %}
+                    </div>
+                    <div class="results-confirmation-sub">
+                        {% if search_query %}
+                            Showing results for “{{ search_query }}”
+                        {% elif browse_mode %}
+                            Browsing cards loaded into this show
+                        {% endif %}
+                        {% if total_results %}
+                            · Showing {{ first_result }}–{{ last_result }}
+                        {% endif %}
+                    </div>
+                </div>
+
+            <div class="results-header-card d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 mb-3">
                 <h2 class="h5 mb-0">
                     {% if search_query %}
                         Results for “{{ search_query }}”
@@ -317,7 +413,7 @@
                         Browsing Show Inventory
                     {% endif %}
                 </h2>
-                <span class="badge text-bg-info">
+                <span class="results-found-pill">
                     {% if total_results %}
                         Showing {{ first_result }}–{{ last_result }} of {{ total_results }}
                     {% else %}
@@ -400,6 +496,7 @@
                     <div>Try searching just the player name, brand, year, team, or “PSA”.</div>
                 </div>
             {% endif %}
+            </section>
         {% elif not active_event %}
             <div class="empty-card mt-4">
                 <div class="h5 text-light">No show is currently active.</div>
@@ -416,5 +513,21 @@
             This customer view only shows cards loaded for the current show.
         </div>
     </main>
+    {% if search_query or browse_mode %}
+    <script>
+        (function () {
+            const resultsSection = document.getElementById("results-section");
+            if (!resultsSection) {
+                return;
+            }
+
+            // After a customer searches or taps Browse, move the phone screen
+            // directly to the results confirmation so the action feels complete.
+            setTimeout(function () {
+                resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 180);
+        })();
+    </script>
+    {% endif %}
 </body>
 </html>
