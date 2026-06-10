@@ -71,6 +71,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
         variation_filter = request.args.get("variation", "")
         acquisition_source_filter = request.args.get("acquisition_source", "")
         acquisition_event_filter = request.args.get("acquisition_event", "")
+        batch_filter = request.args.get("batch", "")
         min_price = request.args.get("min_price", "")
         max_price = request.args.get("max_price", "")
         scope = request.args.get("scope", "inventory")
@@ -152,6 +153,12 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
 
         if acquisition_event_filter:
             query = query.filter(Card.acquisition_event.ilike(f"%{acquisition_event_filter}%"))
+
+        if batch_filter:
+            try:
+                query = query.filter(Card.intake_batch_id == int(batch_filter))
+            except (TypeError, ValueError):
+                batch_filter = ""
 
         if grade_estimate_filter:
             query = query.filter(Card.grade_estimate.ilike(f"%{grade_estimate_filter}%"))
@@ -241,6 +248,7 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             variation_filter,
             acquisition_source_filter,
             acquisition_event_filter,
+            batch_filter,
             min_price,
             max_price,
         ])
@@ -352,6 +360,14 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             .all()
         ]
 
+        all_batches = IntakeBatch.query.order_by(IntakeBatch.batch_name.asc()).all()
+        selected_batch_name = None
+        if batch_filter:
+            for batch in all_batches:
+                if str(batch.id) == str(batch_filter):
+                    selected_batch_name = batch.batch_name
+                    break
+
         deal_cart_ids = get_deal_cart_ids()
         deal_cart_count = get_deal_cart_quantity()
 
@@ -379,6 +395,9 @@ def register_inventory_routes(app, generate_card_code, save_uploaded_image, dele
             variation_filter=variation_filter,
             acquisition_source_filter=acquisition_source_filter,
             acquisition_event_filter=acquisition_event_filter,
+            batch_filter=batch_filter,
+            selected_batch_name=selected_batch_name,
+            all_batches=all_batches,
             min_price=min_price,
             max_price=max_price,
             storage_locations=storage_locations,

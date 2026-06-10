@@ -403,6 +403,7 @@
 {% if variation_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if acquisition_source_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if acquisition_event_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if batch_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if min_price %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if max_price %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% set total_filter_count = search_count + filter_count %}
@@ -417,11 +418,11 @@
 
             <div class="btn-group btn-group-sm" role="group" aria-label="Inventory view toggle">
                 <a class="btn {% if current_view != 'gallery' %}btn-dark{% else %}btn-outline-dark{% endif %}"
-                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, min_price=min_price, max_price=max_price, view='table') }}">
+                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, batch=batch_filter, min_price=min_price, max_price=max_price, view='table') }}">
                     Table
                 </a>
                 <a class="btn {% if current_view == 'gallery' %}btn-dark{% else %}btn-outline-dark{% endif %}"
-                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, min_price=min_price, max_price=max_price, view='gallery') }}">
+                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, batch=batch_filter, min_price=min_price, max_price=max_price, view='gallery') }}">
                     Gallery
                 </a>
             </div>
@@ -598,6 +599,16 @@
                                 {% endfor %}
                             </datalist>
                         </div>
+
+                        <div>
+                            <label class="form-label">Intake Batch</label>
+                            <select class="form-select {% if batch_filter %}filter-active-field{% endif %}" name="batch">
+                                <option value="">All Batches</option>
+                                {% for batch in all_batches|default([]) %}
+                                    <option value="{{ batch.id }}" {% if batch_filter|string == batch.id|string %}selected{% endif %}>{{ batch.batch_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
 
                     <div class="inventory-filter-group">
@@ -637,6 +648,7 @@
                 {% if variation_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Variation: {{ variation_filter }}</span>{% endif %}
                 {% if acquisition_source_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Source: {{ acquisition_source_filter }}</span>{% endif %}
                 {% if acquisition_event_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Event: {{ acquisition_event_filter }}</span>{% endif %}
+                {% if batch_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Batch: {{ selected_batch_name or batch_filter }}</span>{% endif %}
                 {% if min_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Min Cost: {{ min_price }}</span>{% endif %}
                 {% if max_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Max Cost: {{ max_price }}</span>{% endif %}
                 <a class="btn btn-sm btn-edit-card" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', view=current_view) }}{% else %}{{ url_for('cards', view=current_view) }}{% endif %}">Clear Search</a>
