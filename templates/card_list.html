@@ -429,6 +429,7 @@
 {% if variation_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if acquisition_source_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if acquisition_event_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
+{% if batch_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if min_price %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if max_price %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% set total_filter_count = search_count + filter_count %}
@@ -443,11 +444,11 @@
 
             <div class="btn-group btn-group-sm" role="group" aria-label="Inventory view toggle">
                 <a class="btn {% if current_view != 'gallery' %}btn-dark{% else %}btn-outline-dark{% endif %}"
-                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, min_price=min_price, max_price=max_price, view='table') }}">
+                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, batch=batch_filter, min_price=min_price, max_price=max_price, view='table') }}">
                     Table
                 </a>
                 <a class="btn {% if current_view == 'gallery' %}btn-dark{% else %}btn-outline-dark{% endif %}"
-                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, min_price=min_price, max_price=max_price, view='gallery') }}">
+                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, batch=batch_filter, min_price=min_price, max_price=max_price, view='gallery') }}">
                     Gallery
                 </a>
             </div>
@@ -564,6 +565,17 @@
                                 {% endfor %}
                             </select>
                         </div>
+
+                        <div>
+                            <label class="form-label">Batch</label>
+                            <select class="form-select {% if batch_filter %}filter-active-field{% endif %}" name="batch">
+                                <option value="">All Batches</option>
+                                {% for batch_name in batch_names|default([]) %}
+                                    <option value="{{ batch_name }}" {% if batch_filter == batch_name %}selected{% endif %}>{{ batch_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="inventory-filter-locked-note">Filter by intake batch or purchase group</div>
+                        </div>
                     </div>
 
                     <div class="inventory-filter-group">
@@ -663,6 +675,7 @@
                 {% if variation_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Variation: {{ variation_filter }}</span>{% endif %}
                 {% if acquisition_source_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Source: {{ acquisition_source_filter }}</span>{% endif %}
                 {% if acquisition_event_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Event: {{ acquisition_event_filter }}</span>{% endif %}
+                {% if batch_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Batch: {{ batch_filter }}</span>{% endif %}
                 {% if min_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Min Cost: {{ min_price }}</span>{% endif %}
                 {% if max_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Max Cost: {{ max_price }}</span>{% endif %}
                 <a class="btn btn-sm btn-edit-card" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', view=current_view) }}{% else %}{{ url_for('cards', view=current_view) }}{% endif %}">Clear Search</a>
@@ -767,6 +780,13 @@
                                     —
                                 {% endif %}
                             </div>
+                            <div><strong>Batch:</strong>
+                                {% if card.intake_batch %}
+                                    <a class="badge text-bg-info text-decoration-none" href="{{ url_for('cards', batch=card.intake_batch.batch_name, view=current_view) }}">{{ card.intake_batch.batch_name }}</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </div>
                         </div>
 
                         <div class="mt-auto d-flex flex-wrap gap-2">
@@ -831,6 +851,7 @@
                         <th>Platform</th>
                         <th>Status</th>
                         <th>Collection</th>
+                        <th>Batch</th>
                         <th>Storage</th>
                         <th class="text-end">Actions</th>
                     </tr>
@@ -919,6 +940,14 @@
                             </td>
 
                             <td>
+                                {% if card.intake_batch %}
+                                    <a class="badge text-bg-info text-decoration-none" href="{{ url_for('cards', batch=card.intake_batch.batch_name, view=current_view) }}">{{ card.intake_batch.batch_name }}</a>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
                                 <form method="POST" action="{{ url_for('update_card_storage', card_id=card.id) }}" class="quick-storage-form">
                                     {% if all_storage_location_choices %}
                                         <div class="input-group input-group-sm quick-storage-group">
@@ -958,7 +987,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="17" class="text-center text-muted py-5">No cards found.</td></tr>
+                        <tr><td colspan="18" class="text-center text-muted py-5">No cards found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
