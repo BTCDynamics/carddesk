@@ -403,7 +403,6 @@
 {% if variation_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if acquisition_source_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if acquisition_event_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
-{% if batch_filter %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if min_price %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% if max_price %}{% set filter_count = filter_count + 1 %}{% endif %}
 {% set total_filter_count = search_count + filter_count %}
@@ -418,11 +417,11 @@
 
             <div class="btn-group btn-group-sm" role="group" aria-label="Inventory view toggle">
                 <a class="btn {% if current_view != 'gallery' %}btn-dark{% else %}btn-outline-dark{% endif %}"
-                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, batch=batch_filter, min_price=min_price, max_price=max_price, view='table') }}">
+                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, min_price=min_price, max_price=max_price, view='table') }}">
                     Table
                 </a>
                 <a class="btn {% if current_view == 'gallery' %}btn-dark{% else %}btn-outline-dark{% endif %}"
-                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, batch=batch_filter, min_price=min_price, max_price=max_price, view='gallery') }}">
+                   href="{{ url_for('cards', scope=scope, q=search_query, sport=sport_filter, status=status_filter, collection_type=collection_type_filter, rookie=rookie_filter, hof=hof_filter, card_type=card_type_filter, actual_grade=actual_grade_filter, grade_estimate=grade_estimate_filter, year=year_filter, brand=brand_filter, storage=storage_filter, variation=variation_filter, acquisition_source=acquisition_source_filter, acquisition_event=acquisition_event_filter, min_price=min_price, max_price=max_price, view='gallery') }}">
                     Gallery
                 </a>
             </div>
@@ -599,16 +598,6 @@
                                 {% endfor %}
                             </datalist>
                         </div>
-
-                        <div>
-                            <label class="form-label">Intake Batch</label>
-                            <select class="form-select {% if batch_filter %}filter-active-field{% endif %}" name="batch">
-                                <option value="">All Batches</option>
-                                {% for batch in all_batches|default([]) %}
-                                    <option value="{{ batch.id }}" {% if batch_filter|string == batch.id|string %}selected{% endif %}>{{ batch.batch_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
                     </div>
 
                     <div class="inventory-filter-group">
@@ -648,7 +637,6 @@
                 {% if variation_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Variation: {{ variation_filter }}</span>{% endif %}
                 {% if acquisition_source_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Source: {{ acquisition_source_filter }}</span>{% endif %}
                 {% if acquisition_event_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Event: {{ acquisition_event_filter }}</span>{% endif %}
-                {% if batch_filter %}<span class="inventory-filter-chip inventory-filter-chip-muted">Batch: {{ selected_batch_name or batch_filter }}</span>{% endif %}
                 {% if min_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Min Cost: {{ min_price }}</span>{% endif %}
                 {% if max_price %}<span class="inventory-filter-chip inventory-filter-chip-muted">Max Cost: {{ max_price }}</span>{% endif %}
                 <a class="btn btn-sm btn-edit-card" href="{% if scope == 'all' %}{{ url_for('cards', scope='all', view=current_view) }}{% else %}{{ url_for('cards', view=current_view) }}{% endif %}">Clear Search</a>
@@ -780,10 +768,12 @@
 {% else %}
     <form id="deal-cart-add-form" method="POST" action="{{ url_for('add_to_deal_cart') }}"></form>
     <form id="label-preview-form" method="POST" action="{{ url_for('label_preview') }}"></form>
+    <form id="bulk-delete-form" method="POST" action="{{ url_for('bulk_delete_cards') }}"></form>
 
     <div class="d-flex flex-wrap justify-content-end gap-2 mb-2">
         <button class="btn btn-warning" type="button" onclick="submitSelectedInventoryCards('label-preview-form')">Preview Price Labels</button>
         <button class="btn btn-dark" type="button" onclick="submitSelectedInventoryCards('deal-cart-add-form')">Add Selected to Deal Cart</button>
+        <button class="btn btn-outline-danger" type="button" onclick="submitSelectedInventoryCards('bulk-delete-form', { confirmDelete: true })">Delete Selected</button>
         <a class="btn btn-danger" href="{{ url_for('deal_cart') }}">Sell Deal Cart as Lot</a>
     </div>
 
@@ -792,7 +782,11 @@
             <table class="table table-hover mb-0 align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>Select</th>
+                        <th>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="selectAllVisibleCards" aria-label="Select all visible cards">
+                            </div>
+                        </th>
                         <th>Image</th>
                         <th>Card</th>
                         <th>Type</th>
@@ -815,11 +809,13 @@
                     {% for card in cards %}
                         <tr class="inventory-row {% if card.status == 'Sold' %}sold-inventory-row{% endif %}">
                             <td>
-                                {% if card.status == "Active" %}
-                                    <input class="form-check-input inventory-card-select" type="checkbox" value="{{ card.id }}">
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
+                                <input
+                                    class="form-check-input inventory-card-select"
+                                    type="checkbox"
+                                    value="{{ card.id }}"
+                                    data-status="{{ card.status or '' }}"
+                                    aria-label="Select {{ card.card_code }}"
+                                >
                             </td>
                             <td>
                                 {% if card.image_filename %}
@@ -942,7 +938,7 @@
 {{ inventory_pagination_bar('mt-3') }}
 
 <script>
-function submitSelectedInventoryCards(formId) {
+function submitSelectedInventoryCards(formId, options = {}) {
     const form = document.getElementById(formId);
     if (!form) {
         return;
@@ -952,11 +948,24 @@ function submitSelectedInventoryCards(formId) {
         input.remove();
     });
 
-    const selectedCards = document.querySelectorAll('.inventory-card-select:checked');
+    let selectedCards = Array.from(document.querySelectorAll('.inventory-card-select:checked'));
+
+    if (formId === 'deal-cart-add-form') {
+        selectedCards = selectedCards.filter(function(checkbox) {
+            return checkbox.dataset.status === 'Active';
+        });
+    }
 
     if (!selectedCards.length) {
-        alert('Select at least one card first.');
+        alert(formId === 'deal-cart-add-form' ? 'Select at least one active card first.' : 'Select at least one card first.');
         return;
+    }
+
+    if (options.confirmDelete) {
+        const confirmed = confirm(`Delete ${selectedCards.length} selected card(s)? This cannot be undone.`);
+        if (!confirmed) {
+            return;
+        }
     }
 
     selectedCards.forEach(function(checkbox) {
@@ -968,6 +977,25 @@ function submitSelectedInventoryCards(formId) {
     });
 
     form.submit();
+}
+
+const selectAllVisibleCards = document.getElementById('selectAllVisibleCards');
+
+if (selectAllVisibleCards) {
+    selectAllVisibleCards.addEventListener('change', function() {
+        document.querySelectorAll('.inventory-card-select').forEach(function(checkbox) {
+            checkbox.checked = selectAllVisibleCards.checked;
+        });
+    });
+
+    document.querySelectorAll('.inventory-card-select').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            const allCheckboxes = Array.from(document.querySelectorAll('.inventory-card-select'));
+            const checkedCheckboxes = allCheckboxes.filter(function(item) { return item.checked; });
+            selectAllVisibleCards.checked = allCheckboxes.length > 0 && checkedCheckboxes.length === allCheckboxes.length;
+            selectAllVisibleCards.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
+        });
+    });
 }
 </script>
 
