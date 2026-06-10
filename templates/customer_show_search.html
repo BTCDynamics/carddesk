@@ -14,8 +14,6 @@
             --cd-text: #f8fafc;
             --cd-muted: #cbd5e1;
             --cd-soft: #94a3b8;
-            --cd-green: #22c55e;
-            --cd-gold: #f59e0b;
         }
 
         body {
@@ -29,7 +27,7 @@
         }
 
         .customer-shell {
-            max-width: 880px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 1rem;
         }
@@ -85,23 +83,46 @@
             border: 2px solid rgba(125, 211, 252, .55) !important;
         }
 
-        .search-button {
+        .search-button,
+        .browse-button {
             min-height: 56px;
             font-size: 1.05rem;
             font-weight: 900;
         }
 
-        .example-pill {
+        .example-pill,
+        .filter-pill {
             display: inline-flex;
             align-items: center;
             border-radius: 999px;
-            padding: .3rem .65rem;
+            padding: .34rem .68rem;
             color: #dbeafe;
             background: rgba(37, 99, 235, .18);
             border: 1px solid rgba(96, 165, 250, .28);
             text-decoration: none;
             font-size: .82rem;
-            font-weight: 750;
+            font-weight: 800;
+        }
+
+        .filter-pill.active {
+            color: #052e16;
+            background: #86efac;
+            border-color: rgba(187, 247, 208, .72);
+        }
+
+        .browse-tools {
+            margin-top: 1rem;
+            padding: .85rem;
+            border-radius: 1rem;
+            background: rgba(2, 6, 23, .38);
+            border: 1px solid rgba(148, 163, 184, .16);
+        }
+
+        .sort-select {
+            min-height: 42px;
+            font-weight: 800;
+            color: #111827 !important;
+            background: #ffffff !important;
         }
 
         .result-card {
@@ -161,6 +182,7 @@
             background: #86efac;
             font-weight: 950;
             font-size: 1rem;
+            white-space: nowrap;
         }
 
         .tag-row {
@@ -191,6 +213,14 @@
             border: 1px dashed rgba(148, 163, 184, .28);
         }
 
+        .pager-card {
+            margin-top: 1rem;
+            padding: .85rem;
+            border-radius: 1rem;
+            background: rgba(15, 23, 42, .72);
+            border: 1px solid rgba(148, 163, 184, .18);
+        }
+
         .footer-note {
             color: var(--cd-soft);
             font-size: .82rem;
@@ -211,7 +241,7 @@
             <div class="hero-kicker">Card Show Inventory Search</div>
             <div class="hero-title">Looking for a specific card?</div>
             <div class="hero-subtitle">
-                Search the cards we brought to this show. Ask us if you see something you like.
+                Search or browse the cards we brought to this show. Ask us if you see something you like.
                 {% if active_event %}
                     <div class="mt-2"><strong>{{ active_event.event_name }}</strong>{% if active_event.location %} · {{ active_event.location }}{% endif %}</div>
                 {% endif %}
@@ -229,6 +259,10 @@
                     </div>
                 </form>
 
+                <div class="d-grid mt-2">
+                    <a class="btn btn-outline-info browse-button" href="{{ url_for('customer_show_search', browse='1') }}">Browse All Show Inventory</a>
+                </div>
+
                 <div class="d-flex flex-wrap gap-2 mt-3">
                     <a class="example-pill" href="{{ url_for('customer_show_search', q='rookie') }}">Rookies</a>
                     <a class="example-pill" href="{{ url_for('customer_show_search', q='PSA') }}">Graded / PSA</a>
@@ -240,13 +274,56 @@
                 <div class="small mt-3" style="color:#94a3b8;">
                     Searching {{ show_card_count or 0 }} card(s) currently loaded for the show.
                 </div>
+
+                {% if browse_mode or search_query %}
+                    <div class="browse-tools">
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <a class="filter-pill {% if browse_mode and browse_filter == 'all' and not search_query %}active{% endif %}" href="{{ url_for('customer_show_search', browse='1', filter='all', sort=sort_mode) }}">All {{ category_counts.all }}</a>
+                            <a class="filter-pill {% if browse_mode and browse_filter == 'graded' %}active{% endif %}" href="{{ url_for('customer_show_search', browse='1', filter='graded', sort=sort_mode) }}">Graded {{ category_counts.graded }}</a>
+                            <a class="filter-pill {% if browse_mode and browse_filter == 'raw' %}active{% endif %}" href="{{ url_for('customer_show_search', browse='1', filter='raw', sort=sort_mode) }}">Raw {{ category_counts.raw }}</a>
+                            <a class="filter-pill {% if browse_mode and browse_filter == 'rookies' %}active{% endif %}" href="{{ url_for('customer_show_search', browse='1', filter='rookies', sort=sort_mode) }}">Rookies {{ category_counts.rookies }}</a>
+                            <a class="filter-pill {% if browse_mode and browse_filter == 'hof' %}active{% endif %}" href="{{ url_for('customer_show_search', browse='1', filter='hof', sort=sort_mode) }}">HOF {{ category_counts.hof }}</a>
+                            <a class="filter-pill {% if browse_mode and browse_filter == 'under20' %}active{% endif %}" href="{{ url_for('customer_show_search', browse='1', filter='under20', sort=sort_mode) }}">Under $20 {{ category_counts.under20 }}</a>
+                        </div>
+
+                        <form method="GET" action="{{ url_for('customer_show_search') }}" class="row g-2 align-items-end">
+                            {% if search_query %}
+                                <input type="hidden" name="q" value="{{ search_query }}">
+                            {% else %}
+                                <input type="hidden" name="browse" value="1">
+                                <input type="hidden" name="filter" value="{{ browse_filter }}">
+                            {% endif %}
+                            <div class="col-12 col-sm">
+                                <label class="form-label small mb-1" style="color:#cbd5e1;">Sort</label>
+                                <select class="form-select sort-select" name="sort" onchange="this.form.submit()">
+                                    <option value="player" {% if sort_mode == 'player' %}selected{% endif %}>Player / Name</option>
+                                    <option value="price_low" {% if sort_mode == 'price_low' %}selected{% endif %}>Price Low to High</option>
+                                    <option value="price_high" {% if sort_mode == 'price_high' %}selected{% endif %}>Price High to Low</option>
+                                    <option value="year" {% if sort_mode == 'year' %}selected{% endif %}>Year</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
             </div>
         </section>
 
-        {% if search_query %}
-            <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
-                <h2 class="h5 mb-0">Results for “{{ search_query }}”</h2>
-                <span class="badge text-bg-info">{{ result_count }} found</span>
+        {% if search_query or browse_mode %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 mb-3">
+                <h2 class="h5 mb-0">
+                    {% if search_query %}
+                        Results for “{{ search_query }}”
+                    {% else %}
+                        Browsing Show Inventory
+                    {% endif %}
+                </h2>
+                <span class="badge text-bg-info">
+                    {% if total_results %}
+                        Showing {{ first_result }}–{{ last_result }} of {{ total_results }}
+                    {% else %}
+                        0 found
+                    {% endif %}
+                </span>
             </div>
 
             {% if results %}
@@ -297,6 +374,26 @@
                         </div>
                     {% endfor %}
                 </div>
+
+                {% if total_pages > 1 %}
+                    <div class="pager-card d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        {% if prev_url %}
+                            <a class="btn btn-outline-light" href="{{ prev_url }}">← Previous</a>
+                        {% else %}
+                            <span class="btn btn-outline-secondary disabled">← Previous</span>
+                        {% endif %}
+
+                        <div class="small" style="color:#cbd5e1;font-weight:800;">
+                            Page {{ page }} of {{ total_pages }}
+                        </div>
+
+                        {% if next_url %}
+                            <a class="btn btn-success" href="{{ next_url }}">Next →</a>
+                        {% else %}
+                            <span class="btn btn-outline-secondary disabled">Next →</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
             {% else %}
                 <div class="empty-card mt-3">
                     <div class="h5 text-light">No matches found.</div>

@@ -303,23 +303,6 @@
     font-weight: 900;
 }
 
-.show-batch-summary-note {
-    color: #94a3b8;
-    font-size: .84rem;
-    font-weight: 650;
-}
-
-.show-batch-name {
-    color: #ffffff;
-    font-weight: 900;
-}
-
-.show-batch-records {
-    color: #94a3b8;
-    font-size: .78rem;
-    font-weight: 700;
-    margin-top: .15rem;
-}
 
 .customer-search-panel {
     padding: 1rem;
@@ -440,12 +423,13 @@
         <div>
             <div class="show-prep-section-title mb-2">Customer Inventory Search</div>
             <div class="customer-search-sign-text">Looking for a specific card?</div>
-            <div class="customer-search-sign-sub">Customers can scan this QR code to search only the cards loaded into this show.</div>
+            <div class="customer-search-sign-sub">Customers can scan this QR code to search or browse only the cards loaded into this show.</div>
             <div class="customer-search-note mt-2">
                 Customer view shows card details and asking price only. It does not show storage, cost, comp, profit, or notes.
             </div>
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <a class="btn btn-success fw-bold" href="{{ url_for('customer_show_search') }}" target="_blank">Open Customer Search</a>
+                <a class="btn btn-outline-success fw-bold" href="{{ url_for('customer_show_search', browse='1') }}" target="_blank">Browse Show Inventory</a>
                 <button class="btn btn-outline-light" type="button" onclick="navigator.clipboard.writeText('{{ customer_search_url }}')">Copy Link</button>
             </div>
         </div>
@@ -571,57 +555,6 @@
                 </tbody>
             </table>
         </div>
-    </div>
-{% endif %}
-
-{% if batch_summary %}
-    <div class="show-location-panel mb-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-            <div>
-                <div class="show-prep-section-title">Top Batches In Show</div>
-                <div class="show-batch-summary-note">
-                    Purchase groups and intake batches represented in the selected show loadout.
-                </div>
-            </div>
-            <span class="badge text-bg-info">{{ batch_summary|length }} batch(es)</span>
-        </div>
-
-        <div class="table-responsive">
-            <table class="show-loadout-table">
-                <thead>
-                    <tr>
-                        <th>Batch</th>
-                        <th class="text-end">Cards</th>
-                        <th class="text-end">Cost</th>
-                        <th class="text-end">Comp</th>
-                        <th class="text-end">Ask</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for batch in batch_summary %}
-                        <tr>
-                            <td>
-                                <div class="show-batch-name">{{ batch.batch_name }}</div>
-                                <div class="show-batch-records">{{ batch.record_count }} inventory record(s)</div>
-                            </td>
-                            <td class="text-end">{{ batch.card_count }}</td>
-                            <td class="text-end">${{ "%.0f"|format(batch.cost or 0) }}</td>
-                            <td class="text-end">${{ "%.0f"|format(batch.comp or 0) }}</td>
-                            <td class="text-end">${{ "%.0f"|format(batch.ask or 0) }}</td>
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-outline-info" href="{{ url_for('cards', batch=batch.batch_name) }}">Open</a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-{% elif selected_location_summaries %}
-    <div class="show-location-panel mb-4">
-        <div class="show-prep-section-title mb-2">Top Batches In Show</div>
-        <div class="text-muted small">No cards in this loadout are currently tied to an intake batch.</div>
     </div>
 {% endif %}
 

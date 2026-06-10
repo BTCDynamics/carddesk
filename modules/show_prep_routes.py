@@ -184,6 +184,46 @@ def _current_show_cards():
     return active_event, selected_show_locations, show_cards
 
 
+def _customer_card_matches(card, search_terms):
+    """Return True when all customer search terms match public card fields."""
+    searchable_text = " ".join([
+        card.player_name or "",
+        card.sport or "",
+        card.brand or "",
+        card.set_name or "",
+        str(card.year or ""),
+        card.card_number or "",
+        card.variation or "",
+        card.card_type or "",
+        card.grading_company or "",
+        card.actual_grade or "",
+        "rookie" if card.is_rookie else "",
+        "hof" if card.is_hof else "",
+    ]).lower()
+
+    return all(term in searchable_text for term in search_terms)
+
+
+def _customer_filter_matches(card, browse_filter):
+    """Return True when a card belongs in the selected customer browse category."""
+    if browse_filter == "graded":
+        return (card.card_type or "").lower() == "graded"
+
+    if browse_filter == "raw":
+        return (card.card_type or "").lower() == "raw"
+
+    if browse_filter == "rookies":
+        return bool(card.is_rookie)
+
+    if browse_filter == "hof":
+        return bool(card.is_hof)
+
+    if browse_filter == "under20":
+        return bool(card.asking_price is not None and card.asking_price > 0 and card.asking_price <= 20)
+
+    return True
+
+
 def register_show_prep_routes(app):
     @app.route("/show-prep", methods=["GET", "POST"])
     def show_prep():
@@ -224,39 +264,6 @@ def register_show_prep_routes(app):
             card for card in active_cards
             if (card.storage_location or "").strip() in selected_show_location_set
         ]
-
-        batch_summary_by_name = {}
-        for card in show_cards:
-            if not getattr(card, "intake_batch", None):
-                continue
-
-            batch_name = (card.intake_batch.batch_name or "").strip()
-            if not batch_name:
-                continue
-
-            quantity = card.quantity or 1
-
-            if batch_name not in batch_summary_by_name:
-                batch_summary_by_name[batch_name] = {
-                    "batch_name": batch_name,
-                    "card_count": 0,
-                    "record_count": 0,
-                    "cost": 0.0,
-                    "comp": 0.0,
-                    "ask": 0.0,
-                }
-
-            batch_summary_by_name[batch_name]["record_count"] += 1
-            batch_summary_by_name[batch_name]["card_count"] += quantity
-            batch_summary_by_name[batch_name]["cost"] += _money(card.purchase_price) * quantity
-            batch_summary_by_name[batch_name]["comp"] += _money(card.estimated_value) * quantity
-            batch_summary_by_name[batch_name]["ask"] += _money(card.asking_price) * quantity
-
-        batch_summary = sorted(
-            batch_summary_by_name.values(),
-            key=lambda item: (item["card_count"], item["ask"]),
-            reverse=True,
-        )
 
         show_card_count = _total_card_quantity(show_cards)
         show_total_cost = sum(_money(card.purchase_price) * (card.quantity or 1) for card in show_cards)
@@ -378,7 +385,6 @@ def register_show_prep_routes(app):
             location_summaries=location_summaries,
             selected_show_locations=selected_show_locations,
             selected_location_summaries=selected_location_summaries,
-            batch_summary=batch_summary,
             show_cards=show_cards,
             show_card_count=show_card_count,
             show_total_cost=show_total_cost,
@@ -397,47 +403,116 @@ def register_show_prep_routes(app):
 
     @app.route("/customer-search")
     def customer_show_search():
-        """Customer-facing search for cards physically loaded into the current show."""
+        """Customer-facing search/browse for cards physically loaded into the current show."""
         active_event, selected_show_locations, show_cards = _current_show_cards()
+
         search_query = (request.args.get("q") or "").strip()
+        browse_mode = request.args.get("browse") == "1"
+        browse_filter = request.args.get("filter", "all")
+        sort_mode = request.args.get("sort", "player")
+        page = request.args.get("page", 1, type=int)
 
-        results = []
+        if page < 1:
+            page = 1
 
-        if search_query and show_cards:
+        per_page = 50
+
+        allowed_filters = {"all", "graded", "raw", "rookies", "hof", "under20"}
+        if browse_filter not in allowed_filters:
+            browse_filter = "all"
+
+        allowed_sorts = {"player", "price_low", "price_high", "year"}
+        if sort_mode not in allowed_sorts:
+            sort_mode = "player"
+
+        filtered_cards = []
+
+        if search_query:
             search_terms = [
                 term.strip().lower()
                 for term in search_query.split()
                 if term.strip()
             ]
 
-            for card in show_cards:
-                searchable_text = " ".join([
+            filtered_cards = [
+                card for card in show_cards
+                if _customer_card_matches(card, search_terms)
+            ]
+        elif browse_mode:
+            filtered_cards = [
+                card for card in show_cards
+                if _customer_filter_matches(card, browse_filter)
+            ]
+
+        if sort_mode == "price_low":
+            filtered_cards = sorted(
+                filtered_cards,
+                key=lambda card: (
+                    card.asking_price is None or card.asking_price <= 0,
+                    card.asking_price or 0,
                     card.player_name or "",
-                    card.sport or "",
-                    card.brand or "",
-                    card.set_name or "",
-                    str(card.year or ""),
-                    card.card_number or "",
-                    card.variation or "",
-                    card.card_type or "",
-                    card.grading_company or "",
-                    card.actual_grade or "",
-                    "rookie" if card.is_rookie else "",
-                    "hof" if card.is_hof else "",
-                ]).lower()
-
-                if all(term in searchable_text for term in search_terms):
-                    results.append(card)
-
-        results = sorted(
-            results,
-            key=lambda card: (
-                card.player_name or "",
-                card.year or 0,
-                card.brand or "",
-                card.card_number or "",
+                )
             )
-        )[:75]
+        elif sort_mode == "price_high":
+            filtered_cards = sorted(
+                filtered_cards,
+                key=lambda card: (
+                    card.asking_price or 0,
+                    card.player_name or "",
+                ),
+                reverse=True,
+            )
+        elif sort_mode == "year":
+            filtered_cards = sorted(
+                filtered_cards,
+                key=lambda card: (
+                    card.year or 9999,
+                    card.player_name or "",
+                    card.brand or "",
+                )
+            )
+        else:
+            filtered_cards = sorted(
+                filtered_cards,
+                key=lambda card: (
+                    card.player_name or "",
+                    card.year or 0,
+                    card.brand or "",
+                    card.card_number or "",
+                )
+            )
+
+        total_results = len(filtered_cards)
+        total_pages = max(1, (total_results + per_page - 1) // per_page)
+
+        if page > total_pages:
+            page = total_pages
+
+        start_index = (page - 1) * per_page
+        end_index = start_index + per_page
+        results = filtered_cards[start_index:end_index]
+
+        def page_url(page_number):
+            return url_for(
+                "customer_show_search",
+                q=search_query or None,
+                browse="1" if browse_mode and not search_query else None,
+                filter=browse_filter if browse_mode and not search_query else None,
+                sort=sort_mode,
+                page=page_number,
+            )
+
+        prev_url = page_url(page - 1) if page > 1 else None
+        next_url = page_url(page + 1) if page < total_pages else None
+
+        category_counts = {
+            "all": len(show_cards),
+            "graded": len([card for card in show_cards if _customer_filter_matches(card, "graded")]),
+            "raw": len([card for card in show_cards if _customer_filter_matches(card, "raw")]),
+            "rookies": len([card for card in show_cards if _customer_filter_matches(card, "rookies")]),
+            "hof": len([card for card in show_cards if _customer_filter_matches(card, "hof")]),
+            "under20": len([card for card in show_cards if _customer_filter_matches(card, "under20")]),
+        }
 
         popular_examples = [
             row[0]
@@ -457,11 +532,23 @@ def register_show_prep_routes(app):
             "customer_show_search.html",
             active_event=active_event,
             search_query=search_query,
+            browse_mode=browse_mode,
+            browse_filter=browse_filter,
+            sort_mode=sort_mode,
             results=results,
             result_count=len(results),
+            total_results=total_results,
             show_card_count=_total_card_quantity(show_cards),
             selected_show_locations=selected_show_locations,
             popular_examples=popular_examples,
+            category_counts=category_counts,
+            page=page,
+            per_page=per_page,
+            total_pages=total_pages,
+            first_result=start_index + 1 if total_results else 0,
+            last_result=min(end_index, total_results),
+            prev_url=prev_url,
+            next_url=next_url,
         )
 
     @app.route("/show-prep/print")
