@@ -139,6 +139,7 @@
                                         <th class="text-end">Staged</th>
                                         <th class="text-end">Cost</th>
                                         <th class="text-end">Ask</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -155,6 +156,15 @@
                                             <td class="text-end">{{ stats.staged_count }}</td>
                                             <td class="text-end">${{ "%.0f"|format(stats.total_cost or 0) }}</td>
                                             <td class="text-end">${{ "%.0f"|format(stats.total_ask or 0) }}</td>
+                                            <td class="text-end">
+                                                {% if batch.status != 'Active' %}
+                                                    <form method="POST" action="{{ url_for('activate_intake_batch', batch_id=batch.id) }}" onsubmit="return confirm('Reopen this batch and make it active? Any other active batch will be closed.');">
+                                                        <button class="btn btn-sm btn-success" type="submit">Reopen</button>
+                                                    </form>
+                                                {% else %}
+                                                    <span class="badge text-bg-success">Active</span>
+                                                {% endif %}
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>

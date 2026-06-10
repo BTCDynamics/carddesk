@@ -160,12 +160,21 @@ def register_batch_routes(app):
 
     @app.route("/intake-batches/<int:batch_id>/activate", methods=["POST"])
     def activate_intake_batch(batch_id):
+        """Reopen a closed batch and make it the single active intake target."""
         batch = IntakeBatch.query.get_or_404(batch_id)
-        IntakeBatch.query.filter(IntakeBatch.status == "Active").update({"status": "Closed"})
+
+        # Keep the workflow simple: only one active batch can exist at a time.
+        # Reopening this batch closes any other currently active batch.
+        IntakeBatch.query.filter(
+            IntakeBatch.id != batch.id,
+            IntakeBatch.status == "Active"
+        ).update({"status": "Closed"})
+
         batch.status = "Active"
         batch.closed_at = None
         db.session.commit()
-        flash(f"Active intake batch set to {batch.batch_name}.")
+
+        flash(f"Reopened intake batch: {batch.batch_name}. New captures and entries will use this batch again.")
         return redirect(request.referrer or url_for("intake_batch_detail", batch_id=batch.id))
 
     @app.route("/intake-batches/<int:batch_id>/close", methods=["POST"])
