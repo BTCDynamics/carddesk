@@ -5,12 +5,18 @@
 {% block content %}
 
 <div class="batch-detail-page">
+    <div class="batch-print-only batch-print-heading">
+        <div class="batch-print-eyebrow">CardDesk Batch Performance Report</div>
+        <h1>{{ batch.batch_name }}</h1>
+        <div class="batch-print-meta">Status: {{ batch.status }}{% if batch.default_acquisition_date %} · Acquisition Date: {{ batch.default_acquisition_date }}{% endif %}{% if batch.default_acquisition_event %} · Source: {{ batch.default_acquisition_event }}{% endif %}</div>
+    </div>
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 cw-page-title">
         <div>
             <h1 class="h2 mb-1">{{ batch.batch_name }}</h1>
             <p class="text-muted mb-0"><span class="badge batch-badge {% if batch.status == 'Active' %}batch-badge-active{% else %}batch-badge-closed{% endif %}">{{ batch.status }}</span> Intake batch defaults and cards tied to this batch.</p>
         </div>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2 batch-no-print">
+            <button class="btn btn-outline-light" type="button" onclick="window.print()">Print Report</button>
             <a class="btn btn-primary" href="{{ url_for('intake_batches') }}">All Batches</a>
             <a class="btn btn-outline-info" href="{{ url_for('intake_tools') }}">Card Processing</a>
             <a class="btn btn-outline-warning" href="{{ url_for('rapid_entry') }}">Rapid Entry</a>
@@ -70,7 +76,7 @@
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-lg-5">
+        <div class="col-lg-5 batch-no-print">
             <div class="batch-detail-panel h-100">
                 <div class="batch-detail-panel-header">Batch Defaults</div>
                 <div class="batch-detail-panel-body">
@@ -164,7 +170,7 @@
         </div>
     </div>
 
-    <div class="batch-detail-panel mb-4">
+    <div class="batch-detail-panel mb-4 batch-no-print">
         <div class="batch-detail-panel-header">Staged / Review Queue Cards</div>
         <div class="batch-detail-panel-body">
             {% if stats.staged_cards %}
@@ -189,4 +195,18 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+(function () {
+    const printButtons = document.querySelectorAll('[data-batch-print]');
+    printButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            window.print();
+        });
+    });
+})();
+</script>
 {% endblock %}

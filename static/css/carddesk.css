@@ -3011,3 +3011,218 @@ textarea.form-control {
     }
 }
 
+
+
+/* =========================================================
+   Intake Batch Print Report
+   Keeps the screen view dark, but prints a clean hard-copy
+   batch performance report without navigation or form controls.
+   ========================================================= */
+.batch-print-only {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: auto;
+        margin: 0.5in;
+    }
+
+    html,
+    body {
+        color: #111827 !important;
+        background: #ffffff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    nav,
+    .navbar,
+    .cw-navbar,
+    .alert,
+    .batch-no-print,
+    .btn,
+    button,
+    form {
+        display: none !important;
+    }
+
+    main.container-fluid {
+        padding: 0 !important;
+        color: #111827 !important;
+    }
+
+    .batch-detail-page {
+        max-width: none !important;
+        margin: 0 !important;
+        color: #111827 !important;
+    }
+
+    .batch-print-only {
+        display: block !important;
+    }
+
+    .batch-print-heading {
+        margin-bottom: 1rem;
+        padding-bottom: .75rem;
+        border-bottom: 2px solid #111827;
+    }
+
+    .batch-print-eyebrow {
+        color: #475569 !important;
+        font-size: .75rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .batch-print-heading h1 {
+        margin: .15rem 0 .25rem;
+        color: #111827 !important;
+        font-size: 1.65rem;
+        font-weight: 800;
+    }
+
+    .batch-print-meta {
+        color: #475569 !important;
+        font-size: .86rem;
+        font-weight: 500;
+    }
+
+    .cw-page-title {
+        margin-bottom: .75rem !important;
+    }
+
+    .cw-page-title h1,
+    .cw-page-title .h2 {
+        color: #111827 !important;
+        text-shadow: none !important;
+        font-size: 1.25rem;
+    }
+
+    .cw-page-title p,
+    .batch-detail-page .text-muted,
+    .batch-detail-page .small.text-muted {
+        color: #475569 !important;
+    }
+
+    .batch-stat-grid,
+    .batch-performance-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: .45rem !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .batch-stat,
+    .batch-performance-card,
+    .batch-detail-panel,
+    .batch-detail-panel-body,
+    .batch-detail-panel-header {
+        color: #111827 !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+    }
+
+    .batch-stat,
+    .batch-performance-card,
+    .batch-detail-panel {
+        border: 1px solid #cbd5e1 !important;
+    }
+
+    .batch-stat {
+        min-height: auto !important;
+        padding: .65rem !important;
+    }
+
+    .batch-stat-label,
+    .batch-performance-label {
+        color: #475569 !important;
+        font-size: .66rem !important;
+        font-weight: 800 !important;
+    }
+
+    .batch-stat-value,
+    .batch-performance-value {
+        color: #111827 !important;
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+    }
+
+    .batch-performance-note {
+        color: #64748b !important;
+        font-size: .72rem !important;
+    }
+
+    .batch-profit-positive,
+    .batch-profit-negative {
+        color: #111827 !important;
+    }
+
+    .batch-detail-panel {
+        margin-bottom: .75rem !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .batch-detail-panel-header {
+        color: #111827 !important;
+        border-bottom: 1px solid #cbd5e1 !important;
+        padding: .55rem .65rem !important;
+        font-size: .75rem !important;
+    }
+
+    .batch-detail-panel-body {
+        padding: .65rem !important;
+    }
+
+    .batch-detail-page .table-responsive {
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        overflow: visible !important;
+    }
+
+    .batch-table,
+    .batch-table thead,
+    .batch-table tbody,
+    .batch-table tr,
+    .batch-table td,
+    .batch-table th,
+    .batch-table > :not(caption) > * > * {
+        color: #111827 !important;
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: none !important;
+    }
+
+    .batch-table th {
+        color: #334155 !important;
+        font-size: .65rem !important;
+        font-weight: 800 !important;
+    }
+
+    .batch-table td {
+        font-size: .76rem !important;
+        font-weight: 400 !important;
+        padding: .35rem .45rem !important;
+    }
+
+    .batch-table td.text-end {
+        font-weight: 500 !important;
+    }
+
+    .batch-link {
+        color: #111827 !important;
+        font-weight: 500 !important;
+        text-decoration: none !important;
+    }
+
+    .batch-badge,
+    .badge {
+        color: #111827 !important;
+        background: #ffffff !important;
+        border: 1px solid #94a3b8 !important;
+        font-weight: 600 !important;
+    }
+}
