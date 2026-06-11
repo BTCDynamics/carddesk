@@ -2732,3 +2732,282 @@ textarea.form-control {
 .analytics-card-health::before {
     background: linear-gradient(180deg, #ef4444, #f59e0b) !important;
 }
+
+/* =========================================================
+   Intake Batch Detail - Dark Dealer Terminal Refactor
+   Keeps batch detail styling in the main stylesheet instead
+   of inline template CSS. This also overrides Bootstrap table
+   and badge backgrounds that were causing bright white areas.
+   ========================================================= */
+.batch-detail-page {
+    max-width: 1450px;
+    margin: 0 auto;
+    color: #e5edf7;
+}
+
+.batch-detail-page .cw-page-title h1,
+.batch-detail-page .cw-page-title .h2 {
+    color: #ffffff !important;
+}
+
+.batch-detail-page .cw-page-title p,
+.batch-detail-page .text-muted,
+.batch-detail-page .small.text-muted {
+    color: #94a3b8 !important;
+}
+
+.batch-detail-panel {
+    border-radius: 1.1rem;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .08), transparent 34%),
+        linear-gradient(145deg, #07111f, #0d1728) !important;
+    border: 1px solid rgba(96, 165, 250, .22) !important;
+    color: #f8fafc !important;
+    overflow: hidden;
+    box-shadow: 0 18px 42px rgba(2, 6, 23, .30) !important;
+}
+
+.batch-detail-panel-header {
+    padding: .95rem 1rem;
+    border-bottom: 1px solid rgba(96, 165, 250, .20) !important;
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, .14), transparent 36%),
+        linear-gradient(145deg, #0b182a, #07111f) !important;
+    color: #f8fafc !important;
+    font-size: .82rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.batch-detail-panel-body {
+    padding: 1rem;
+    background: linear-gradient(145deg, #101827, #172033) !important;
+}
+
+.batch-detail-page .form-label {
+    color: #cbd5e1 !important;
+    font-weight: 800;
+    font-size: .82rem;
+}
+
+.batch-detail-page .form-control,
+.batch-detail-page .form-select,
+.batch-detail-page textarea.form-control {
+    background-color: rgba(15, 23, 42, .82) !important;
+    border-color: rgba(148, 163, 184, .26) !important;
+    color: #f9fafb !important;
+}
+
+.batch-detail-page .form-control:focus,
+.batch-detail-page .form-select:focus,
+.batch-detail-page textarea.form-control:focus {
+    background-color: #07111f !important;
+    border-color: rgba(14, 165, 233, .70) !important;
+    box-shadow: 0 0 0 .18rem rgba(14, 165, 233, .18) !important;
+    color: #ffffff !important;
+}
+
+.batch-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: .85rem;
+}
+
+.batch-stat {
+    padding: 1rem;
+    min-height: 112px;
+    border-radius: 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, .12), transparent 42%),
+        linear-gradient(145deg, #202b3a, #263244) !important;
+    border: 1px solid rgba(148, 163, 184, .22) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+
+.batch-stat-label {
+    color: #cbd5e1 !important;
+    font-size: .74rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.batch-stat-value {
+    margin-top: .35rem;
+    color: #ffffff !important;
+    font-size: 1.8rem;
+    font-weight: 900;
+}
+
+.batch-performance-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .85rem;
+}
+
+.batch-performance-card {
+    padding: 1rem;
+    border-radius: 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, .12), transparent 42%),
+        linear-gradient(145deg, #0b1220, #111c2e) !important;
+    border: 1px solid rgba(96, 165, 250, .22) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+
+.batch-performance-label {
+    color: #93c5fd !important;
+    font-size: .72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.batch-performance-value {
+    color: #ffffff !important;
+    font-size: 1.55rem;
+    font-weight: 900;
+    margin-top: .25rem;
+}
+
+.batch-performance-note {
+    color: #94a3b8 !important;
+    font-size: .78rem;
+    margin-top: .25rem;
+}
+
+.batch-profit-positive { color: #86efac !important; }
+.batch-profit-negative { color: #fca5a5 !important; }
+
+.batch-detail-page .table-responsive {
+    border-radius: .85rem;
+    overflow: hidden;
+    background: rgba(15, 23, 42, .28) !important;
+    border: 1px solid rgba(148, 163, 184, .14);
+}
+
+.batch-table {
+    margin-bottom: 0 !important;
+    color: #e5edf7 !important;
+    --bs-table-bg: transparent !important;
+    --bs-table-striped-bg: rgba(255, 255, 255, .02) !important;
+    --bs-table-hover-bg: rgba(59, 130, 246, .08) !important;
+    --bs-table-color: #e5edf7 !important;
+    --bs-table-border-color: rgba(148, 163, 184, .12) !important;
+}
+
+.batch-table thead,
+.batch-table tbody,
+.batch-table tr,
+.batch-table td,
+.batch-table th,
+.batch-table > :not(caption) > * > * {
+    background-color: transparent !important;
+    color: #e5edf7 !important;
+    border-color: rgba(148, 163, 184, .12) !important;
+    box-shadow: none !important;
+}
+
+.batch-table th {
+    color: #93c5fd !important;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.batch-table td {
+    vertical-align: middle;
+    font-weight: 400;
+}
+
+.batch-table td.text-end {
+    font-weight: 500;
+}
+
+.batch-table tbody tr:nth-child(odd) {
+    background: rgba(255, 255, 255, .012) !important;
+}
+
+.batch-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, .032) !important;
+}
+
+.batch-table tbody tr:hover {
+    background: rgba(59, 130, 246, .09) !important;
+}
+
+.batch-table .text-muted,
+.batch-table .small.text-muted {
+    color: #94a3b8 !important;
+    font-weight: 400 !important;
+}
+
+.batch-link {
+    color: #e5edf7 !important;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.batch-link:hover {
+    color: #bfdbfe !important;
+    text-decoration: underline;
+}
+
+.batch-badge {
+    border-radius: 999px;
+    padding: .34rem .6rem;
+    font-size: .74rem;
+    font-weight: 650;
+    letter-spacing: .01em;
+    border: 1px solid rgba(255, 255, 255, .12);
+}
+
+.batch-badge-active,
+.batch-detail-page .text-bg-success {
+    background: rgba(22, 101, 52, .78) !important;
+    color: #dcfce7 !important;
+    border-color: rgba(134, 239, 172, .24) !important;
+}
+
+.batch-badge-sold,
+.batch-detail-page .text-bg-danger {
+    background: rgba(127, 29, 29, .82) !important;
+    color: #fecaca !important;
+    border-color: rgba(248, 113, 113, .24) !important;
+}
+
+.batch-badge-info,
+.batch-detail-page .text-bg-info {
+    background: rgba(30, 58, 138, .82) !important;
+    color: #dbeafe !important;
+    border-color: rgba(147, 197, 253, .26) !important;
+}
+
+.batch-badge-closed,
+.batch-detail-page .text-bg-secondary {
+    background: rgba(51, 65, 85, .88) !important;
+    color: #e2e8f0 !important;
+    border-color: rgba(148, 163, 184, .24) !important;
+}
+
+@media (max-width: 991.98px) {
+    .batch-stat-grid,
+    .batch-performance-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .batch-stat-grid,
+    .batch-performance-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .batch-detail-page .table-responsive {
+        overflow-x: auto;
+    }
+}
+

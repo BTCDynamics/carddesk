@@ -120,6 +120,10 @@ class IntakeBatch(db.Model):
     status = db.Column(db.String(20), default="Active")
     notes = db.Column(db.Text)
 
+    # Optional total paid for the whole acquisition/batch.
+    # Used by the Batch Performance report to average cost across inventoried cards.
+    total_batch_cost = db.Column(db.Float, default=0)
+
     default_sport = db.Column(db.String(50), default="Baseball")
     default_card_type = db.Column(db.String(20), default="Raw")
     default_collection_type = db.Column(db.String(50), default="Inventory")

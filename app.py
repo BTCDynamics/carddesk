@@ -37,10 +37,18 @@ app = Flask(__name__)
 
 app.secret_key = os.environ.get("CARDWATCH_SECRET_KEY", "cardwatch-dev-secret")
 
-DATA_DIR = os.environ.get("CARDWATCH_DATA_DIR", "/var/data")
+DATA_DIR = os.environ.get(
+    "CARDWATCH_DATA_DIR",
+    os.path.join(os.path.dirname(__file__), "data")
+)
 os.makedirs(DATA_DIR, exist_ok=True)
 
+
+
 DB_NAME = os.environ.get("CARDWATCH_DB_NAME", "carddesk.db")
+
+print(f"CardDesk DATA_DIR: {DATA_DIR}")
+print(f"CardDesk DB: {os.path.join(DATA_DIR, DB_NAME)}")
 
 PERSISTENT_UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
 
