@@ -36,7 +36,7 @@
 
 
 .dealer-event-panel {
-    max-width: 900px;
+    max-width: 50%;
 }
 
 .dealer-storage-setup-card {
@@ -438,6 +438,50 @@
     }
 }
 
+
+/* Dealer Hub polish fixes */
+.dealer-event-panel .dealer-hub-stat-grid {
+    grid-template-columns: repeat(5, minmax(165px, 1fr));
+}
+
+.dealer-event-panel .dealer-hub-stat-label,
+.dealer-event-panel .dealer-hub-stat-note {
+    white-space: nowrap;
+}
+
+.business-financials-card {
+    margin-top: 1.5rem !important;
+}
+
+.business-financials-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.business-financials-card .card-body {
+    padding: 1rem;
+}
+
+@media (max-width: 991.98px) {
+    .dealer-event-panel .dealer-hub-stat-grid {
+        grid-template-columns: repeat(2, minmax(165px, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .dealer-event-panel .dealer-hub-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dealer-event-panel .dealer-hub-stat-label,
+    .dealer-event-panel .dealer-hub-stat-note {
+        white-space: normal;
+    }
+}
+
 </style>
 
 <div class="dealer-hub-hero mb-4">
@@ -564,34 +608,18 @@
 
 
 
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-    <div>
-        <div class="dealer-hub-section-title mb-1">Business Financials</div>
-        <div class="text-muted small">
-            All inventory • All platforms • All shows
+<div class="card page-card business-financials-card mb-4">
+    <div class="card-header">
+        <span class="fw-bold">Business Financials</span>
+        <div class="dealer-hub-range-wrap">
+            <a class="dealer-hub-range-link {% if dealer_hub_range == 'today' %}active{% endif %}" href="{{ url_for('dealer_hub', range='today') }}">Today</a>
+            <a class="dealer-hub-range-link {% if dealer_hub_range == '3d' %}active{% endif %}" href="{{ url_for('dealer_hub', range='3d') }}">3D</a>
+            <a class="dealer-hub-range-link {% if dealer_hub_range == '7d' %}active{% endif %}" href="{{ url_for('dealer_hub', range='7d') }}">7D</a>
+            <a class="dealer-hub-range-link {% if dealer_hub_range == '30d' %}active{% endif %}" href="{{ url_for('dealer_hub', range='30d') }}">30D</a>
         </div>
     </div>
-
-    <div class="text-end">
-        <div class="dealer-hub-mode-pill mb-2">
-            <span>{{ dealer_hub_range_label or 'Last 3 Days' }}</span>
-            <span>Since {{ dealer_hub_start_date }}</span>
-        </div>
-
-        <div class="dealer-hub-range-wrap justify-content-end">
-            <a class="dealer-hub-range-link {% if dealer_hub_range == 'today' %}active{% endif %}"
-               href="{{ url_for('dealer_hub', range='today') }}">Today</a>
-            <a class="dealer-hub-range-link {% if dealer_hub_range == '3d' %}active{% endif %}"
-               href="{{ url_for('dealer_hub', range='3d') }}">3D</a>
-            <a class="dealer-hub-range-link {% if dealer_hub_range == '7d' %}active{% endif %}"
-               href="{{ url_for('dealer_hub', range='7d') }}">7D</a>
-            <a class="dealer-hub-range-link {% if dealer_hub_range == '30d' %}active{% endif %}"
-               href="{{ url_for('dealer_hub', range='30d') }}">30D</a>
-        </div>
-    </div>
-</div>
-
-<div class="dealer-hub-stat-grid mb-4">
+    <div class="card-body">
+        <div class="dealer-hub-stat-grid">
     <a class="dealer-hub-stat text-decoration-none" href="{{ url_for('cards', acquisition_range=dealer_hub_range, status='Active', collection_type='Inventory') }}">
         <div class="dealer-hub-stat-label">Cards Acquired · {{ dealer_hub_range_label }}</div>
         <div class="dealer-hub-stat-value">{{ range_acquired_count or 0 }}</div>
@@ -621,6 +649,8 @@
         <div class="dealer-hub-stat-value {% if range_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.0f"|format(range_profit or 0) }}</div>
         <div class="dealer-hub-stat-note">Margin {{ "%.1f"|format(range_sales_margin_percent or 0) }}%</div>
     </a>
+        </div>
+    </div>
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
